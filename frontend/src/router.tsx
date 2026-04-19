@@ -1,7 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 
 import { GuestRouteGuard, RoleRouteGuard } from '@/components/RoleRouteGuards'
-import CustomerPortal from '@/pages/CustomerPortal/CustomerPortal'
+import CustomerPortal from '@/pages/CustomerPortal'
 import DeliveryDashboard from '@/pages/DeliveryDashboard'
 import Login from '@/pages/Login'
 import MerchantConsole from '@/pages/MerchantConsole'
