@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 
 import { GuestRouteGuard, RoleRouteGuard } from '@/components/RoleRouteGuards'
 import CustomerPortal from '@/pages/CustomerPortal'
+import CustomerMerchantOrderPage from '@/pages/CustomerPortal/CustomerMerchantOrderPage'
 import DeliveryDashboard from '@/pages/DeliveryDashboard'
 import Login from '@/pages/Login'
 import MerchantConsole from '@/pages/MerchantConsole'
@@ -36,6 +37,14 @@ const routes = [
     element: (
       <RoleRouteGuard allowedRoles={['admin']}>
         <DeliveryDashboard />
+      </RoleRouteGuard>
+    ),
+  },
+  {
+    path: '/delivery/customer/m/:merchantId',
+    element: (
+      <RoleRouteGuard allowedRoles={['customer']}>
+        <CustomerMerchantOrderPage />
       </RoleRouteGuard>
     ),
   },

@@ -5,7 +5,6 @@ import { DeliveryPageShell } from '@/components/DeliveryPageShell'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAppChrome } from '@/hooks/useAppChrome'
-import type { MerchantId, ProductId } from '@/objects/shared'
 import { useCustomerPortalStore } from '@/stores/pages/use-customer-portal-store'
 
 import { CartTab } from './CartTab'
@@ -24,7 +23,6 @@ export default function CustomerPortal() {
   const merchants = useCustomerPortalStore((state) => state.merchants)
   const products = useCustomerPortalStore((state) => state.products)
   const activeTab = useCustomerPortalStore((state) => state.activeTab)
-  const selectedMerchantId = useCustomerPortalStore((state) => state.selectedMerchantId)
   const cartLines = useCustomerPortalStore((state) => state.cartLines)
   const walletBalance = useCustomerPortalStore((state) => state.walletBalance)
   const pendingOrders = useCustomerPortalStore((state) => state.pendingOrders)
@@ -34,11 +32,8 @@ export default function CustomerPortal() {
   const rechargeAmountInput = useCustomerPortalStore((state) => state.rechargeAmountInput)
   const profileDraft = useCustomerPortalStore((state) => state.profileDraft)
   const selectedOrder = useCustomerPortalStore((state) => state.selectedOrder)
-  const resetPage = useCustomerPortalStore((state) => state.resetPage)
   const bootstrap = useCustomerPortalStore((state) => state.bootstrap)
   const setActiveTab = useCustomerPortalStore((state) => state.setActiveTab)
-  const setSelectedMerchantId = useCustomerPortalStore((state) => state.setSelectedMerchantId)
-  const addProductToCart = useCustomerPortalStore((state) => state.addProductToCart)
   const changeQuantity = useCustomerPortalStore((state) => state.changeQuantity)
   const setIsRechargeOpen = useCustomerPortalStore((state) => state.setIsRechargeOpen)
   const openEditProfile = useCustomerPortalStore((state) => state.openEditProfile)
@@ -52,9 +47,15 @@ export default function CustomerPortal() {
   const saveProfile = useCustomerPortalStore((state) => state.saveProfile)
 
   useEffect(() => {
-    resetPage()
-    void bootstrap()
-  }, [bootstrap, resetPage])
+    void (async () => {
+      const st = useCustomerPortalStore.getState()
+      if (!st.bootstrapDone) {
+        await bootstrap()
+      } else {
+        await refreshPortal().catch(() => {})
+      }
+    })()
+  }, [bootstrap, refreshPortal])
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -65,11 +66,6 @@ export default function CustomerPortal() {
       window.clearInterval(timer)
     }
   }, [refreshPortal])
-
-  const handleAddProductToCart = (merchantId: MerchantId, productId: ProductId) => {
-    addProductToCart(merchantId, productId)
-    showNotice('已加入购物车。', 'success')
-  }
 
   const handleCheckout = async () => {
     const result = await checkout()
@@ -170,13 +166,7 @@ export default function CustomerPortal() {
         </Card>
 
         <TabsContent value="home">
-          <HomeTab
-            merchants={merchants}
-            products={products}
-            selectedMerchantId={selectedMerchantId}
-            onSelectMerchant={setSelectedMerchantId}
-            onAddProductToCart={handleAddProductToCart}
-          />
+          <HomeTab merchants={merchants} />
         </TabsContent>
 
         <TabsContent value="cart">

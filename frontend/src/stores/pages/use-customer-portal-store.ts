@@ -52,7 +52,9 @@ type CustomerPortalStore = {
   setProfileDraftField: (field: 'name' | 'phone' | 'defaultAddress', value: string) => void
   setRechargeAmountInput: (value: string) => void
   setSelectedOrder: (order: Order | null) => void
-  checkout: () => Promise<{ ok: true; createdCount: number } | { ok: false; message: string }>
+  checkout: (options?: { merchantId?: MerchantId }) => Promise<
+    { ok: true; createdCount: number } | { ok: false; message: string }
+  >
   recharge: () => Promise<{ ok: true; amount: number } | { ok: false; message: string }>
   saveProfile: () => Promise<{ ok: true } | { ok: false; message: string }>
 }
@@ -170,14 +172,19 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
     })),
   setRechargeAmountInput: (rechargeAmountInput) => set({ rechargeAmountInput }),
   setSelectedOrder: (selectedOrder) => set({ selectedOrder }),
-  checkout: async () => {
+  checkout: async (options?: { merchantId?: MerchantId }) => {
+    const merchantId = options?.merchantId
     const { cartLines, walletBalance, products, pendingOrders, customerAccount } = get()
+    const lines = merchantId ? cartLines.filter((line) => line.merchantId === merchantId) : cartLines
 
-    if (cartLines.length === 0) {
-      return { ok: false, message: '购物车为空，无法结算。' }
+    if (lines.length === 0) {
+      return {
+        ok: false,
+        message: merchantId ? '本店购物车为空，无法结算。' : '购物车为空，无法结算。',
+      }
     }
 
-    const cartTotal = cartLines.reduce((sum, line) => {
+    const cartTotal = lines.reduce((sum, line) => {
       const product = products.find((item) => item.id === line.productId)
       return sum + (product ? product.price * line.quantity : 0)
     }, 0)
@@ -187,8 +194,11 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
     }
 
     try {
-      const data = await runTask(checkoutIO(cartLines))
+      const data = await runTask(checkoutIO(lines))
       const nextPendingOrders = [...data.orders, ...pendingOrders]
+      const nextCartLines = merchantId
+        ? cartLines.filter((line) => line.merchantId !== merchantId)
+        : []
       set({
         walletBalance: data.walletBalance,
         pendingOrders: nextPendingOrders,
@@ -202,8 +212,8 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
               },
             }
           : customerAccount,
-        cartLines: [],
-        activeTab: 'profile',
+        cartLines: nextCartLines,
+        activeTab: merchantId ? get().activeTab : 'profile',
       })
       return { ok: true, createdCount: data.orders.length }
     } catch (error) {
