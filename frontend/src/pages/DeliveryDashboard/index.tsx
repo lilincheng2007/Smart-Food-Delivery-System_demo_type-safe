@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 
+import { DeliveryLogoutBar } from '@/components/DeliveryLogoutBar'
 import { DeliveryPageShell } from '@/components/DeliveryPageShell'
 import { FloatingPageTools } from '@/components/FloatingPageTools'
 import { Card, CardContent } from '@/components/ui/card'
@@ -31,10 +32,7 @@ export default function DeliveryDashboard() {
   const complaintTickets = overview?.complaintTickets ?? []
 
   return (
-    <DeliveryPageShell
-      title="外卖平台 - 业务总览"
-      description="演示型外卖平台总览：覆盖顾客、商家、骑手与平台运营等核心角色。"
-    >
+    <DeliveryPageShell>
       <FloatingPageTools
         events={pageEvents}
         onEventSelect={(event) => showNotice(`${event.label}：${event.description}`, 'info')}
@@ -57,6 +55,8 @@ export default function DeliveryDashboard() {
         campaigns={campaigns as PromotionCampaign[]}
         onCreateCampaign={() => showNotice('新增活动由后端 API 提供后再接线。', 'info')}
       />
+
+      <DeliveryLogoutBar />
     </DeliveryPageShell>
   )
 }

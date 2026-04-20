@@ -2,10 +2,10 @@ import { BadgeAlert } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import type { ServiceAgent } from '@/objects/admin'
+import type { CustomerServiceAgent } from '@/objects/admin'
 
 interface CustomerServiceCardProps {
-  agent: ServiceAgent | undefined
+  agent: CustomerServiceAgent | undefined
   onResolveTicket: () => void
 }
 

@@ -77,6 +77,8 @@ object ApiJsonCodecs:
   given Codec[CreateProductResponse] = deriveCodec
   given Codec[CreateStoreRequest] = deriveCodec
   given Codec[CreateStoreResponse] = deriveCodec
+  given Codec[UpdateStoreImageRequest] = deriveCodec
+  given Codec[StoreImageUploadResponse] = deriveCodec
   given Codec[UpdateProductRequest] = deriveCodec
   given Codec[UpdateProductResponse] = deriveCodec
   given Codec[CatalogResponse] = deriveCodec

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 
+import { DeliveryLogoutBar } from '@/components/DeliveryLogoutBar'
 import { DeliveryPageShell } from '@/components/DeliveryPageShell'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAppChrome } from '@/hooks/useAppChrome'
@@ -25,11 +26,7 @@ export default function OrderCenter() {
   const riders = panel?.riders ?? []
 
   return (
-    <DeliveryPageShell
-      title="平台后端 - 订单中心"
-      description="处理订单状态流转、基础派单策略和状态通知，是外卖平台的核心链路。"
-      roleBadge="订单中心"
-    >
+    <DeliveryPageShell>
       {error ? (
         <Card className="border-rose-200 bg-rose-50/90">
           <CardContent className="p-4 text-sm text-rose-800">{error}</CardContent>
@@ -42,6 +39,8 @@ export default function OrderCenter() {
         orders={orders}
         onAdvanceStatus={() => showNotice('订单状态推进由后端 API 提供后再接线。', 'info')}
       />
+
+      <DeliveryLogoutBar />
     </DeliveryPageShell>
   )
 }

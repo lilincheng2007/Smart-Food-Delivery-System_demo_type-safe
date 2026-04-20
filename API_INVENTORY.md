@@ -23,6 +23,9 @@
 | `GET` | `/api/delivery/catalog` | `backend/src/merchant/api/CatalogApi.scala` | 无请求体 | `CatalogResponse` |
 | `PUT` | `/api/delivery/me/merchant/profile` | `backend/src/merchant/api/MerchantProfileApi.scala` | `MerchantProfileBody` | `OkResponse` |
 | `POST` | `/api/delivery/me/merchant/stores` | `backend/src/merchant/api/MerchantStoreApi.scala` | `CreateStoreRequest` | `CreateStoreResponse` |
+| `PUT` | `/api/merchant/me/stores/:merchantId/image` | `backend/src/merchant/api/MerchantStoreImageApi.scala` | `UpdateStoreImageRequest` | `OkResponse` |
+| `POST` | `/api/merchant/me/stores/:merchantId/image-file` | `backend/src/merchant/api/MerchantStoreImageFileApi.scala` | `multipart/form-data` 字段 `file` | `StoreImageUploadResponse` |
+| `GET` | `/api/merchant/store-images/:fileName` | `MerchantRoutes`（静态文件） | 无 | 图片字节流 |
 | `POST` | `/api/delivery/me/customer/checkout` | `backend/src/order/api/CheckoutApi.scala` | `CheckoutRequest` | `CheckoutResponse` |
 | `GET` | `/api/delivery/overview` | `backend/src/admin/api/OverviewApi.scala` | 无请求体 | `OverviewResponse` |
 | `GET` | `/api/delivery/orders-panel` | `backend/src/admin/api/OrdersPanelApi.scala` | 无请求体 | `OrdersPanelResponse` |
@@ -56,6 +59,8 @@
 | `MerchantProfileBody` | `backend/src/merchant/objects/MerchantProfileBody.scala` | `frontend/src/merchant/objects/MerchantProfileBody.ts` |
 | `CreateStoreRequest` | `backend/src/merchant/objects/CreateStoreRequest.scala` | `frontend/src/merchant/objects/CreateStoreRequest.ts` |
 | `CreateStoreResponse` | `backend/src/merchant/objects/CreateStoreResponse.scala` | `frontend/src/merchant/objects/CreateStoreResponse.ts` |
+| `UpdateStoreImageRequest` | `backend/src/merchant/objects/UpdateStoreImageRequest.scala` | `frontend/src/objects/merchant/UpdateStoreImageRequest.ts` |
+| `StoreImageUploadResponse` | `backend/src/merchant/objects/StoreImageUploadResponse.scala` | `frontend/src/objects/merchant/StoreImageUploadResponse.ts` |
 | `CatalogResponse` | `backend/src/merchant/objects/CatalogResponse.scala` | `frontend/src/merchant/objects/CatalogResponse.ts` |
 | `MerchantAccountPublic` | `backend/src/merchant/objects/MerchantAccountPublic.scala` | `frontend/src/merchant/objects/MerchantAccountPublic.ts` |
 | `MerchantMeResponse` | `backend/src/merchant/objects/MerchantMeResponse.scala` | `frontend/src/merchant/objects/MerchantMeResponse.ts` |

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 
+import { DeliveryLogoutBar } from '@/components/DeliveryLogoutBar'
 import { DeliveryPageShell } from '@/components/DeliveryPageShell'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAppChrome } from '@/hooks/useAppChrome'
@@ -43,44 +44,39 @@ export default function RiderApp() {
 
   if (!bootstrapDone) {
     return (
-      <DeliveryPageShell title="骑手端核心功能" description="正在加载…" roleBadge="骑手 APP">
+      <DeliveryPageShell>
         <Card className="border-orange-100 bg-white/95">
           <CardContent className="p-6 text-sm text-slate-600">加载中…</CardContent>
         </Card>
+        <DeliveryLogoutBar />
       </DeliveryPageShell>
     )
   }
 
   if (loadError) {
     return (
-      <DeliveryPageShell title="骑手端核心功能" description="加载失败" roleBadge="骑手 APP">
+      <DeliveryPageShell>
         <Card className="border-orange-100 bg-white/95">
           <CardContent className="p-6 text-sm text-rose-600">{loadError}</CardContent>
         </Card>
+        <DeliveryLogoutBar />
       </DeliveryPageShell>
     )
   }
 
   if (!riderAccount || !rider) {
     return (
-      <DeliveryPageShell
-        title="骑手端核心功能"
-        description="当前账号未绑定骑手信息，请先完成骑手注册资料。"
-        roleBadge="骑手 APP"
-      >
+      <DeliveryPageShell>
         <Card className="border-orange-100 bg-white/95">
           <CardContent className="p-6 text-sm text-slate-600">未找到当前骑手账号档案。</CardContent>
         </Card>
+        <DeliveryLogoutBar />
       </DeliveryPageShell>
     )
   }
 
   return (
-    <DeliveryPageShell
-      title="骑手端核心功能"
-      description="支持骑手注册登录、抢单/派单、查看订单详情与导航、更新配送状态。"
-      roleBadge="骑手 APP"
-    >
+    <DeliveryPageShell>
       <RiderOverview rider={rider} />
       <DispatchCard
         availableOrders={availableOrders}
@@ -100,6 +96,7 @@ export default function RiderApp() {
         }}
       />
       <SalaryCard salary={rider.salary} />
+      <DeliveryLogoutBar />
     </DeliveryPageShell>
   )
 }

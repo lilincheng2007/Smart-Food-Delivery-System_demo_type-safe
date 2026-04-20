@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 
+import { DeliveryLogoutBar } from '@/components/DeliveryLogoutBar'
 import { DeliveryPageShell } from '@/components/DeliveryPageShell'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -102,44 +103,39 @@ export default function CustomerPortal() {
 
   if (!bootstrapDone) {
     return (
-      <DeliveryPageShell title="顾客端核心功能" description="正在加载数据…" roleBadge="顾客 APP">
-        <Card className="border-orange-100 bg-white/95">
-          <CardContent className="p-6 text-sm text-slate-600">加载中…</CardContent>
+      <DeliveryPageShell>
+        <Card className="border-border/70 bg-card/90 backdrop-blur-sm">
+          <CardContent className="p-6 text-sm text-muted-foreground">加载中…</CardContent>
         </Card>
+        <DeliveryLogoutBar />
       </DeliveryPageShell>
     )
   }
 
   if (loadError) {
     return (
-      <DeliveryPageShell title="顾客端核心功能" description="数据加载失败" roleBadge="顾客 APP">
-        <Card className="border-orange-100 bg-white/95">
-          <CardContent className="p-6 text-sm text-rose-600">{loadError}</CardContent>
+      <DeliveryPageShell>
+        <Card className="border-border/70 bg-card/90 backdrop-blur-sm">
+          <CardContent className="p-6 text-sm text-destructive">{loadError}</CardContent>
         </Card>
+        <DeliveryLogoutBar />
       </DeliveryPageShell>
     )
   }
 
   if (!customerAccount) {
     return (
-      <DeliveryPageShell
-        title="顾客端核心功能"
-        description="当前账号未绑定顾客信息，请先完成顾客注册资料。"
-        roleBadge="顾客 APP"
-      >
-        <Card className="border-orange-100 bg-white/95">
-          <CardContent className="p-6 text-sm text-slate-600">未找到当前顾客账号档案。</CardContent>
+      <DeliveryPageShell>
+        <Card className="border-border/70 bg-card/90 backdrop-blur-sm">
+          <CardContent className="p-6 text-sm text-muted-foreground">未找到当前顾客账号档案。</CardContent>
         </Card>
+        <DeliveryLogoutBar />
       </DeliveryPageShell>
     )
   }
 
   return (
-    <DeliveryPageShell
-      title="顾客端核心功能"
-      description="覆盖注册登录、定位、浏览搜索、购物车、下单支付、订单状态和配送轨迹等功能。"
-      roleBadge="顾客 APP"
-    >
+    <DeliveryPageShell>
       <Tabs
         value={activeTab}
         onValueChange={(value) => {
@@ -148,16 +144,25 @@ export default function CustomerPortal() {
           }
         }}
       >
-        <Card className="border-orange-100 bg-white/95 py-0">
-          <CardContent className="px-4 py-4">
-            <TabsList className="grid h-11 w-full grid-cols-3 rounded-xl bg-orange-50 p-1">
-              <TabsTrigger value="home" className="rounded-lg">
+        <Card className="border-border/70 bg-card/85 py-0 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur-md dark:shadow-[0_18px_50px_rgba(0,0,0,0.35)]">
+          <CardContent className="px-4 py-4 sm:px-5 sm:py-5">
+            <TabsList className="grid h-12 w-full grid-cols-3 gap-1 rounded-2xl border border-border/60 bg-gradient-to-br from-secondary/90 to-background/90 p-1 shadow-inner">
+              <TabsTrigger
+                value="home"
+                className="cursor-pointer rounded-xl text-sm font-semibold transition-[color,background-color,box-shadow] duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-[oklch(0.62_0.18_45)] data-[state=active]:text-primary-foreground data-[state=active]:shadow-[0_12px_28px_rgba(225,29,72,0.28)] dark:data-[state=active]:to-[oklch(0.68_0.14_45)]"
+              >
                 首页
               </TabsTrigger>
-              <TabsTrigger value="cart" className="rounded-lg">
+              <TabsTrigger
+                value="cart"
+                className="cursor-pointer rounded-xl text-sm font-semibold transition-[color,background-color,box-shadow] duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-[oklch(0.62_0.18_45)] data-[state=active]:text-primary-foreground data-[state=active]:shadow-[0_12px_28px_rgba(225,29,72,0.28)] dark:data-[state=active]:to-[oklch(0.68_0.14_45)]"
+              >
                 购物车
               </TabsTrigger>
-              <TabsTrigger value="profile" className="rounded-lg">
+              <TabsTrigger
+                value="profile"
+                className="cursor-pointer rounded-xl text-sm font-semibold transition-[color,background-color,box-shadow] duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-[oklch(0.62_0.18_45)] data-[state=active]:text-primary-foreground data-[state=active]:shadow-[0_12px_28px_rgba(225,29,72,0.28)] dark:data-[state=active]:to-[oklch(0.68_0.14_45)]"
+              >
                 我的
               </TabsTrigger>
             </TabsList>

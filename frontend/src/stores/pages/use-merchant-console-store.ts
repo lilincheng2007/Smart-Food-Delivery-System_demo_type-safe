@@ -3,9 +3,16 @@ import { create } from 'zustand'
 import { finishMerchantOrderCookingIO } from '@/api/merchant/MerchantOrderApi'
 import { createMerchantProductIO, updateMerchantProductIO } from '@/api/merchant/MerchantProductApi'
 import { fetchMerchantMeIO } from '@/api/merchant/MerchantMeApi'
+import { uploadMerchantStoreImageFileIO } from '@/api/merchant/MerchantStoreImageFileApi'
+import { updateMerchantStoreImageIO } from '@/api/merchant/MerchantStoreImageApi'
 import { createMerchantStoreIO } from '@/api/merchant/MerchantStoreApi'
 import { runTask } from '@/api/shared/client'
-import type { CreateProductRequest, MerchantAccountPublic, MerchantStoreProfile, UpdateProductRequest } from '@/objects/merchant'
+import type {
+  CreateProductRequest,
+  MerchantAccountPublic,
+  MerchantStoreProfile,
+  UpdateProductRequest,
+} from '@/objects/merchant'
 
 export type MerchantTab = 'products' | 'orders' | 'profile'
 
@@ -31,6 +38,8 @@ type MerchantConsoleStore = {
   finishCooking: (orderId: string) => Promise<void>
   createProduct: (input: CreateProductRequest) => Promise<void>
   updateProduct: (productId: string, input: UpdateProductRequest) => Promise<void>
+  updateStoreImage: (merchantId: string, imageUrl: string) => Promise<void>
+  uploadStoreImageFile: (merchantId: string, file: File) => Promise<void>
 }
 
 const initialState = {
@@ -109,6 +118,28 @@ export const useMerchantConsoleStore = create<MerchantConsoleStore>()((set, get)
   },
   updateProduct: async (productId, input) => {
     await runTask(updateMerchantProductIO(productId, input))
+    await get().refreshMerchant()
+  },
+  updateStoreImage: async (merchantId, imageUrl) => {
+    await runTask(updateMerchantStoreImageIO(merchantId, { imageUrl }))
+    await get().refreshMerchant()
+  },
+  uploadStoreImageFile: async (merchantId, file) => {
+    const res = await runTask(uploadMerchantStoreImageFileIO(merchantId, file))
+    const patchStore = (st: MerchantStoreProfile): MerchantStoreProfile =>
+      st.merchant.id === merchantId ? { ...st, merchant: { ...st.merchant, imageUrl: res.imageUrl } } : st
+    set((state) => ({
+      stores: state.stores.map(patchStore),
+      merchantAccount: state.merchantAccount
+        ? {
+            ...state.merchantAccount,
+            profile: {
+              ...state.merchantAccount.profile,
+              stores: state.merchantAccount.profile.stores.map(patchStore),
+            },
+          }
+        : state.merchantAccount,
+    }))
     await get().refreshMerchant()
   },
 }))

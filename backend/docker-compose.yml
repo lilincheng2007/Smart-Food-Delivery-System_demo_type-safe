@@ -8,7 +8,7 @@ services:
       # 默认连接库；各服务使用 delivery_user / delivery_order / … 见 docker/init-databases.sql
       POSTGRES_DB: postgres
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - delivery_pg_data:/var/lib/postgresql/data
       # 使用 .sql 由镜像内 psql 执行，避免挂载 .sh 在部分环境下 shebang/权限导致 126 退出

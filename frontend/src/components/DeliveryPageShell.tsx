@@ -1,11 +1,7 @@
 import type { ReactNode } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { runTask } from '@/api/shared/TaskIO'
 import type { UserRole } from '@/objects/shared/ids'
-import { clearAuthSessionIO } from '@/lib/auth-session'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { cn } from '@/lib/utils'
 
@@ -25,64 +21,41 @@ const navItems: NavItem[] = [
 ]
 
 interface DeliveryPageShellProps {
-  title: string
-  description: string
-  roleBadge?: string
   children: ReactNode
 }
 
-export function DeliveryPageShell({
-  title,
-  description,
-  roleBadge = '外卖平台',
-  children,
-}: DeliveryPageShellProps) {
-  const navigate = useNavigate()
+export function DeliveryPageShell({ children }: DeliveryPageShellProps) {
   const session = useAuthSession()
   const currentRole: UserRole | null = session?.role ?? null
   const visibleNavItems = navItems.filter((item) => currentRole && item.roles.includes(currentRole))
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(255,212,174,0.35),transparent_38%),linear-gradient(180deg,#fffaf4_0%,#fff7ee_45%,#fff4ea_100%)] px-6 py-8 sm:px-10">
-      <section className="mx-auto max-w-6xl space-y-6">
-        <header className="space-y-4 rounded-2xl border border-orange-100 bg-white/90 p-6 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Badge variant="outline" className="border-orange-200 text-orange-700">
-              {roleBadge}
-            </Badge>
-            <div className="flex items-center gap-2">
-              <p className="text-xs text-slate-500">
-                类型安全外卖平台演示 {session ? `· ${session.account}` : ''}
-              </p>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  void runTask(clearAuthSessionIO()).then(() => {
-                    navigate('/auth/login')
-                  })
-                }}
-              >
-                退出登录
-              </Button>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{title}</h1>
-            <p className="text-sm leading-6 text-slate-600">{description}</p>
-          </div>
-          <nav className="flex flex-wrap gap-2">
+    <main className="relative min-h-screen overflow-hidden bg-[linear-gradient(165deg,oklch(0.985_0.02_12)_0%,oklch(0.96_0.03_95)_42%,oklch(0.94_0.04_280/0.18)_100%)] px-5 py-8 sm:px-10 sm:py-10">
+      <div
+        aria-hidden
+        className="delivery-ambient-blob pointer-events-none absolute -left-28 -top-32 h-[22rem] w-[22rem] rounded-full bg-[radial-gradient(circle,oklch(0.88_0.12_12/0.55),transparent_65%)] blur-2xl"
+      />
+      <div
+        aria-hidden
+        className="delivery-ambient-blob pointer-events-none absolute -right-20 top-1/3 h-[18rem] w-[18rem] rounded-full bg-[radial-gradient(circle,oklch(0.82_0.14_264/0.35),transparent_68%)] blur-2xl [animation-delay:-4s]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-[linear-gradient(180deg,transparent,oklch(0.97_0.02_12/0.9))]"
+      />
+      <section className="relative mx-auto max-w-6xl space-y-6">
+        {visibleNavItems.length > 0 ? (
+          <nav className="flex flex-wrap gap-2 rounded-2xl border border-white/70 bg-white/80 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/55 sm:p-5">
             {visibleNavItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
                   cn(
-                    'rounded-full border px-3 py-1.5 text-sm transition-colors',
+                    'cursor-pointer rounded-full border px-3.5 py-1.5 text-sm font-medium transition-[color,background-color,border-color,box-shadow] duration-200',
                     isActive
-                      ? 'border-orange-500 bg-orange-500 text-white'
-                      : 'border-orange-100 bg-white text-slate-700 hover:bg-orange-50',
+                      ? 'border-transparent bg-gradient-to-r from-primary to-[oklch(0.62_0.18_45)] text-primary-foreground shadow-[0_10px_30px_rgba(225,29,72,0.35)] dark:to-[oklch(0.68_0.14_45)]'
+                      : 'border-border/80 bg-background/90 text-foreground/85 hover:border-primary/35 hover:bg-primary/5 hover:text-foreground',
                   )
                 }
               >
@@ -90,7 +63,7 @@ export function DeliveryPageShell({
               </NavLink>
             ))}
           </nav>
-        </header>
+        ) : null}
         {children}
       </section>
     </main>

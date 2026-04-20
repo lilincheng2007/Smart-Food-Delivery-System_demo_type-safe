@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react'
 
+import { DeliveryLogoutBar } from '@/components/DeliveryLogoutBar'
 import { DeliveryPageShell } from '@/components/DeliveryPageShell'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -66,44 +67,39 @@ export default function MerchantConsole() {
 
   if (!bootstrapDone) {
     return (
-      <DeliveryPageShell title="商家端后台核心功能" description="正在加载…" roleBadge="商家后台">
+      <DeliveryPageShell>
         <Card className="border-orange-100 bg-white/95">
           <CardContent className="p-6 text-sm text-slate-600">加载中…</CardContent>
         </Card>
+        <DeliveryLogoutBar />
       </DeliveryPageShell>
     )
   }
 
   if (loadError) {
     return (
-      <DeliveryPageShell title="商家端后台核心功能" description="加载失败" roleBadge="商家后台">
+      <DeliveryPageShell>
         <Card className="border-orange-100 bg-white/95">
           <CardContent className="p-6 text-sm text-rose-600">{loadError}</CardContent>
         </Card>
+        <DeliveryLogoutBar />
       </DeliveryPageShell>
     )
   }
 
   if (!merchantAccount) {
     return (
-      <DeliveryPageShell
-        title="商家端后台核心功能"
-        description="当前账号未绑定商家信息，请先完成商家注册资料。"
-        roleBadge="商家后台"
-      >
+      <DeliveryPageShell>
         <Card className="border-orange-100 bg-white/95">
           <CardContent className="p-6 text-sm text-slate-600">未找到当前商家账号档案。</CardContent>
         </Card>
+        <DeliveryLogoutBar />
       </DeliveryPageShell>
     )
   }
 
   return (
-    <DeliveryPageShell
-      title="商家端后台核心功能"
-      description="包含商家入驻申请、商品管理、自动接单后的订单处理和营业概况查看。"
-      roleBadge="商家后台"
-    >
+    <DeliveryPageShell>
       <Tabs
         value={activeTab}
         onValueChange={(value) => {

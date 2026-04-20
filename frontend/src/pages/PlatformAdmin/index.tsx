@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 
+import { DeliveryLogoutBar } from '@/components/DeliveryLogoutBar'
 import { DeliveryPageShell } from '@/components/DeliveryPageShell'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAppChrome } from '@/hooks/useAppChrome'
@@ -30,11 +31,7 @@ export default function PlatformAdmin() {
   const campaigns = meta?.campaigns ?? []
 
   return (
-    <DeliveryPageShell
-      title="平台后端与管理系统"
-      description="包含运营经理后台、客服后台和基础管理能力：商家审核、活动发放、加盟费收取、投诉处理等。"
-      roleBadge="管理后台"
-    >
+    <DeliveryPageShell>
       {adminName ? (
         <Card className="border-orange-100 bg-white/95">
           <CardContent className="p-4 text-sm text-slate-700">当前管理员：{adminName}</CardContent>
@@ -66,6 +63,8 @@ export default function PlatformAdmin() {
           campaigns={campaigns}
         />
       </section>
+
+      <DeliveryLogoutBar />
     </DeliveryPageShell>
   )
 }

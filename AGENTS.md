@@ -57,4 +57,4 @@
 
 ## 规则文件位置
 
-全部 **7** 个 `.mdc` 在 [.cursor/rules/](.cursor/rules/)；若需修订，可对照 [PLAN_AGENTS_RULES.md](PLAN_AGENTS_RULES.md) 中的原文块同步更新。
+全部 **8** 个 `.mdc` 在 [.cursor/rules/](.cursor/rules/)（含默认启用的 [agent-type-safety-fe-be-correspondence.mdc](.cursor/rules/agent-type-safety-fe-be-correspondence.mdc)：类型安全 + 前后端目录/文件名对应）；若需修订，可对照 [PLAN_AGENTS_RULES.md](PLAN_AGENTS_RULES.md) 中的原文块同步更新。

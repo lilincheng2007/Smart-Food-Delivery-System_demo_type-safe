@@ -5,7 +5,7 @@
 
 @theme inline {
   --font-sans:
-    "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "DM Sans", "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
     sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -33,59 +33,63 @@
 
 :root {
   font-family:
-    'Avenir Next', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    "DM Sans", "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
     sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: oklch(0.3 0.01 260);
-  background-color: oklch(0.985 0.002 106);
+  color: oklch(0.28 0.06 12);
+  background-color: oklch(0.97 0.02 12);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --radius: 0.75rem;
-  --background: oklch(0.985 0.002 106);
-  --foreground: oklch(0.3 0.01 260);
+  --radius: 0.9rem;
+  --delivery-brand-blue: oklch(0.52 0.19 264);
+  --delivery-glow: oklch(0.78 0.14 45);
+  --background: oklch(0.97 0.022 12);
+  --foreground: oklch(0.28 0.06 12);
   --text-strong: var(--foreground);
-  --muted: oklch(0.5 0.01 260);
+  --muted: oklch(0.52 0.04 12);
   --accent-strong: var(--primary);
-  --card: oklch(0.995 0.002 106);
-  --card-foreground: oklch(0.3 0.01 260);
-  --popover: oklch(0.995 0.002 106);
-  --popover-foreground: oklch(0.3 0.01 260);
-  --primary: oklch(0.35 0.01 260);
-  --primary-foreground: oklch(0.985 0.002 106);
-  --secondary: oklch(0.96 0.002 106);
-  --secondary-foreground: oklch(0.34 0.01 260);
-  --ui-muted: oklch(0.965 0.002 106);
-  --ui-muted-foreground: oklch(0.5 0.01 260);
-  --accent: oklch(0.96 0.002 106);
-  --accent-foreground: oklch(0.32 0.01 260);
-  --destructive: oklch(0.61 0.18 28);
-  --border: oklch(0.9 0.002 106);
-  --input: oklch(0.9 0.002 106);
-  --ring: oklch(0.55 0.01 260);
+  --card: oklch(0.995 0.012 12);
+  --card-foreground: oklch(0.28 0.06 12);
+  --popover: oklch(0.995 0.012 12);
+  --popover-foreground: oklch(0.28 0.06 12);
+  --primary: oklch(0.56 0.22 12);
+  --primary-foreground: oklch(0.99 0.01 106);
+  --secondary: oklch(0.94 0.03 12);
+  --secondary-foreground: oklch(0.32 0.07 12);
+  --ui-muted: oklch(0.955 0.02 12);
+  --ui-muted-foreground: oklch(0.48 0.05 12);
+  --accent: oklch(0.94 0.04 12);
+  --accent-foreground: oklch(0.3 0.08 12);
+  --destructive: oklch(0.58 0.2 25);
+  --border: oklch(0.9 0.03 12);
+  --input: oklch(0.9 0.03 12);
+  --ring: oklch(0.52 0.16 264);
 }
 
 .dark {
-  --background: oklch(0.19 0.01 56);
-  --foreground: oklch(0.95 0.01 84);
-  --card: oklch(0.24 0.015 56);
-  --card-foreground: oklch(0.95 0.01 84);
-  --popover: oklch(0.24 0.015 56);
-  --popover-foreground: oklch(0.95 0.01 84);
-  --primary: oklch(0.74 0.06 67);
-  --primary-foreground: oklch(0.24 0.015 56);
-  --secondary: oklch(0.31 0.015 56);
-  --secondary-foreground: oklch(0.95 0.01 84);
-  --ui-muted: oklch(0.3 0.01 56);
-  --ui-muted-foreground: oklch(0.78 0.01 75);
-  --accent: oklch(0.31 0.015 56);
-  --accent-foreground: oklch(0.95 0.01 84);
-  --destructive: oklch(0.68 0.17 24);
-  --border: oklch(0.34 0.012 57);
-  --input: oklch(0.34 0.012 57);
-  --ring: oklch(0.69 0.04 67);
+  --delivery-brand-blue: oklch(0.72 0.14 264);
+  --delivery-glow: oklch(0.72 0.12 45);
+  --background: oklch(0.2 0.03 280);
+  --foreground: oklch(0.96 0.02 95);
+  --card: oklch(0.24 0.04 280);
+  --card-foreground: oklch(0.96 0.02 95);
+  --popover: oklch(0.24 0.04 280);
+  --popover-foreground: oklch(0.96 0.02 95);
+  --primary: oklch(0.7 0.16 12);
+  --primary-foreground: oklch(0.18 0.03 280);
+  --secondary: oklch(0.3 0.04 280);
+  --secondary-foreground: oklch(0.96 0.02 95);
+  --ui-muted: oklch(0.3 0.04 280);
+  --ui-muted-foreground: oklch(0.78 0.03 95);
+  --accent: oklch(0.3 0.04 280);
+  --accent-foreground: oklch(0.96 0.02 95);
+  --destructive: oklch(0.66 0.18 22);
+  --border: oklch(0.34 0.04 280);
+  --input: oklch(0.34 0.04 280);
+  --ring: oklch(0.72 0.14 264);
 }
 
 * {
@@ -124,4 +128,28 @@ p {
 
 a {
   color: inherit;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes delivery-breathe {
+    0%,
+    100% {
+      opacity: 0.55;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.85;
+      transform: scale(1.03);
+    }
+  }
+}
+
+.delivery-ambient-blob {
+  animation: delivery-breathe 14s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .delivery-ambient-blob {
+    animation: none;
+  }
 }

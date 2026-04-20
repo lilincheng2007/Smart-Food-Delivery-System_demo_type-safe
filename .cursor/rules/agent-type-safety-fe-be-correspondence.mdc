@@ -1,0 +1,25 @@
+---
+description: 全栈类型安全 + 前后端目录/文件名与职责一一对应
+alwaysApply: true
+---
+
+# 类型安全与前后端目录对应
+
+## 类型安全（必须）
+
+- **前端（TypeScript）**：以契约类型为准（`frontend/src/delivery/model/`、`frontend/src/objects/**`）；禁止用 `any`、无依据的 `as` 或宽松索引类型掩盖 API/领域形状；`fetch`/解析结果应落到已声明类型或经校验的结构。若使用 Zod 等运行时校验，schema 与 TS 类型须同源或同步维护，避免漂移。
+- **后端（Scala 3）**：DTO / 路由体用 `case class` 或明确代数类型建模；Circe（或等价）编解码与字段一一对应；避免长期用 `io.circe.Json` 或字符串键承载未在类型里声明的业务字段。
+- **变更 API 或字段时**：同步更新网关路径、调用方、以及前后端共享契约；禁止只改一端导致编译通过但运行契约错误。
+
+## 目录与命名 ↔ 内容（必须）
+
+- **文件夹名**：须反映其内代码的真实领域或技术职责（例如 `order` 只放订单相关，不把无关模块塞入仅为「凑目录」）。
+- **前后端成对目录**（文件名与文件数量、职责对齐，见仓库根目录 [AGENTS.md](AGENTS.md)）：
+  - `backend/src/*/api/` ↔ `frontend/src/api/*/`
+  - `backend/src/*/objects/` ↔ `frontend/src/objects/*/`
+  - 契约模型：`frontend/src/delivery/model/`（若存在；`domain-types/` 仅重导出）与 `backend/shared/src/main/scala/delivery/model/`（或仓库内与之等价的单一契约源）字段语义一致；不要在第二套路径里复制另一套含义。
+- **新增业务能力**：若一端新增与某域相关的文件/目录，另一端以**同名文件、同级职责**补齐；禁止只在单端留下无法与对端映射的孤立路径。
+
+## 与专用子规则的关系
+
+- 深度枚举/DTO/生成物对齐可再 **@** [agent-type-safety-shared.mdc](agent-type-safety-shared.mdc)；本规则为全仓库默认底线，不替代各切片规则中的边界说明。

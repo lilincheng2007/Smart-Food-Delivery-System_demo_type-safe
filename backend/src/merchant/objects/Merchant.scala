@@ -8,5 +8,6 @@ final case class Merchant(
     phone: String,
     rating: Double,
     tags: List[String],
-    featuredProductIds: List[String]
+    featuredProductIds: List[String],
+    imageUrl: Option[String]
 )

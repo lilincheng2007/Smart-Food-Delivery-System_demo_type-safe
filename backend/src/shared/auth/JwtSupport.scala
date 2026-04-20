@@ -16,7 +16,7 @@ object JwtSupport:
     IO(Option(System.getenv("JWT_SECRET")).filter(_.nonEmpty).getOrElse(DefaultSecret))
 
   def signToken(username: String, role: String): IO[String] =
-    for
+    for {
       nowMillis <- IO.realTime.map(_.toMillis)
       jwtSecret <- secret
       now = nowMillis / 1000
@@ -28,7 +28,7 @@ object JwtSupport:
         )
         .noSpaces
       claim = JwtClaim(content = content, expiration = Some(exp), issuedAt = Some(now))
-    yield JwtCirce.encode(claim, jwtSecret, algo)
+    } yield JwtCirce.encode(claim, jwtSecret, algo)
 
   def verifyToken(token: String): IO[Either[String, (String, String)]] =
     secret.flatMap(secretValue => IO(JwtCirce.decode(token, secretValue, Seq(algo)))).flatMap {

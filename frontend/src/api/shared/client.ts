@@ -38,7 +38,7 @@ export class ApiError extends Error {
 async function apiFetchPromise<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${base.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`
   const headers = new Headers(init?.headers)
-  if (!headers.has('Content-Type') && init?.body) {
+  if (!(init?.body instanceof FormData) && !headers.has('Content-Type') && init?.body) {
     headers.set('Content-Type', 'application/json')
   }
   const token = await runTask(getAuthTokenIO())
@@ -78,6 +78,15 @@ export function apiPostIO<T>(path: string, body?: unknown): TaskIO<T> {
     apiFetchPromise(path, {
       method: 'POST',
       body: body === undefined ? undefined : JSON.stringify(body),
+    })
+}
+
+/** multipart/form-data（不要手动设置 Content-Type，以便包含 boundary） */
+export function apiPostFormDataIO<T>(path: string, formData: FormData): TaskIO<T> {
+  return () =>
+    apiFetchPromise(path, {
+      method: 'POST',
+      body: formData,
     })
 }
 

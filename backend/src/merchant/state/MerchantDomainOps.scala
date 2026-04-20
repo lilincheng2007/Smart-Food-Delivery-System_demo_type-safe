@@ -49,6 +49,38 @@ object MerchantDomainOps:
       }
     )
 
+  private def patchMerchantImage(merchantId: String, imageUrl: Option[String])(m: Merchant): Merchant =
+    if m.id == merchantId then m.copy(imageUrl = imageUrl) else m
+
+  def updateStoreImage(state: MerchantServiceState, username: String, merchantId: String, rawUrl: String): Either[String, MerchantServiceState] =
+    if !hasStoreAccess(state, username, merchantId) then Left("无权修改该店铺图片")
+    else
+      val trimmed = rawUrl.trim
+      val urlOk =
+        trimmed.isEmpty ||
+          trimmed.startsWith("http://") ||
+          trimmed.startsWith("https://") ||
+          trimmed.startsWith("/api/merchant/store-images/")
+      if trimmed.nonEmpty && !urlOk then
+        Left("图片链接须为 http(s) 地址、本地上传生成的 /api/merchant/store-images/... 路径，或留空以清除")
+      else
+        val imageOpt = if trimmed.isEmpty then None else Some(trimmed)
+        Right(
+          state.copy(
+            catalogMerchants = state.catalogMerchants.map(patchMerchantImage(merchantId, imageOpt)),
+            merchantAccounts = state.merchantAccounts.map { acc =>
+              acc.copy(profile =
+                acc.profile.copy(stores =
+                  acc.profile.stores.map { sp =>
+                    if sp.merchant.id == merchantId then sp.copy(merchant = patchMerchantImage(merchantId, imageOpt)(sp.merchant))
+                    else sp
+                  }
+                )
+              )
+            }
+          )
+        )
+
   def replaceMerchantProfile(state: MerchantServiceState, username: String, profile: MerchantProfile): Either[String, MerchantServiceState] =
     state.merchantAccounts.find(_.username == username) match
       case None => Left("Not found")
@@ -60,7 +92,7 @@ object MerchantDomainOps:
       case None => IO.pure(Left("未找到商家账号"))
       case Some(acc) =>
         IO.realTime.map(_.toMillis).map { nowMillis =>
-          val m = Merchant(s"m-local-$nowMillis", storeName, "中餐", address, acc.profile.phone, 5, List("新店"), Nil)
+          val m = Merchant(s"m-local-$nowMillis", storeName, "中餐", address, acc.profile.phone, 5, List("新店"), Nil, None)
           val sp = MerchantStoreProfile(m, Nil, Nil, Nil)
           val newAcc = acc.copy(profile = acc.profile.copy(stores = acc.profile.stores :+ sp))
           Right((state.copy(merchantAccounts = state.merchantAccounts.map(ma => if ma.username == username then newAcc else ma), catalogMerchants = state.catalogMerchants :+ m), m.id))
@@ -172,7 +204,7 @@ object MerchantDomainOps:
     if state.merchantAccounts.exists(_.username == username) then IO.pure(Left("商户已存在"))
     else
       IO.realTime.map(_.toMillis).map { nowMillis =>
-        val newMerchant = Merchant(s"m-$nowMillis", s"${username}的店铺", "中餐", "请完善店铺地址", "", 5, Nil, Nil)
+        val newMerchant = Merchant(s"m-$nowMillis", s"${username}的店铺", "中餐", "请完善店铺地址", "", 5, Nil, Nil, None)
         val acc = MerchantAccount("merchant", username, "", MerchantProfile(s"merchant-profile-${newMerchant.id}", username, "", List(MerchantStoreProfile(newMerchant, Nil, Nil, Nil))))
         Right(state.copy(merchantAccounts = state.merchantAccounts :+ acc, catalogMerchants = state.catalogMerchants :+ newMerchant))
       }

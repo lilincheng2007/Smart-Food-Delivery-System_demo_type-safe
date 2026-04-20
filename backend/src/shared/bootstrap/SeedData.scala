@@ -22,8 +22,28 @@ object SeedData:
   )
 
   val seedMerchants: List[Merchant] = List(
-    Merchant("m-2001", "阿强小炒", "中餐", "浦东新区张杨路 88 号", "021-60001234", 4.8, List("五星店铺", "出餐快"), List("p-3001", "p-3002")),
-    Merchant("m-2002", "甜点星球", "饮品甜点", "徐汇区天钥桥路 77 号", "021-60005678", 4.7, List("下午茶首选"), List("p-3003"))
+    Merchant(
+      "m-2001",
+      "阿强小炒",
+      "中餐",
+      "浦东新区张杨路 88 号",
+      "021-60001234",
+      4.8,
+      List("五星店铺", "出餐快"),
+      List("p-3001", "p-3002"),
+      Some("https://picsum.photos/seed/m2001-store/480/280")
+    ),
+    Merchant(
+      "m-2002",
+      "甜点星球",
+      "饮品甜点",
+      "徐汇区天钥桥路 77 号",
+      "021-60005678",
+      4.7,
+      List("下午茶首选"),
+      List("p-3003"),
+      Some("https://picsum.photos/seed/m2002-store/480/280")
+    )
   )
 
   val seedProducts: List[Product] = List(
