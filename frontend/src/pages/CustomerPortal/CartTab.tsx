@@ -4,8 +4,10 @@ import { Minus, Plus, ShoppingCart } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import type { Merchant, Product } from '@/objects/merchant'
-import type { MerchantId, ProductId } from '@/objects/shared'
+import type { Merchant } from '@/objects/merchant/Merchant'
+import type { Product } from '@/objects/merchant/Product'
+import type { MerchantId } from '@/objects/shared/ids'
+import type { ProductId } from '@/objects/shared/ids'
 import type { CartLine } from '@/stores/pages/use-customer-portal-store'
 
 type CartTabProps = {

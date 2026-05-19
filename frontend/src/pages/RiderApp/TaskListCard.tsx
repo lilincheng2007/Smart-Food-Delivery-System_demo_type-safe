@@ -3,7 +3,7 @@ import { MapPinned, Route } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { Order } from '@/objects/order'
+import type { Order } from '@/objects/order/Order'
 
 interface TaskListCardProps {
   orders: Order[]

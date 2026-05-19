@@ -5,11 +5,14 @@ import { checkoutIO, type CheckoutDeliverySnapshot } from '@/api/order/CheckoutA
 import { runTask } from '@/api/shared/client'
 import { fetchCustomerMeIO } from '@/api/user/CustomerMeApi'
 import { patchCustomerProfileIO } from '@/api/user/CustomerProfilePatchApi'
-import type { Merchant, Product } from '@/objects/merchant'
-import type { Order } from '@/objects/order'
-import type { MerchantId, ProductId } from '@/objects/shared'
+import type { Merchant } from '@/objects/merchant/Merchant'
+import type { Product } from '@/objects/merchant/Product'
+import type { Order } from '@/objects/order/Order'
+import type { MerchantId } from '@/objects/shared/ids'
+import type { ProductId } from '@/objects/shared/ids'
 import { validateDeliveryContacts } from '@/lib/deliveryContacts'
-import type { CustomerAccountPublic, CustomerDeliveryContact } from '@/objects/user'
+import type { CustomerAccountPublic } from '@/objects/user/CustomerAccountPublic'
+import type { CustomerDeliveryContact } from '@/objects/user/CustomerDeliveryContact'
 
 export type CustomerTab = 'home' | 'cart' | 'profile'
 

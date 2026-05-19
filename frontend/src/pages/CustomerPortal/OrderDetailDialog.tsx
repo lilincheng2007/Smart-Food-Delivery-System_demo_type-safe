@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import type { Order } from '@/objects/order'
+import type { Order } from '@/objects/order/Order'
 
 type OrderDetailDialogProps = {
   selectedOrder: Order | null

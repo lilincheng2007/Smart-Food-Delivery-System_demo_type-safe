@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 import { fetchOrdersPanelIO } from '@/api/admin/OrdersPanelApi'
 import { runTask } from '@/api/shared/client'
-import type { OrdersPanelResponse } from '@/objects/admin'
+import type { OrdersPanelResponse } from '@/objects/admin/OrdersPanelResponse'
 
 type OrderCenterStore = {
   panel: OrdersPanelResponse | null

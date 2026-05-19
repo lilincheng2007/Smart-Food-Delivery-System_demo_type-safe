@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAppChrome } from '@/hooks/useAppChrome'
 import { resolveApiMediaUrl } from '@/lib/api-media-url'
-import type { MerchantStoreProfile } from '@/objects/merchant'
+import type { MerchantStoreProfile } from '@/objects/merchant/MerchantStoreProfile'
 import { useMerchantConsoleStore } from '@/stores/pages/use-merchant-console-store'
 
 type ProfileTabProps = {

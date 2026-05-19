@@ -2,11 +2,11 @@ package delivery.merchant.api
 
 import cats.effect.IO
 import delivery.merchant.objects.StoreImageUploadResponse
-import delivery.merchant.state.MerchantDomainOps
+import delivery.merchant.tables.MerchantDomainOps
 import delivery.merchant.utils.StoreImageUploads
 import delivery.shared.api.ApiPlan
 import delivery.shared.objects.DeliveryState
-import delivery.shared.state.DeliveryStateOps
+import delivery.shared.db.DeliveryStateOps
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.nio.file.Files

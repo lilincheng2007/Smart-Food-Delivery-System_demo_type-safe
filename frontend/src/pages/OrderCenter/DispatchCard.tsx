@@ -2,7 +2,7 @@ import { Radar } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import type { Rider } from '@/objects/rider'
+import type { Rider } from '@/objects/rider/Rider'
 
 interface DispatchCardProps {
   riders: Rider[]

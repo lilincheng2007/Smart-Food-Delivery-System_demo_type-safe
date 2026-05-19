@@ -39,7 +39,7 @@ object RootInfoApi extends ApiPlan[RootInfoApi.RootInfoQuery.type, RootInfoRespo
 
   private def moduleInfo(tableNames: List[String]): RootInfoModule =
     RootInfoModule(
-      layers = List("api", "objects", "tables", "utils", "state"),
+      layers = List("api", "objects", "routes", "tables", "utils"),
       tables = tableNames
     )
 

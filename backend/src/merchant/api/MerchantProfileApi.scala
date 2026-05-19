@@ -3,9 +3,9 @@ package delivery.merchant.api
 import cats.effect.IO
 import delivery.shared.api.ApiPlan
 import delivery.merchant.objects.MerchantProfileBody
-import delivery.merchant.state.MerchantDomainOps
+import delivery.merchant.tables.MerchantDomainOps
 import delivery.shared.objects.{DeliveryState, OkResponse}
-import delivery.shared.state.DeliveryStateOps
+import delivery.shared.db.DeliveryStateOps
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 object MerchantProfileApi extends ApiPlan[MerchantProfileApi.MerchantProfileCommand, Either[String, MerchantProfileApi.MerchantProfileSuccess]]:

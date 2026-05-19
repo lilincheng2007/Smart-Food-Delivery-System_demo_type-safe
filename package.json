@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend:wait\"",
-    "dev:backend": "cd backend && sbt -batch clean run",
+    "dev:db": "docker compose -f backend/docker-compose.yml up -d postgres",
+    "dev:backend": "bash -lc 'npm run dev:db && until (echo > /dev/tcp/127.0.0.1/5432) >/dev/null 2>&1; do sleep 1; done; cd backend && sbt -batch clean run'",
     "dev:frontend": "npm run dev --prefix frontend",
     "dev:frontend:wait": "bash -lc 'until curl -sf http://127.0.0.1:8787/api/admin/health >/dev/null; do sleep 1; done; npm run dev --prefix frontend'"
   },

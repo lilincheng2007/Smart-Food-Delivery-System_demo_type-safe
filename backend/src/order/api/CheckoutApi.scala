@@ -1,15 +1,15 @@
 package delivery.order.api
 
 import cats.effect.IO
-import delivery.merchant.state.MerchantDomainOps
+import delivery.merchant.tables.MerchantDomainOps
 import delivery.shared.api.ApiPlan
 import delivery.order.objects.{CheckoutRequest, CheckoutResponse}
-import delivery.order.state.OrderDomainOps
+import delivery.order.tables.OrderDomainOps
 import delivery.order.utils.OrderApiSupport
 import delivery.shared.objects.DeliveryState
-import delivery.shared.state.DeliveryStateOps
+import delivery.shared.db.DeliveryStateOps
 import delivery.user.objects.CheckoutCompleteRequest
-import delivery.user.state.UserDomainOps
+import delivery.user.tables.UserDomainOps
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 object CheckoutApi extends ApiPlan[CheckoutApi.CheckoutCommand, Either[CheckoutApi.CheckoutFailure, CheckoutApi.CheckoutSuccess]]:

@@ -1,13 +1,13 @@
 package delivery.user.api
 
 import cats.effect.IO
-import delivery.merchant.state.MerchantDomainOps
+import delivery.merchant.tables.MerchantDomainOps
 import delivery.shared.api.ApiPlan
 import delivery.shared.objects.{DeliveryState, OkResponse}
-import delivery.shared.state.DeliveryStateOps
-import delivery.rider.state.RiderDomainOps
+import delivery.shared.db.DeliveryStateOps
+import delivery.rider.tables.RiderDomainOps
 import delivery.user.objects.RegisterRequest
-import delivery.user.state.UserDomainOps
+import delivery.user.tables.UserDomainOps
 import delivery.user.utils.UserApiSupport
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 

@@ -1,5 +1,5 @@
-import type { CustomerDeliveryContact } from '@/objects/user'
-import type { CustomerProfile } from '@/objects/user'
+import type { CustomerDeliveryContact } from '@/objects/user/CustomerDeliveryContact'
+import type { CustomerProfile } from '@/objects/user/CustomerProfile'
 
 /** 展示用：无列表或空列表时，用档案顶层字段合成一组 */
 export function normalizedDeliveryContacts(profile: CustomerProfile): CustomerDeliveryContact[] {

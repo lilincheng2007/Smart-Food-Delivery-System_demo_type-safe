@@ -1,12 +1,12 @@
 package delivery.rider.api
 
-import delivery.merchant.state.MerchantDomainOps
-import delivery.order.state.OrderDomainOps
+import delivery.merchant.tables.MerchantDomainOps
+import delivery.order.tables.OrderDomainOps
 import delivery.rider.objects.RiderUpdateOrderStatusResponse
-import delivery.rider.state.RiderDomainOps
+import delivery.rider.tables.RiderDomainOps
 import delivery.shared.objects.DeliveryState
-import delivery.shared.state.DeliveryStateOps
-import delivery.user.state.UserDomainOps
+import delivery.shared.db.DeliveryStateOps
+import delivery.user.tables.UserDomainOps
 
 object RiderUpdateOrderStatusApi:
 

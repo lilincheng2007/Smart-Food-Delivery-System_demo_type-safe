@@ -7,12 +7,10 @@ import { uploadMerchantStoreImageFileIO } from '@/api/merchant/MerchantStoreImag
 import { updateMerchantStoreImageIO } from '@/api/merchant/MerchantStoreImageApi'
 import { createMerchantStoreIO } from '@/api/merchant/MerchantStoreApi'
 import { runTask } from '@/api/shared/client'
-import type {
-  CreateProductRequest,
-  MerchantAccountPublic,
-  MerchantStoreProfile,
-  UpdateProductRequest,
-} from '@/objects/merchant'
+import type { CreateProductRequest } from '@/objects/merchant/CreateProductRequest'
+import type { MerchantAccountPublic } from '@/objects/merchant/MerchantAccountPublic'
+import type { MerchantStoreProfile } from '@/objects/merchant/MerchantStoreProfile'
+import type { UpdateProductRequest } from '@/objects/merchant/UpdateProductRequest'
 
 export type MerchantTab = 'products' | 'orders' | 'profile'
 

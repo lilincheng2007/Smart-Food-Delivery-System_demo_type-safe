@@ -1,7 +1,7 @@
 package delivery.admin.utils
 
 import delivery.admin.objects.{AdminAccountPublic, AdminMeResponse, OrdersPanelResponse, OverviewResponse, PlatformMetaResponse}
-import delivery.admin.state.AdminAccount
+import delivery.admin.tables.AdminAccount
 import delivery.shared.objects.ErrorBody
 
 object AdminApiSupport:

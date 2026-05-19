@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardDescription, CardTitle } from '@/components/ui/card'
-import type { ComplaintTicket } from '@/objects/admin'
+import type { ComplaintTicket } from '@/objects/admin/ComplaintTicket'
 
 interface OverviewStatsProps {
   merchantCount: number

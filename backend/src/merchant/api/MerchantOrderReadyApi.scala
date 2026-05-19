@@ -1,13 +1,13 @@
 package delivery.merchant.api
 
 import cats.effect.IO
-import delivery.merchant.state.MerchantDomainOps
-import delivery.order.state.OrderDomainOps
-import delivery.rider.state.RiderDomainOps
+import delivery.merchant.tables.MerchantDomainOps
+import delivery.order.tables.OrderDomainOps
+import delivery.rider.tables.RiderDomainOps
 import delivery.shared.api.ApiPlan
 import delivery.shared.objects.{DeliveryState, OkResponse}
-import delivery.shared.state.DeliveryStateOps
-import delivery.user.state.UserDomainOps
+import delivery.shared.db.DeliveryStateOps
+import delivery.user.tables.UserDomainOps
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 object MerchantOrderReadyApi extends ApiPlan[MerchantOrderReadyApi.MerchantOrderReadyCommand, Either[String, MerchantOrderReadyApi.MerchantOrderReadySuccess]]:

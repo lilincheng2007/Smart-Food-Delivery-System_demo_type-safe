@@ -3,7 +3,7 @@ import { create } from 'zustand'
 import { fetchAdminMeIO } from '@/api/admin/AdminMeApi'
 import { fetchPlatformMetaIO } from '@/api/admin/PlatformMetaApi'
 import { runTask } from '@/api/shared/client'
-import type { PlatformMetaResponse } from '@/objects/admin'
+import type { PlatformMetaResponse } from '@/objects/admin/PlatformMetaResponse'
 
 type PlatformAdminStore = {
   meta: PlatformMetaResponse | null

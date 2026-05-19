@@ -1,4 +1,4 @@
-package delivery.merchant.state
+package delivery.merchant.tables
 
 import delivery.merchant.objects.{Merchant, Product}
 

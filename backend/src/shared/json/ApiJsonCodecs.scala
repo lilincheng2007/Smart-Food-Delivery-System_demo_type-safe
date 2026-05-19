@@ -1,16 +1,16 @@
 package delivery.shared.json
 
 import delivery.admin.objects.*
-import delivery.admin.state.*
+import delivery.admin.tables.*
 import delivery.merchant.objects.*
-import delivery.merchant.state.*
+import delivery.merchant.tables.*
 import delivery.order.objects.*
-import delivery.order.state.*
+import delivery.order.tables.*
 import delivery.rider.objects.*
-import delivery.rider.state.*
+import delivery.rider.tables.*
 import delivery.shared.objects.*
 import delivery.user.objects.*
-import delivery.user.state.*
+import delivery.user.tables.*
 import io.circe.Codec
 import io.circe.Decoder
 import io.circe.Encoder

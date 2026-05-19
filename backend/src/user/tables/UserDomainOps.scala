@@ -1,4 +1,4 @@
-package delivery.user.state
+package delivery.user.tables
 
 import cats.effect.IO
 import delivery.order.objects.Order

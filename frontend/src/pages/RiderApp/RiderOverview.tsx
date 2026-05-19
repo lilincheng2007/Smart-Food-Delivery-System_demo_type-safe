@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardDescription, CardTitle } from '@/components/ui/card'
-import type { Rider } from '@/objects/rider'
+import type { Rider } from '@/objects/rider/Rider'
 
 interface RiderOverviewProps {
   rider: Rider

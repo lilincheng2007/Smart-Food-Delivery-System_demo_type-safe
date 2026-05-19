@@ -1,6 +1,7 @@
 package delivery.admin.tables
 
 object AdminTables:
+  val ServiceState = "admin_service_state"
   val AdminAccounts = "admin_accounts"
   val Campaigns = "promotion_campaigns"
   val ComplaintTickets = "complaint_tickets"
@@ -9,6 +10,6 @@ object AdminTables:
   val OperationsManagers = "operations_managers"
 
   val all: List[String] =
-    List(AdminAccounts, Campaigns, ComplaintTickets, MerchantApplications, ServiceAgents, OperationsManagers)
+    List(ServiceState, AdminAccounts, Campaigns, ComplaintTickets, MerchantApplications, ServiceAgents, OperationsManagers)
 
 end AdminTables

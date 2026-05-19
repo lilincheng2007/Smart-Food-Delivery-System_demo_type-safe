@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAppChrome } from '@/hooks/useAppChrome'
 import { resolveApiMediaUrl } from '@/lib/api-media-url'
 import { cn } from '@/lib/utils'
-import type { MerchantId, ProductId } from '@/objects/shared'
+import type { MerchantId } from '@/objects/shared/ids'
+import type { ProductId } from '@/objects/shared/ids'
 import { useCustomerPortalStore } from '@/stores/pages/use-customer-portal-store'
 
 export default function CustomerMerchantOrderPage() {

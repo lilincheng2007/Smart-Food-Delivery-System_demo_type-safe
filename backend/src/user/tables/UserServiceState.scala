@@ -1,4 +1,4 @@
-package delivery.user.state
+package delivery.user.tables
 
 import delivery.user.objects.Customer
 

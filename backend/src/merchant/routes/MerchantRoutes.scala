@@ -1,14 +1,14 @@
 package delivery.merchant.routes
 
 import cats.effect.IO
-import cats.effect.kernel.Ref
 import cats.syntax.all.*
 import delivery.merchant.api.*
 import delivery.merchant.objects.{CreateProductRequest, CreateStoreRequest, MerchantProfileBody, UpdateProductRequest, UpdateStoreImageRequest}
 import delivery.merchant.utils.{MerchantApiSupport, StoreImageUploads}
+import delivery.shared.db.DeliveryStateStore
 import delivery.shared.http.AuthHttp
 import delivery.shared.json.ApiJsonCodecs.given
-import delivery.shared.objects.{DeliveryState, ErrorBody}
+import delivery.shared.objects.ErrorBody
 import fs2.Chunk
 import org.http4s.*
 import org.http4s.circe.CirceEntityCodec.given
@@ -18,6 +18,7 @@ import org.http4s.multipart.{Multipart, Part}
 
 import java.nio.file.Files
 import java.util.regex.Pattern
+import javax.sql.DataSource
 
 object MerchantRoutes:
 
@@ -49,14 +50,14 @@ object MerchantRoutes:
   private def pickFilePart(mp: Multipart[IO]): Option[Part[IO]] =
     mp.parts.find(_.name.exists(_ == "file")).orElse(mp.parts.find(_.filename.exists(_.trim.nonEmpty)))
 
-  def routes(ref: Ref[IO, DeliveryState], persist: DeliveryState => IO[Unit]): HttpRoutes[IO] =
+  def routes(ds: DataSource): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       case GET -> Root / "catalog" =>
-        ref.get.flatMap(state => CatalogApi.plan(CatalogApi.CatalogQuery(state))).flatMap(Ok(_))
+        DeliveryStateStore.load(ds).flatMap(state => CatalogApi.plan(CatalogApi.CatalogQuery(state))).flatMap(Ok(_))
 
       case req @ GET -> Root / "me" =>
         AuthHttp.requireRole(req, "merchant") { username =>
-          ref.get.flatMap(state => MerchantMeApi.plan(MerchantMeApi.MerchantMeQuery(state, username))).flatMap {
+          DeliveryStateStore.load(ds).flatMap(state => MerchantMeApi.plan(MerchantMeApi.MerchantMeQuery(state, username))).flatMap {
             case None => NotFound(MerchantApiSupport.merchantNotFound)
             case Some(output) => Ok(output)
           }
@@ -66,12 +67,12 @@ object MerchantRoutes:
         AuthHttp.requireRole(req, "merchant") { username =>
           for
             body <- req.as[MerchantProfileBody]
-            current <- ref.get
+            current <- DeliveryStateStore.load(ds)
             response <- MerchantProfileApi
               .plan(MerchantProfileApi.MerchantProfileCommand(current, username, body))
               .flatMap {
                 case Left(msg) => BadRequest(ErrorBody(msg))
-                case Right(output) => ref.set(output.nextState) *> persist(output.nextState) *> Ok(output.response)
+                case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
               }
           yield response
         }
@@ -80,10 +81,10 @@ object MerchantRoutes:
         AuthHttp.requireRole(req, "merchant") { username =>
           for
             body <- req.as[CreateStoreRequest]
-            current <- ref.get
+            current <- DeliveryStateStore.load(ds)
             response <- MerchantStoreApi.plan(MerchantStoreApi.MerchantStoreCommand(current, username, body)).flatMap {
               case Left(msg) => BadRequest(ErrorBody(msg))
-              case Right(output) => ref.set(output.nextState) *> persist(output.nextState) *> Ok(output.response)
+              case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
             }
           yield response
         }
@@ -92,12 +93,12 @@ object MerchantRoutes:
         AuthHttp.requireRole(req, "merchant") { username =>
           for
             body <- req.as[UpdateStoreImageRequest]
-            current <- ref.get
+            current <- DeliveryStateStore.load(ds)
             response <- MerchantStoreImageApi
               .plan(MerchantStoreImageApi.MerchantStoreImageCommand(current, username, merchantId, body))
               .flatMap {
                 case Left(msg) => BadRequest(ErrorBody(msg))
-                case Right(output) => ref.set(output.nextState) *> persist(output.nextState) *> Ok(output.response)
+                case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
               }
           yield response
         }
@@ -115,7 +116,7 @@ object MerchantRoutes:
                       val m = h.mediaType
                       s"${m.mainType}/${m.subType}".toLowerCase
                     }
-                  ref.get.flatMap { current =>
+                  DeliveryStateStore.load(ds).flatMap { current =>
                     MerchantStoreImageFileApi
                       .plan(
                         MerchantStoreImageFileApi.MerchantStoreImageFileCommand(
@@ -129,7 +130,7 @@ object MerchantRoutes:
                       )
                       .flatMap {
                         case Left(msg) => BadRequest(ErrorBody(msg))
-                        case Right(output) => ref.set(output.nextState) *> persist(output.nextState) *> Ok(output.response)
+                        case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
                       }
                   }
                 }
@@ -140,10 +141,10 @@ object MerchantRoutes:
         AuthHttp.requireRole(req, "merchant") { username =>
           for
             body <- req.as[CreateProductRequest]
-            current <- ref.get
+            current <- DeliveryStateStore.load(ds)
             response <- MerchantCreateProductApi.plan(MerchantCreateProductApi.MerchantCreateProductCommand(current, username, body)).flatMap {
               case Left(msg) => BadRequest(ErrorBody(msg))
-              case Right(output) => ref.set(output.nextState) *> persist(output.nextState) *> Ok(output.response)
+              case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
             }
           yield response
         }
@@ -152,10 +153,10 @@ object MerchantRoutes:
         AuthHttp.requireRole(req, "merchant") { username =>
           for
             body <- req.as[UpdateProductRequest]
-            current <- ref.get
+            current <- DeliveryStateStore.load(ds)
             response <- MerchantProductApi.plan(MerchantProductApi.MerchantProductCommand(current, username, productId, body)).flatMap {
               case Left(msg) => BadRequest(ErrorBody(msg))
-              case Right(output) => ref.set(output.nextState) *> persist(output.nextState) *> Ok(output.response)
+              case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
             }
           yield response
         }
@@ -163,10 +164,10 @@ object MerchantRoutes:
       case req @ POST -> Root / "me" / "orders" / orderId / "finish" =>
         AuthHttp.requireRole(req, "merchant") { username =>
           for
-            current <- ref.get
+            current <- DeliveryStateStore.load(ds)
             response <- MerchantOrderReadyApi.plan(MerchantOrderReadyApi.MerchantOrderReadyCommand(current, username, orderId)).flatMap {
               case Left(msg) => BadRequest(ErrorBody(msg))
-              case Right(output) => ref.set(output.nextState) *> persist(output.nextState) *> Ok(output.response)
+              case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
             }
           yield response
         }
@@ -174,10 +175,10 @@ object MerchantRoutes:
       case req @ POST -> Root / "me" / "orders" / orderId / "ready" =>
         AuthHttp.requireRole(req, "merchant") { username =>
           for
-            current <- ref.get
+            current <- DeliveryStateStore.load(ds)
             response <- MerchantOrderReadyApi.plan(MerchantOrderReadyApi.MerchantOrderReadyCommand(current, username, orderId)).flatMap {
               case Left(msg) => BadRequest(ErrorBody(msg))
-              case Right(output) => ref.set(output.nextState) *> persist(output.nextState) *> Ok(output.response)
+              case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
             }
           yield response
         }

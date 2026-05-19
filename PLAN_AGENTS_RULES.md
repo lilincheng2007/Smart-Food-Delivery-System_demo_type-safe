@@ -203,6 +203,14 @@ alwaysApply: false
 
 ---
 
+## `agent-type-safety-fe-be-correspondence.mdc` 补充
+
+默认启用的前后端类型安全规则还包含以下全仓库底线：
+
+- **不可变绑定**：后端 Scala 代码只能使用 `val`，不能新增 `var`；需要表达变化时，用不可变数据拷贝、函数返回值或数据库/API 状态承载。
+
+---
+
 ## 可选：扩大 TypeSafety 匹配范围
 
 若契约放在 `contracts/` 或 `packages/shared/`，可将 `agent-type-safety-shared.mdc` 的 `globs` 改为：

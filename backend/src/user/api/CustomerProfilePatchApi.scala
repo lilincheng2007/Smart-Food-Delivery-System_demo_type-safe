@@ -3,9 +3,9 @@ package delivery.user.api
 import cats.effect.IO
 import delivery.shared.api.ApiPlan
 import delivery.shared.objects.{DeliveryState, OkResponse}
-import delivery.shared.state.DeliveryStateOps
+import delivery.shared.db.DeliveryStateOps
 import delivery.user.objects.CustomerProfilePatch
-import delivery.user.state.UserDomainOps
+import delivery.user.tables.UserDomainOps
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 object CustomerProfilePatchApi

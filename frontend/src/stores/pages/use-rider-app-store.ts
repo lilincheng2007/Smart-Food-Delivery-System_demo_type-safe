@@ -3,8 +3,8 @@ import { create } from 'zustand'
 import { fetchRiderMeIO } from '@/api/rider/RiderMeApi'
 import { grabRiderOrderIO, updateRiderOrderStatusIO } from '@/api/rider/RiderOrderApi'
 import { runTask } from '@/api/shared/client'
-import type { Order } from '@/objects/order'
-import type { RiderAccountPublic } from '@/objects/rider'
+import type { Order } from '@/objects/order/Order'
+import type { RiderAccountPublic } from '@/objects/rider/RiderAccountPublic'
 
 type RiderAppStore = {
   bootstrapDone: boolean

@@ -4,7 +4,7 @@ import { DeliveryLogoutBar } from '@/components/DeliveryLogoutBar'
 import { DeliveryPageShell } from '@/components/DeliveryPageShell'
 import { FloatingPageTools } from '@/components/FloatingPageTools'
 import { Card, CardContent } from '@/components/ui/card'
-import type { PromotionCampaign } from '@/objects/admin'
+import type { PromotionCampaign } from '@/objects/admin/PromotionCampaign'
 import { useAppChrome } from '@/hooks/useAppChrome'
 import { useDeliveryDashboardStore } from '@/stores/pages/use-delivery-dashboard-store'
 

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 import { runTask } from '@/api/shared/client'
 import { registerIO } from '@/api/user/RegisterApi'
-import type { UserRole } from '@/objects/shared'
+import type { UserRole } from '@/objects/shared/ids'
 
 export type RegisterRole = Exclude<UserRole, 'admin'>
 

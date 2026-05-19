@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 import { fetchOverviewIO } from '@/api/admin/OverviewApi'
 import { runTask } from '@/api/shared/client'
-import type { OverviewResponse } from '@/objects/admin'
+import type { OverviewResponse } from '@/objects/admin/OverviewResponse'
 
 type DeliveryDashboardStore = {
   overview: OverviewResponse | null

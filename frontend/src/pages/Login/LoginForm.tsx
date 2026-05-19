@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { isUserRole } from '@/lib/auth-session'
-import type { UserRole } from '@/objects/shared'
+import type { UserRole } from '@/objects/shared/ids'
 
 import { roleOptions } from './constants'
 

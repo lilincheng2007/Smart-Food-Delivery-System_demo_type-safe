@@ -2,7 +2,7 @@ import { Handshake, Megaphone, UserCog } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import type { OperationsManager } from '@/objects/admin'
+import type { OperationsManager } from '@/objects/admin/OperationsManager'
 
 interface OperationsManagerCardProps {
   manager: OperationsManager | undefined

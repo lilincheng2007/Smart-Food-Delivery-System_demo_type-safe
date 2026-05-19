@@ -6,8 +6,8 @@ import { DeliveryContactsSection } from './DeliveryContactsSection'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import type { Merchant } from '@/objects/merchant'
-import type { Order } from '@/objects/order'
+import type { Merchant } from '@/objects/merchant/Merchant'
+import type { Order } from '@/objects/order/Order'
 
 type ProfileTabProps = {
   username: string

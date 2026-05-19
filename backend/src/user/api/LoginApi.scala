@@ -5,7 +5,7 @@ import delivery.shared.api.ApiPlan
 import delivery.shared.auth.JwtSupport
 import delivery.shared.objects.DeliveryState
 import delivery.user.objects.{LoginRequest, LoginResponse}
-import delivery.user.state.UserDomainOps
+import delivery.user.tables.UserDomainOps
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 object LoginApi extends ApiPlan[LoginApi.LoginCommand, Either[String, LoginResponse]]:

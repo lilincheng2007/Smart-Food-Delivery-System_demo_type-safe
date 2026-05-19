@@ -16,7 +16,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import type { CreateProductRequest, MerchantStoreProfile, Product, UpdateProductRequest } from '@/objects/merchant'
+import type { CreateProductRequest } from '@/objects/merchant/CreateProductRequest'
+import type { MerchantStoreProfile } from '@/objects/merchant/MerchantStoreProfile'
+import type { Product } from '@/objects/merchant/Product'
+import type { UpdateProductRequest } from '@/objects/merchant/UpdateProductRequest'
 
 type ProductsTabProps = {
   selectedStore: MerchantStoreProfile | null

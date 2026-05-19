@@ -1,4 +1,4 @@
-package delivery.order.state
+package delivery.order.tables
 
 import delivery.order.objects.Order
 

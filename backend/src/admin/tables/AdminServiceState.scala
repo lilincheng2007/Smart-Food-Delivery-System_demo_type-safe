@@ -1,4 +1,4 @@
-package delivery.admin.state
+package delivery.admin.tables
 
 import delivery.admin.objects.*
 

@@ -1,6 +1,8 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import type { ComplaintTicket, MerchantApplication, PromotionCampaign } from '@/objects/admin'
+import type { ComplaintTicket } from '@/objects/admin/ComplaintTicket'
+import type { MerchantApplication } from '@/objects/admin/MerchantApplication'
+import type { PromotionCampaign } from '@/objects/admin/PromotionCampaign'
 
 interface AdminMetricsCardProps {
   merchantApplications: MerchantApplication[]

@@ -12,8 +12,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import type { Order } from '@/objects/order'
-import type { MerchantStoreProfile } from '@/objects/merchant'
+import type { Order } from '@/objects/order/Order'
+import type { MerchantStoreProfile } from '@/objects/merchant/MerchantStoreProfile'
 
 type OrdersTabProps = {
   selectedStore: MerchantStoreProfile | null

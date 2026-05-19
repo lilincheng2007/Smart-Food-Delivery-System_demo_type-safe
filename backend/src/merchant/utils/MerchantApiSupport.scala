@@ -1,7 +1,7 @@
 package delivery.merchant.utils
 
 import delivery.merchant.objects.{MerchantAccountPublic, MerchantMeResponse}
-import delivery.merchant.state.MerchantAccount
+import delivery.merchant.tables.MerchantAccount
 import delivery.shared.objects.ErrorBody
 
 object MerchantApiSupport:

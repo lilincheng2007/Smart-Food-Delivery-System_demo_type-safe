@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useAppChrome } from '@/hooks/useAppChrome'
 import { appendContact, normalizedDeliveryContacts } from '@/lib/deliveryContacts'
-import type { MerchantId } from '@/objects/shared'
+import type { MerchantId } from '@/objects/shared/ids'
 import { useCustomerPortalStore } from '@/stores/pages/use-customer-portal-store'
 
 import { DeliveryContactAddDialog } from './DeliveryContactAddDialog'

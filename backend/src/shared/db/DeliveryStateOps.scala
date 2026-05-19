@@ -1,10 +1,10 @@
-package delivery.shared.state
+package delivery.shared.db
 
-import delivery.merchant.state.MerchantServiceState
-import delivery.order.state.OrderServiceState
-import delivery.rider.state.RiderServiceState
+import delivery.merchant.tables.MerchantServiceState
+import delivery.order.tables.OrderServiceState
+import delivery.rider.tables.RiderServiceState
 import delivery.shared.objects.DeliveryState
-import delivery.user.state.UserServiceState
+import delivery.user.tables.UserServiceState
 
 object DeliveryStateOps:
 

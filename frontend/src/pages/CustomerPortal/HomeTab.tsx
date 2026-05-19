@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { resolveApiMediaUrl } from '@/lib/api-media-url'
 import { cn } from '@/lib/utils'
-import type { Merchant } from '@/objects/merchant'
+import type { Merchant } from '@/objects/merchant/Merchant'
 
 type HomeTabProps = {
   merchants: Merchant[]

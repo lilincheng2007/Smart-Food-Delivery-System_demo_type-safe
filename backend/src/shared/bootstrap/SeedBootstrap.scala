@@ -1,15 +1,15 @@
 package delivery.shared.bootstrap
 
 import delivery.admin.objects.*
-import delivery.admin.state.*
+import delivery.admin.tables.*
 import delivery.merchant.objects.*
-import delivery.merchant.state.*
+import delivery.merchant.tables.*
 import delivery.order.objects.*
-import delivery.order.state.*
+import delivery.order.tables.*
 import delivery.rider.objects.*
-import delivery.rider.state.*
+import delivery.rider.tables.*
 import delivery.user.objects.{Customer, CustomerDeliveryContact, CustomerProfile}
-import delivery.user.state.*
+import delivery.user.tables.*
 
 object SeedBootstrap:
 

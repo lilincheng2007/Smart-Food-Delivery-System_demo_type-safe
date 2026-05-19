@@ -2,7 +2,7 @@ package delivery.rider.utils
 
 import delivery.order.objects.Order
 import delivery.rider.objects.{RiderAccountPublic, RiderMeResponse}
-import delivery.rider.state.RiderAccount
+import delivery.rider.tables.RiderAccount
 import delivery.shared.objects.ErrorBody
 
 object RiderApiSupport:

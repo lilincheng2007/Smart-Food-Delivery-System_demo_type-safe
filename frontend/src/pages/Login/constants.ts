@@ -1,4 +1,4 @@
-import type { UserRole } from '@/objects/shared'
+import type { UserRole } from '@/objects/shared/ids'
 
 export const roleOptions: Array<{ value: UserRole; label: string }> = [
   { value: 'customer', label: '顾客' },

@@ -2,7 +2,7 @@ package delivery.user.utils
 
 import delivery.shared.objects.ErrorBody
 import delivery.user.objects.{CustomerAccountPublic, CustomerMeResponse}
-import delivery.user.state.CustomerAccount
+import delivery.user.tables.CustomerAccount
 
 object UserApiSupport:
 

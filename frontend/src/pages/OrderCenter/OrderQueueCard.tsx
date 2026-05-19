@@ -3,7 +3,7 @@ import { Clock3, Route } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { Order } from '@/objects/order'
+import type { Order } from '@/objects/order/Order'
 
 interface OrderQueueCardProps {
   orders: Order[]
