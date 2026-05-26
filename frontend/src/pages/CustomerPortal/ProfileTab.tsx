@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Merchant } from '@/objects/merchant/Merchant'
 import type { Order } from '@/objects/order/Order'
+import type { OrderId } from '@/objects/shared/ids'
 
 type ProfileTabProps = {
   username: string
@@ -16,7 +17,7 @@ type ProfileTabProps = {
   pendingOrders: Order[]
   historyOrders: Order[]
   onOpenRecharge: () => void
-  onSelectOrder: (order: Order) => void
+  onSelectOrder: (orderId: OrderId) => void
 }
 
 export function ProfileTab({
@@ -113,7 +114,7 @@ export function ProfileTab({
                     size="sm"
                     variant="outline"
                     className="cursor-pointer border-border/80 transition-colors hover:border-primary/40 hover:bg-primary/5"
-                    onClick={() => onSelectOrder(order)}
+                    onClick={() => onSelectOrder(order.id)}
                   >
                     订单详情
                   </Button>
@@ -157,7 +158,7 @@ export function ProfileTab({
                     size="sm"
                     variant="outline"
                     className="cursor-pointer border-border/80 transition-colors hover:border-primary/40 hover:bg-primary/5"
-                    onClick={() => onSelectOrder(order)}
+                    onClick={() => onSelectOrder(order.id)}
                   >
                     订单详情
                   </Button>

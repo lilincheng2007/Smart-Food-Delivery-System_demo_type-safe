@@ -1,7 +1,8 @@
+import { APIMessage } from '@/api/shared/APIMessage'
 import type { TaskIO } from '@/api/shared/TaskIO'
+import { sendAPI } from '@/api/shared/sendAPI'
 import type { CheckoutLine } from '@/objects/order/CheckoutLine'
 import type { CheckoutResponse } from '@/objects/order/CheckoutResponse'
-import { apiPostIO } from '@/api/shared/client'
 
 export type CheckoutDeliverySnapshot = {
   customerName: string
@@ -9,12 +10,21 @@ export type CheckoutDeliverySnapshot = {
   deliveryAddress: string
 }
 
-export function checkoutIO(lines: CheckoutLine[], delivery?: CheckoutDeliverySnapshot): TaskIO<CheckoutResponse> {
-  const body: Record<string, unknown> = { lines }
-  if (delivery) {
-    body.customerName = delivery.customerName
-    body.customerPhone = delivery.customerPhone
-    body.deliveryAddress = delivery.deliveryAddress
+class CheckoutAPI extends APIMessage<CheckoutResponse> {
+  readonly lines: CheckoutLine[]
+  readonly customerName?: string
+  readonly customerPhone?: string
+  readonly deliveryAddress?: string
+
+  constructor(lines: CheckoutLine[], delivery?: CheckoutDeliverySnapshot) {
+    super()
+    this.lines = lines
+    this.customerName = delivery?.customerName
+    this.customerPhone = delivery?.customerPhone
+    this.deliveryAddress = delivery?.deliveryAddress
   }
-  return apiPostIO('/order/checkout', body)
+}
+
+export function checkoutIO(lines: CheckoutLine[], delivery?: CheckoutDeliverySnapshot): TaskIO<CheckoutResponse> {
+  return sendAPI(new CheckoutAPI(lines, delivery))
 }

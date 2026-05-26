@@ -6,9 +6,14 @@ type OrderDetailDialogProps = {
   selectedOrder: Order | null
   onOpenChange: (open: boolean) => void
   onClose: () => void
+  onCancelOrder: (order: Order) => void
 }
 
-export function OrderDetailDialog({ selectedOrder, onOpenChange, onClose }: OrderDetailDialogProps) {
+function canCancel(order: Order): boolean {
+  return order.status !== '已取消' && order.status !== '已送达' && order.status !== '已完成' && order.status !== '配送中' && !order.riderId
+}
+
+export function OrderDetailDialog({ selectedOrder, onOpenChange, onClose, onCancelOrder }: OrderDetailDialogProps) {
   return (
     <Dialog open={selectedOrder !== null} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md rounded-2xl border border-orange-100 bg-white p-6">
@@ -40,6 +45,11 @@ export function OrderDetailDialog({ selectedOrder, onOpenChange, onClose }: Orde
           </div>
         ) : null}
         <DialogFooter>
+          {selectedOrder && canCancel(selectedOrder) ? (
+            <Button variant="destructive" onClick={() => onCancelOrder(selectedOrder)}>
+              取消订单
+            </Button>
+          ) : null}
           <Button variant="outline" onClick={onClose}>
             关闭
           </Button>

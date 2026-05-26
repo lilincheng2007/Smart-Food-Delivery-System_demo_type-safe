@@ -7,7 +7,7 @@
 | 路径 | 说明 |
 |------|------|
 | [frontend/](frontend/) | Vite + React，**仅通过 HTTP 调用** `backend` API；业务状态不在浏览器内伪造持久化。 |
-| [backend/](backend/) | **Scala 3 + http4s + Circe** 微服务：`user` / `order` / `merchant` / `rider` / `admin` + **网关**；**对外 API 经网关 `8787`**（`npm run dev:backend` 用 `stack/run` 单进程起全栈）。每服务独立 PostgreSQL 库（`delivery_user` 等），JSONB 快照 + JWT。 |
+| [backend/](backend/) | **Scala 3 + http4s + Circe** 微服务：`user` / `order` / `merchant` / `rider` + **网关**；**对外 API 经网关 `8787`**（`npm run dev:backend` 用 `stack/run` 单进程起全栈）。每服务独立 PostgreSQL 库（`delivery_user` 等），JSONB 快照 + JWT。 |
 | [模版/](模版/) | 迁移后仅余占位文件时可忽略或清理。 |
 
 ## 本地启动
@@ -18,11 +18,11 @@
 4. 终端二：`cd frontend && npm install && npm run dev`（Vite 将 `/api` 代理到 `http://localhost:8787`）。
 5. 或根目录：`npm run dev`（需已 `npm install`）。
 
-演示账号（与种子数据一致）：`customer_demo` / `merchant_demo` / `rider_demo` / `admin`，密码均为 `123456`。
+演示账号（与种子数据一致）：`customer_demo` / `merchant_demo` / `rider_demo`，密码均为 `123456`。
 
 ## 前端 API 层
 
-- [frontend/src/api/client.ts](frontend/src/api/client.ts)：带 `Authorization: Bearer` 的 `fetch` 与 **`TaskIO`**；[frontend/src/api/services/](frontend/src/api/services/) 按 **user / order / merchant / admin / rider** 微服务拆分调用（路径常量 [gateway-paths.ts](frontend/src/api/gateway-paths.ts)）；入口 [frontend/src/api/index.ts](frontend/src/api/index.ts)。
+- [frontend/src/api/client.ts](frontend/src/api/client.ts)：带 `Authorization: Bearer` 的 `fetch` 与 **`TaskIO`**；[frontend/src/api/services/](frontend/src/api/services/) 按 **user / order / merchant / rider** 微服务拆分调用（路径常量 [gateway-paths.ts](frontend/src/api/gateway-paths.ts)）；入口 [frontend/src/api/index.ts](frontend/src/api/index.ts)。
 - 契约类型：[frontend/src/delivery/model/](frontend/src/delivery/model/)。`lib/api/*` 为兼容重导出（deprecated）。
 - 会话仅保存 JWT 与角色：[frontend/src/lib/auth-session.ts](frontend/src/lib/auth-session.ts)。
 

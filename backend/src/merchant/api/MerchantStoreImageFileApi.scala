@@ -1,7 +1,6 @@
 package delivery.merchant.api
 
 import cats.effect.IO
-import delivery.merchant.objects.StoreImageUploadResponse
 import delivery.merchant.tables.MerchantDomainOps
 import delivery.merchant.utils.StoreImageUploads
 import delivery.shared.api.ApiPlan
@@ -28,7 +27,7 @@ object MerchantStoreImageFileApi extends ApiPlan[
       filenameHint: Option[String]
   )
 
-  final case class MerchantStoreImageFileSuccess(nextState: DeliveryState, response: StoreImageUploadResponse)
+  final case class MerchantStoreImageFileSuccess(nextState: DeliveryState, response: String)
 
   private val logger = Slf4jLogger.getLogger[IO]
 
@@ -73,7 +72,7 @@ object MerchantStoreImageFileApi extends ApiPlan[
                     .map(nextMerchant =>
                       MerchantStoreImageFileSuccess(
                         DeliveryStateOps.withMerchantState(input.state, nextMerchant),
-                        StoreImageUploadResponse(ok = true, imageUrl = publicPath)
+                        publicPath
                       )
                     )
                 )

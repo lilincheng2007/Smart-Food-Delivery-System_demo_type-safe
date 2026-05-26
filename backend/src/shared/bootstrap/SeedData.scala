@@ -1,6 +1,5 @@
 package delivery.shared.bootstrap
 
-import delivery.admin.objects.*
 import delivery.merchant.objects.*
 import delivery.order.objects.*
 import delivery.rider.objects.Rider
@@ -58,24 +57,5 @@ object SeedData:
   )
 
   val seedOrders: List[Order] = Nil
-
-  val seedServiceAgents: List[CustomerServiceAgent] = List(
-    CustomerServiceAgent("cs-01", "陈琳", "售后服务部", "在线", List("t-1", "t-2"))
-  )
-
-  val seedOperationsManagers: List[OperationsManager] = List(
-    OperationsManager("op-01", "吴越", "浦东新区", List("m-2001", "m-2002"), List("周末满减冲刺", "新商家冷启动流量扶持"))
-  )
-
-  val seedMerchantApplications: List[MerchantApplication] = List(
-    MerchantApplication("ma-001", "张晨", "夜猫子烧烤", "夜宵", "杨浦区", "待审核")
-  )
-
-  val seedComplaintTickets: List[ComplaintTicket] = Nil
-
-  val seedCampaigns: List[PromotionCampaign] = List(
-    PromotionCampaign("c-01", "新客立减 12 元", "新客", "进行中"),
-    PromotionCampaign("c-02", "周末全城满 39 减 6", "全体用户", "草稿")
-  )
 
 end SeedData

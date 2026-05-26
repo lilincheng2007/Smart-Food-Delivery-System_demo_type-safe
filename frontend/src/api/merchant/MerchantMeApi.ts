@@ -1,7 +1,10 @@
+import { APIMessage } from '@/api/shared/APIMessage'
 import type { TaskIO } from '@/api/shared/TaskIO'
+import { sendAPI } from '@/api/shared/sendAPI'
 import type { MerchantMeResponse } from '@/objects/merchant/MerchantMeResponse'
-import { apiGetIO } from '@/api/shared/client'
+
+class MerchantMeAPI extends APIMessage<MerchantMeResponse> {}
 
 export function fetchMerchantMeIO(): TaskIO<MerchantMeResponse> {
-  return apiGetIO('/merchant/me')
+  return sendAPI(new MerchantMeAPI())
 }

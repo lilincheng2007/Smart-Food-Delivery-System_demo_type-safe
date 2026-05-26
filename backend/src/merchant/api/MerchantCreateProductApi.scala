@@ -1,7 +1,7 @@
 package delivery.merchant.api
 
 import cats.effect.IO
-import delivery.merchant.objects.{CreateProductRequest, CreateProductResponse}
+import delivery.merchant.objects.{CreateProductRequest, Product}
 import delivery.merchant.tables.MerchantDomainOps
 import delivery.shared.api.ApiPlan
 import delivery.shared.objects.DeliveryState
@@ -19,7 +19,7 @@ object MerchantCreateProductApi extends ApiPlan[
       body: CreateProductRequest
   )
 
-  final case class MerchantCreateProductSuccess(nextState: DeliveryState, response: CreateProductResponse)
+  final case class MerchantCreateProductSuccess(nextState: DeliveryState, response: Product)
 
   private val logger = Slf4jLogger.getLogger[IO]
 
@@ -40,7 +40,7 @@ object MerchantCreateProductApi extends ApiPlan[
       ).map(_.map { case (nextMerchant, createdProduct) =>
         MerchantCreateProductSuccess(
           DeliveryStateOps.withMerchantState(input.state, nextMerchant),
-          CreateProductResponse(ok = true, product = createdProduct)
+          createdProduct
         )
       })
       _ <- logger.info(s"$name finished, success=${response.isRight}")

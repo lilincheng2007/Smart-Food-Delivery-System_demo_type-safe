@@ -1,7 +1,10 @@
+import { APIMessage } from '@/api/shared/APIMessage'
 import type { TaskIO } from '@/api/shared/TaskIO'
+import { sendAPI } from '@/api/shared/sendAPI'
 import type { CatalogResponse } from '@/objects/merchant/CatalogResponse'
-import { apiGetIO } from '@/api/shared/client'
+
+class CatalogAPI extends APIMessage<CatalogResponse> {}
 
 export function fetchCatalogIO(): TaskIO<CatalogResponse> {
-  return apiGetIO('/merchant/catalog')
+  return sendAPI(new CatalogAPI())
 }

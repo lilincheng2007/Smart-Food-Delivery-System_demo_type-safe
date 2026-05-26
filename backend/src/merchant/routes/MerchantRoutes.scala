@@ -1,33 +1,28 @@
 package delivery.merchant.routes
 
 import cats.effect.IO
-import cats.syntax.all.*
 import delivery.merchant.api.*
-import delivery.merchant.objects.{CreateProductRequest, CreateStoreRequest, MerchantProfileBody, UpdateProductRequest, UpdateStoreImageRequest}
-import delivery.merchant.utils.{MerchantApiSupport, StoreImageUploads}
-import delivery.shared.db.DeliveryStateStore
-import delivery.shared.http.AuthHttp
+import delivery.merchant.objects.*
+import delivery.merchant.utils.StoreImageUploads
+import delivery.shared.api.RegisteredAPIMessage
+import delivery.shared.api.RegisteredAPIMessage.{api, apiWithRole}
 import delivery.shared.json.ApiJsonCodecs.given
 import delivery.shared.objects.ErrorBody
-import fs2.Chunk
+import delivery.shared.objects.OkResponse
+import io.circe.generic.auto.*
 import org.http4s.*
 import org.http4s.circe.CirceEntityCodec.given
 import org.http4s.dsl.io.*
 import org.http4s.headers.`Content-Type`
-import org.http4s.multipart.{Multipart, Part}
 
 import java.nio.file.Files
 import java.util.regex.Pattern
-import javax.sql.DataSource
 
 object MerchantRoutes:
-
-  given EntityDecoder[IO, Multipart[IO]] = EntityDecoder.multipart[IO]
 
   private val storedImagePattern: Pattern =
     Pattern.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(jpg|jpeg|png|gif|webp)$", Pattern.CASE_INSENSITIVE)
 
-  /** 挂载在 `Router("/api/merchant/store-images" -> ...)` 下，避免嵌套在 `/api/merchant` 时 path 匹配不到。 */
   val storeImagePublicRoutes: HttpRoutes[IO] =
     HttpRoutes.of[IO] { case GET -> Root / imageFile =>
       if !storedImagePattern.matcher(imageFile).matches() then BadRequest(ErrorBody("非法文件名"))
@@ -47,141 +42,16 @@ object MerchantRoutes:
           }
     }
 
-  private def pickFilePart(mp: Multipart[IO]): Option[Part[IO]] =
-    mp.parts.find(_.name.exists(_ == "file")).orElse(mp.parts.find(_.filename.exists(_.trim.nonEmpty)))
-
-  def routes(ds: DataSource): HttpRoutes[IO] =
-    HttpRoutes.of[IO] {
-      case GET -> Root / "catalog" =>
-        DeliveryStateStore.load(ds).flatMap(state => CatalogApi.plan(CatalogApi.CatalogQuery(state))).flatMap(Ok(_))
-
-      case req @ GET -> Root / "me" =>
-        AuthHttp.requireRole(req, "merchant") { username =>
-          DeliveryStateStore.load(ds).flatMap(state => MerchantMeApi.plan(MerchantMeApi.MerchantMeQuery(state, username))).flatMap {
-            case None => NotFound(MerchantApiSupport.merchantNotFound)
-            case Some(output) => Ok(output)
-          }
-        }
-
-      case req @ PUT -> Root / "me" / "profile" =>
-        AuthHttp.requireRole(req, "merchant") { username =>
-          for
-            body <- req.as[MerchantProfileBody]
-            current <- DeliveryStateStore.load(ds)
-            response <- MerchantProfileApi
-              .plan(MerchantProfileApi.MerchantProfileCommand(current, username, body))
-              .flatMap {
-                case Left(msg) => BadRequest(ErrorBody(msg))
-                case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
-              }
-          yield response
-        }
-
-      case req @ POST -> Root / "me" / "stores" =>
-        AuthHttp.requireRole(req, "merchant") { username =>
-          for
-            body <- req.as[CreateStoreRequest]
-            current <- DeliveryStateStore.load(ds)
-            response <- MerchantStoreApi.plan(MerchantStoreApi.MerchantStoreCommand(current, username, body)).flatMap {
-              case Left(msg) => BadRequest(ErrorBody(msg))
-              case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
-            }
-          yield response
-        }
-
-      case req @ PUT -> Root / "me" / "stores" / merchantId / "image" =>
-        AuthHttp.requireRole(req, "merchant") { username =>
-          for
-            body <- req.as[UpdateStoreImageRequest]
-            current <- DeliveryStateStore.load(ds)
-            response <- MerchantStoreImageApi
-              .plan(MerchantStoreImageApi.MerchantStoreImageCommand(current, username, merchantId, body))
-              .flatMap {
-                case Left(msg) => BadRequest(ErrorBody(msg))
-                case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
-              }
-          yield response
-        }
-
-      case req @ POST -> Root / "me" / "stores" / merchantId / "image-file" =>
-        AuthHttp.requireRole(req, "merchant") { username =>
-          req.as[Multipart[IO]].flatMap { mp =>
-            pickFilePart(mp) match
-              case None => BadRequest(ErrorBody("请使用表单字段名 file 上传图片"))
-              case Some(part) =>
-                part.body.compile.to(Chunk).flatMap { ch =>
-                  val bytes = ch.toArray
-                  val ctLower =
-                    part.headers.get[`Content-Type`].fold("") { h =>
-                      val m = h.mediaType
-                      s"${m.mainType}/${m.subType}".toLowerCase
-                    }
-                  DeliveryStateStore.load(ds).flatMap { current =>
-                    MerchantStoreImageFileApi
-                      .plan(
-                        MerchantStoreImageFileApi.MerchantStoreImageFileCommand(
-                          current,
-                          username,
-                          merchantId,
-                          bytes,
-                          ctLower,
-                          part.filename
-                        )
-                      )
-                      .flatMap {
-                        case Left(msg) => BadRequest(ErrorBody(msg))
-                        case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
-                      }
-                  }
-                }
-          }
-        }
-
-      case req @ POST -> Root / "me" / "products" =>
-        AuthHttp.requireRole(req, "merchant") { username =>
-          for
-            body <- req.as[CreateProductRequest]
-            current <- DeliveryStateStore.load(ds)
-            response <- MerchantCreateProductApi.plan(MerchantCreateProductApi.MerchantCreateProductCommand(current, username, body)).flatMap {
-              case Left(msg) => BadRequest(ErrorBody(msg))
-              case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
-            }
-          yield response
-        }
-
-      case req @ PUT -> Root / "me" / "products" / productId =>
-        AuthHttp.requireRole(req, "merchant") { username =>
-          for
-            body <- req.as[UpdateProductRequest]
-            current <- DeliveryStateStore.load(ds)
-            response <- MerchantProductApi.plan(MerchantProductApi.MerchantProductCommand(current, username, productId, body)).flatMap {
-              case Left(msg) => BadRequest(ErrorBody(msg))
-              case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
-            }
-          yield response
-        }
-
-      case req @ POST -> Root / "me" / "orders" / orderId / "finish" =>
-        AuthHttp.requireRole(req, "merchant") { username =>
-          for
-            current <- DeliveryStateStore.load(ds)
-            response <- MerchantOrderReadyApi.plan(MerchantOrderReadyApi.MerchantOrderReadyCommand(current, username, orderId)).flatMap {
-              case Left(msg) => BadRequest(ErrorBody(msg))
-              case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
-            }
-          yield response
-        }
-
-      case req @ POST -> Root / "me" / "orders" / orderId / "ready" =>
-        AuthHttp.requireRole(req, "merchant") { username =>
-          for
-            current <- DeliveryStateStore.load(ds)
-            response <- MerchantOrderReadyApi.plan(MerchantOrderReadyApi.MerchantOrderReadyCommand(current, username, orderId)).flatMap {
-              case Left(msg) => BadRequest(ErrorBody(msg))
-              case Right(output) => DeliveryStateStore.save(ds)(output.nextState) *> Ok(output.response)
-            }
-          yield response
-        }
-    }
+  val apiMessages: List[RegisteredAPIMessage] = List(
+    api[CatalogAPIMessage, CatalogResponse],
+    apiWithRole[MerchantMeAPIMessage, MerchantMeResponse]("merchant"),
+    apiWithRole[MerchantProfileAPIMessage, OkResponse]("merchant"),
+    apiWithRole[MerchantStoreAPIMessage, String]("merchant"),
+    apiWithRole[MerchantStoreImageAPIMessage, OkResponse]("merchant"),
+    apiWithRole[MerchantStoreImageFileAPIMessage, String]("merchant"),
+    apiWithRole[MerchantCreateProductAPIMessage, Product]("merchant"),
+    apiWithRole[MerchantProductAPIMessage, Product]("merchant"),
+    apiWithRole[MerchantOrderReadyAPIMessage, OkResponse]("merchant")
+  )
 
 end MerchantRoutes

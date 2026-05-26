@@ -3,5 +3,4 @@ export interface DeliveryState {
   order: unknown
   merchant: unknown
   rider: unknown
-  admin: unknown
 }

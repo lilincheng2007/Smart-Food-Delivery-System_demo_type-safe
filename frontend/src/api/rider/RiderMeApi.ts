@@ -1,7 +1,10 @@
+import { APIMessage } from '@/api/shared/APIMessage'
 import type { TaskIO } from '@/api/shared/TaskIO'
+import { sendAPI } from '@/api/shared/sendAPI'
 import type { RiderMeResponse } from '@/objects/rider/RiderMeResponse'
-import { apiGetIO } from '@/api/shared/client'
+
+class RiderMeAPI extends APIMessage<RiderMeResponse> {}
 
 export function fetchRiderMeIO(): TaskIO<RiderMeResponse> {
-  return apiGetIO('/rider/me')
+  return sendAPI(new RiderMeAPI())
 }

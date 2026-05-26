@@ -13,17 +13,16 @@ export interface AuthSession {
 export const AUTH_SESSION_KEY = 'delivery-platform-auth-session-v2'
 export const AUTH_SESSION_UPDATED_EVENT = 'delivery-auth-session-updated'
 
-type RoleHomeRoute = '/delivery/customer' | '/delivery/merchant' | '/delivery/rider' | '/delivery/dashboard'
+type RoleHomeRoute = '/delivery/customer' | '/delivery/merchant' | '/delivery/rider'
 
 const roleHomeRouteMap: Record<UserRole, RoleHomeRoute> = {
   customer: '/delivery/customer',
   merchant: '/delivery/merchant',
   rider: '/delivery/rider',
-  admin: '/delivery/dashboard',
 }
 
 export function isUserRole(value: unknown): value is UserRole {
-  return value === 'customer' || value === 'merchant' || value === 'rider' || value === 'admin'
+  return value === 'customer' || value === 'merchant' || value === 'rider'
 }
 
 function isAuthSession(value: unknown): value is AuthSession {

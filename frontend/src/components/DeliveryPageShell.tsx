@@ -12,12 +12,9 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { to: '/delivery/dashboard', label: '平台总览', roles: ['admin'] },
   { to: '/delivery/customer', label: '顾客端', roles: ['customer'] },
   { to: '/delivery/merchant', label: '商家端', roles: ['merchant'] },
   { to: '/delivery/rider', label: '骑手端', roles: ['rider'] },
-  { to: '/delivery/orders', label: '订单中心', roles: ['admin'] },
-  { to: '/delivery/admin', label: '管理后台', roles: ['admin'] },
 ]
 
 interface DeliveryPageShellProps {

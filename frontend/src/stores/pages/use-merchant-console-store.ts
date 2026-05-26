@@ -95,16 +95,16 @@ export const useMerchantConsoleStore = create<MerchantConsoleStore>()((set, get)
       return null
     }
 
-    const created = await runTask(createMerchantStoreIO({ storeName: trimmedName, address: trimmedAddress }))
+    const merchantId = await runTask(createMerchantStoreIO({ storeName: trimmedName, address: trimmedAddress }))
     await get().refreshMerchant()
     set({
-      selectedStoreId: created.merchantId,
+      selectedStoreId: merchantId,
       newStoreName: '',
       newStoreAddress: '',
       isStoreDialogOpen: false,
       activeTab: 'products',
     })
-    return created.merchantId
+    return merchantId
   },
   finishCooking: async (orderId) => {
     await runTask(finishMerchantOrderCookingIO(orderId))
@@ -123,9 +123,9 @@ export const useMerchantConsoleStore = create<MerchantConsoleStore>()((set, get)
     await get().refreshMerchant()
   },
   uploadStoreImageFile: async (merchantId, file) => {
-    const res = await runTask(uploadMerchantStoreImageFileIO(merchantId, file))
+    const imageUrl = await runTask(uploadMerchantStoreImageFileIO(merchantId, file))
     const patchStore = (st: MerchantStoreProfile): MerchantStoreProfile =>
-      st.merchant.id === merchantId ? { ...st, merchant: { ...st.merchant, imageUrl: res.imageUrl } } : st
+      st.merchant.id === merchantId ? { ...st, merchant: { ...st.merchant, imageUrl } } : st
     set((state) => ({
       stores: state.stores.map(patchStore),
       merchantAccount: state.merchantAccount

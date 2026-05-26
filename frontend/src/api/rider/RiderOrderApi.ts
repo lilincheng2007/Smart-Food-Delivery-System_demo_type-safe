@@ -1,12 +1,30 @@
+import { APIMessage } from '@/api/shared/APIMessage'
 import type { TaskIO } from '@/api/shared/TaskIO'
+import { sendAPI } from '@/api/shared/sendAPI'
 import type { OkResponse } from '@/objects/shared/OkResponse'
-import type { RiderUpdateOrderStatusResponse } from '@/objects/rider/RiderUpdateOrderStatusResponse'
-import { apiPostIO } from '@/api/shared/client'
 
-export function grabRiderOrderIO(orderId: string): TaskIO<OkResponse> {
-  return apiPostIO(`/rider/me/orders/${orderId}/grab`)
+class RiderGrabOrderAPI extends APIMessage<OkResponse> {
+  readonly orderId: string
+
+  constructor(orderId: string) {
+    super()
+    this.orderId = orderId
+  }
 }
 
-export function updateRiderOrderStatusIO(orderId: string): TaskIO<RiderUpdateOrderStatusResponse> {
-  return apiPostIO(`/rider/me/orders/${orderId}/status`)
+class RiderUpdateOrderStatusAPI extends APIMessage<OkResponse> {
+  readonly orderId: string
+
+  constructor(orderId: string) {
+    super()
+    this.orderId = orderId
+  }
+}
+
+export function grabRiderOrderIO(orderId: string): TaskIO<OkResponse> {
+  return sendAPI(new RiderGrabOrderAPI(orderId))
+}
+
+export function updateRiderOrderStatusIO(orderId: string): TaskIO<OkResponse> {
+  return sendAPI(new RiderUpdateOrderStatusAPI(orderId))
 }

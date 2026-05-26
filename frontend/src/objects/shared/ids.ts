@@ -1,14 +1,11 @@
 export type UserId = string
 export type MerchantId = string
 export type RiderId = string
-export type CustomerServiceAgentId = string
-export type OperationsManagerId = string
 export type ProductId = string
 export type OrderId = string
 export type VoucherId = string
-export type CampaignId = string
 
-export type UserRole = 'customer' | 'merchant' | 'rider' | 'admin'
+export type UserRole = 'customer' | 'merchant' | 'rider'
 
 export type MerchantCategory = '中餐' | '西餐' | '零售' | '饮品甜点' | '夜宵'
 

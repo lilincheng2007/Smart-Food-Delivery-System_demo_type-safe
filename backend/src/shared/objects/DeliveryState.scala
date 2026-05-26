@@ -1,6 +1,5 @@
 package delivery.shared.objects
 
-import delivery.admin.tables.AdminServiceState
 import delivery.merchant.tables.MerchantServiceState
 import delivery.order.tables.OrderServiceState
 import delivery.rider.tables.RiderServiceState
@@ -11,8 +10,7 @@ final case class DeliveryState(
     user: UserServiceState,
     order: OrderServiceState,
     merchant: MerchantServiceState,
-    rider: RiderServiceState,
-    admin: AdminServiceState
+    rider: RiderServiceState
 )
 
 object DeliveryState:
@@ -21,8 +19,7 @@ object DeliveryState:
       user = SeedBootstrap.userState,
       order = SeedBootstrap.orderState,
       merchant = SeedBootstrap.merchantState,
-      rider = SeedBootstrap.riderState,
-      admin = SeedBootstrap.adminState
+      rider = SeedBootstrap.riderState
     )
 
 end DeliveryState

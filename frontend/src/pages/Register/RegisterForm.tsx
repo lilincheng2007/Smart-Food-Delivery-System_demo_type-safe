@@ -46,7 +46,7 @@ export function RegisterForm({
       }}
     >
       <div className="space-y-2">
-        <Label htmlFor="register-role">角色（管理员不可注册）</Label>
+        <Label htmlFor="register-role">角色</Label>
         <Select
           value={role}
           onValueChange={(value) => {

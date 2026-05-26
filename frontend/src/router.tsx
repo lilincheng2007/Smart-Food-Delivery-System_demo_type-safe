@@ -4,11 +4,8 @@ import { GuestRouteGuard, RoleRouteGuard } from '@/components/RoleRouteGuards'
 import CustomerPortal from '@/pages/CustomerPortal'
 import CustomerCheckoutPage from '@/pages/CustomerPortal/CustomerCheckoutPage'
 import CustomerMerchantOrderPage from '@/pages/CustomerPortal/CustomerMerchantOrderPage'
-import DeliveryDashboard from '@/pages/DeliveryDashboard'
 import Login from '@/pages/Login'
 import MerchantConsole from '@/pages/MerchantConsole'
-import OrderCenter from '@/pages/OrderCenter'
-import PlatformAdmin from '@/pages/PlatformAdmin'
 import Register from '@/pages/Register'
 import RiderApp from '@/pages/RiderApp'
 
@@ -31,14 +28,6 @@ const routes = [
       <GuestRouteGuard>
         <Register />
       </GuestRouteGuard>
-    ),
-  },
-  {
-    path: '/delivery/dashboard',
-    element: (
-      <RoleRouteGuard allowedRoles={['admin']}>
-        <DeliveryDashboard />
-      </RoleRouteGuard>
     ),
   },
   {
@@ -78,22 +67,6 @@ const routes = [
     element: (
       <RoleRouteGuard allowedRoles={['rider']}>
         <RiderApp />
-      </RoleRouteGuard>
-    ),
-  },
-  {
-    path: '/delivery/orders',
-    element: (
-      <RoleRouteGuard allowedRoles={['admin']}>
-        <OrderCenter />
-      </RoleRouteGuard>
-    ),
-  },
-  {
-    path: '/delivery/admin',
-    element: (
-      <RoleRouteGuard allowedRoles={['admin']}>
-        <PlatformAdmin />
       </RoleRouteGuard>
     ),
   },

@@ -2,7 +2,7 @@ package delivery.merchant.api
 
 import cats.effect.IO
 import delivery.shared.api.ApiPlan
-import delivery.merchant.objects.{CreateStoreRequest, CreateStoreResponse}
+import delivery.merchant.objects.CreateStoreRequest
 import delivery.merchant.tables.MerchantDomainOps
 import delivery.shared.objects.DeliveryState
 import delivery.shared.db.DeliveryStateOps
@@ -27,12 +27,12 @@ object MerchantStoreApi extends ApiPlan[MerchantStoreApi.MerchantStoreCommand, E
         case Left(msg) => IO.pure(Left(msg))
         case Right((nextMerchant, merchantId)) =>
           IO.pure(
-            Right(MerchantStoreSuccess(DeliveryStateOps.withMerchantState(input.state, nextMerchant), CreateStoreResponse(ok = true, merchantId = merchantId)))
+            Right(MerchantStoreSuccess(DeliveryStateOps.withMerchantState(input.state, nextMerchant), merchantId))
           )
       }
       _ <- logger.info(s"$name finished, success=${response.isRight}")
     yield response
 
-  final case class MerchantStoreSuccess(nextState: DeliveryState, response: CreateStoreResponse)
+  final case class MerchantStoreSuccess(nextState: DeliveryState, response: String)
 
 end MerchantStoreApi

@@ -23,7 +23,6 @@ object RegisterApi extends ApiPlan[RegisterApi.RegisterCommand, Either[String, R
     for
       _ <- logger.info(s"$name started, username=${input.body.username}")
       response <- input.body.role match
-        case "admin" => IO.pure(Left("不可注册管理员"))
         case "customer" =>
           UserDomainOps.registerCustomer(input.state.user, input.body.username, input.body.password).flatMap {
             case Left(msg) => IO.pure(Left(msg))

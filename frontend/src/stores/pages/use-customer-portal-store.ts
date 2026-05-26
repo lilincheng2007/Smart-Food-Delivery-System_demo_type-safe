@@ -1,7 +1,10 @@
 import { create } from 'zustand'
 
+import { fetchCustomerOrdersIO } from '@/api/order/CustomerOrdersApi'
 import { fetchCatalogIO } from '@/api/merchant/CatalogApi'
+import { cancelOrderIO } from '@/api/order/OrderCancelApi'
 import { checkoutIO, type CheckoutDeliverySnapshot } from '@/api/order/CheckoutApi'
+import { fetchOrderDetailIO } from '@/api/order/OrderDetailApi'
 import { runTask } from '@/api/shared/client'
 import { fetchCustomerMeIO } from '@/api/user/CustomerMeApi'
 import { patchCustomerProfileIO } from '@/api/user/CustomerProfilePatchApi'
@@ -9,6 +12,7 @@ import type { Merchant } from '@/objects/merchant/Merchant'
 import type { Product } from '@/objects/merchant/Product'
 import type { Order } from '@/objects/order/Order'
 import type { MerchantId } from '@/objects/shared/ids'
+import type { OrderId } from '@/objects/shared/ids'
 import type { ProductId } from '@/objects/shared/ids'
 import { validateDeliveryContacts } from '@/lib/deliveryContacts'
 import type { CustomerAccountPublic } from '@/objects/user/CustomerAccountPublic'
@@ -47,6 +51,8 @@ type CustomerPortalStore = {
   setIsRechargeOpen: (open: boolean) => void
   setRechargeAmountInput: (value: string) => void
   setSelectedOrder: (order: Order | null) => void
+  openOrderDetail: (orderId: OrderId) => Promise<{ ok: true } | { ok: false; message: string }>
+  cancelOrder: (orderId: OrderId) => Promise<{ ok: true } | { ok: false; message: string }>
   checkout: (options?: {
     merchantId?: MerchantId
     delivery?: CheckoutDeliverySnapshot
@@ -80,6 +86,7 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
   refreshPortal: async () => {
     const me = await runTask(fetchCustomerMeIO())
     const catalog = await runTask(fetchCatalogIO())
+    const orders = await runTask(fetchCustomerOrdersIO())
     const visibleProductIds = new Set(catalog.products.map((product) => product.id))
     const currentSelectedMerchantId = get().selectedMerchantId
     const nextSelectedMerchantId =
@@ -91,8 +98,8 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
     set({
       customerAccount: me.customerAccount,
       walletBalance: me.customerAccount.profile.walletBalance,
-      pendingOrders: me.customerAccount.profile.pendingOrders,
-      historyOrders: me.customerAccount.profile.historyOrders,
+      pendingOrders: orders.pendingOrders,
+      historyOrders: orders.historyOrders,
       merchants: catalog.merchants,
       products: catalog.products,
       selectedMerchantId: nextSelectedMerchantId,
@@ -145,6 +152,28 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
   setIsRechargeOpen: (isRechargeOpen) => set({ isRechargeOpen }),
   setRechargeAmountInput: (rechargeAmountInput) => set({ rechargeAmountInput }),
   setSelectedOrder: (selectedOrder) => set({ selectedOrder }),
+  openOrderDetail: async (orderId) => {
+    try {
+      const order = await runTask(fetchOrderDetailIO(orderId))
+      set({ selectedOrder: order })
+      return { ok: true }
+    } catch (error) {
+      return { ok: false, message: error instanceof Error ? error.message : '订单详情加载失败' }
+    }
+  },
+  cancelOrder: async (orderId) => {
+    try {
+      const data = await runTask(cancelOrderIO(orderId))
+      await get().refreshPortal()
+      set((state) => ({
+        walletBalance: data.walletBalance,
+        selectedOrder: state.selectedOrder?.id === orderId ? data.order : state.selectedOrder,
+      }))
+      return { ok: true }
+    } catch (error) {
+      return { ok: false, message: error instanceof Error ? error.message : '订单取消失败' }
+    }
+  },
   checkout: async (options?: { merchantId?: MerchantId; delivery?: CheckoutDeliverySnapshot }) => {
     const merchantId = options?.merchantId
     const { cartLines, walletBalance, products, pendingOrders, customerAccount } = get()

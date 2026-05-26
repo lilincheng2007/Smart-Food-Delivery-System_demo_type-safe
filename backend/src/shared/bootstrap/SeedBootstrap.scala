@@ -1,7 +1,5 @@
 package delivery.shared.bootstrap
 
-import delivery.admin.objects.*
-import delivery.admin.tables.*
 import delivery.merchant.objects.*
 import delivery.merchant.tables.*
 import delivery.order.objects.*
@@ -52,8 +50,7 @@ object SeedBootstrap:
     val authCredentials =
       customerAccounts.map(a => AuthCredential(a.role, a.username, a.password)) ++
         merchantState.merchantAccounts.map(a => AuthCredential(a.role, a.username, a.password)) ++
-        riderState.riderAccounts.map(a => AuthCredential(a.role, a.username, a.password)) ++
-        adminState.adminAccounts.map(a => AuthCredential(a.role, a.username, a.password))
+        riderState.riderAccounts.map(a => AuthCredential(a.role, a.username, a.password))
 
     UserServiceState(
       customers = SeedData.seedCustomers,
@@ -111,16 +108,6 @@ object SeedBootstrap:
     }
 
     RiderServiceState(riders = SeedData.seedRiders, riderAccounts = riderAccounts)
-
-  lazy val adminState: AdminServiceState =
-    AdminServiceState(
-      adminAccounts = List(AdminAccount(role = "admin", username = "admin", password = "123456", displayName = "平台管理员")),
-      serviceAgents = SeedData.seedServiceAgents,
-      operationsManagers = SeedData.seedOperationsManagers,
-      merchantApplications = SeedData.seedMerchantApplications,
-      complaintTickets = SeedData.seedComplaintTickets,
-      campaigns = SeedData.seedCampaigns
-    )
 
   lazy val orderState: OrderServiceState =
     OrderServiceState(orders = SeedData.seedOrders)

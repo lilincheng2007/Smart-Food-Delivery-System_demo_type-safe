@@ -1,5 +1,4 @@
 package delivery.user.objects
 
 type MeResponse =
-  CustomerMeResponse | delivery.merchant.objects.MerchantMeResponse | delivery.rider.objects.RiderMeResponse |
-    delivery.admin.objects.AdminMeResponse
+  CustomerMeResponse | delivery.merchant.objects.MerchantMeResponse | delivery.rider.objects.RiderMeResponse

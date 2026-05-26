@@ -142,6 +142,21 @@ object UserDomainOps:
         )
     }
 
+  def cancelCustomerOrder(state: UserServiceState, username: String, updatedOrder: Order): Either[String, UserServiceState] =
+    state.customerAccounts.find(_.username == username).toRight("未找到顾客账号").flatMap { account =>
+      if !account.profile.pendingOrders.exists(_.id == updatedOrder.id) then Left("只能取消待收货订单")
+      else
+        val nextPending = account.profile.pendingOrders.filterNot(_.id == updatedOrder.id)
+        val nextHistory = updatedOrder :: account.profile.historyOrders.filterNot(_.id == updatedOrder.id)
+        val nextWallet = account.profile.walletBalance + updatedOrder.totalAmount
+        val nextProfile = account.profile.copy(
+          walletBalance = nextWallet,
+          pendingOrders = nextPending,
+          historyOrders = nextHistory
+        )
+        Right(state.copy(customerAccounts = state.customerAccounts.map(ca => if ca.username == username then ca.copy(profile = nextProfile) else ca)))
+    }
+
   def replaceOrderSnapshot(state: UserServiceState, updatedOrder: Order): UserServiceState =
     state.copy(
       customerAccounts = state.customerAccounts.map { account =>

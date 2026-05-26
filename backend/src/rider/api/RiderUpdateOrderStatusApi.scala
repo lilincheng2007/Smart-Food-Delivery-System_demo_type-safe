@@ -2,8 +2,8 @@ package delivery.rider.api
 
 import delivery.merchant.tables.MerchantDomainOps
 import delivery.order.tables.OrderDomainOps
-import delivery.rider.objects.RiderUpdateOrderStatusResponse
 import delivery.rider.tables.RiderDomainOps
+import delivery.shared.objects.OkResponse
 import delivery.shared.objects.DeliveryState
 import delivery.shared.db.DeliveryStateOps
 import delivery.user.tables.UserDomainOps
@@ -18,7 +18,7 @@ object RiderUpdateOrderStatusApi:
 
   final case class RiderUpdateOrderStatusSuccess(
       nextState: DeliveryState,
-      response: RiderUpdateOrderStatusResponse
+      response: OkResponse
   )
 
   def plan(input: RiderUpdateOrderStatusCommand): Either[String, RiderUpdateOrderStatusSuccess] =
@@ -35,7 +35,7 @@ object RiderUpdateOrderStatusApi:
               val nextUser = UserDomainOps.replaceOrderSnapshot(input.state.user, updatedOrder)
               val nextState =
                 DeliveryStateOps.withOrderAndMerchantAndUserAndRiderState(input.state, nextUser, nextOrder, nextMerchant, riderState)
-              RiderUpdateOrderStatusSuccess(nextState, RiderUpdateOrderStatusResponse(ok = true, order = updatedOrder))
+              RiderUpdateOrderStatusSuccess(nextState, OkResponse(ok = true))
             }
           }
       }

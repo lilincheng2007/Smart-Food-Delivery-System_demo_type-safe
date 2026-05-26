@@ -1,7 +1,5 @@
 package delivery.shared.json
 
-import delivery.admin.objects.*
-import delivery.admin.tables.*
 import delivery.merchant.objects.*
 import delivery.merchant.tables.*
 import delivery.order.objects.*
@@ -154,6 +152,8 @@ object ApiJsonCodecs:
 
   given Codec[CheckoutRequest] = Codec.from(checkoutRequestDecoder, checkoutRequestEncoder)
   given Codec[CheckoutResponse] = deriveCodec
+  given Codec[CustomerOrdersResponse] = deriveCodec
+  given Codec[OrderCancelResponse] = deriveCodec
 
   given Codec[Product] = deriveCodec
   given Codec[Merchant] = deriveCodec
@@ -163,13 +163,9 @@ object ApiJsonCodecs:
   given Codec[MerchantProfile] = deriveCodec
   given Codec[MerchantProfileBody] = deriveCodec
   given Codec[CreateProductRequest] = deriveCodec
-  given Codec[CreateProductResponse] = deriveCodec
   given Codec[CreateStoreRequest] = deriveCodec
-  given Codec[CreateStoreResponse] = deriveCodec
   given Codec[UpdateStoreImageRequest] = deriveCodec
-  given Codec[StoreImageUploadResponse] = deriveCodec
   given Codec[UpdateProductRequest] = deriveCodec
-  given Codec[UpdateProductResponse] = deriveCodec
   given Codec[CatalogResponse] = deriveCodec
   given Codec[MerchantAccountPublic] = deriveCodec
   given Codec[MerchantMeResponse] = deriveCodec
@@ -180,21 +176,5 @@ object ApiJsonCodecs:
   given Codec[RiderProfile] = deriveCodec
   given Codec[RiderAccountPublic] = deriveCodec
   given Codec[RiderMeResponse] = deriveCodec
-  given Codec[RiderUpdateOrderStatusResponse] = deriveCodec
-
-  given Codec[AdminAccount] = deriveCodec
-  given Codec[AdminServiceState] = deriveCodec
-  given Codec[ComplaintTicket] = deriveCodec
-  given Codec[CustomerServiceAgent] = deriveCodec
-  given Codec[MerchantApplication] = deriveCodec
-  given Codec[OperationsManager] = deriveCodec
-  given Codec[PromotionCampaign] = deriveCodec
-  given Codec[AdminAccountPublic] = deriveCodec
-  given Codec[AdminMeResponse] = deriveCodec
-  given Codec[RootInfoModule] = deriveCodec
-  given Codec[RootInfoResponse] = deriveCodec
-  given Codec[OverviewResponse] = deriveCodec
-  given Codec[OrdersPanelResponse] = deriveCodec
-  given Codec[PlatformMetaResponse] = deriveCodec
 
 end ApiJsonCodecs

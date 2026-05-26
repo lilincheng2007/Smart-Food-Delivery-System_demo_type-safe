@@ -6,7 +6,7 @@
     "dev:db": "docker compose -f backend/docker-compose.yml up -d postgres",
     "dev:backend": "bash -lc 'npm run dev:db && until (echo > /dev/tcp/127.0.0.1/5432) >/dev/null 2>&1; do sleep 1; done; cd backend && sbt -batch clean run'",
     "dev:frontend": "npm run dev --prefix frontend",
-    "dev:frontend:wait": "bash -lc 'until curl -sf http://127.0.0.1:8787/api/admin/health >/dev/null; do sleep 1; done; npm run dev --prefix frontend'"
+    "dev:frontend:wait": "bash -lc 'until curl -sf -X POST -H \"Content-Type: application/json\" -d \"{}\" http://127.0.0.1:8787/api/catalogapi >/dev/null; do sleep 1; done; npm run dev --prefix frontend'"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

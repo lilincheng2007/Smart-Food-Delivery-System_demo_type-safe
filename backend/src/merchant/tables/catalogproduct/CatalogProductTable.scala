@@ -1,0 +1,92 @@
+package delivery.merchant.tables.catalogproduct
+
+import cats.effect.IO
+import delivery.merchant.objects.Product
+
+import java.sql.{Connection, PreparedStatement, ResultSet}
+
+object CatalogProductTable:
+
+  private val upsertSql: String =
+    """
+      |INSERT INTO catalog_products (
+      |  id, merchant_id, name, price, description, image_url, monthly_sales,
+      |  remaining_stock, listing_status, inventory_status, discount_text, updated_at
+      |)
+      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
+      |ON CONFLICT (id) DO UPDATE SET
+      |  merchant_id = EXCLUDED.merchant_id,
+      |  name = EXCLUDED.name,
+      |  price = EXCLUDED.price,
+      |  description = EXCLUDED.description,
+      |  image_url = EXCLUDED.image_url,
+      |  monthly_sales = EXCLUDED.monthly_sales,
+      |  remaining_stock = EXCLUDED.remaining_stock,
+      |  listing_status = EXCLUDED.listing_status,
+      |  inventory_status = EXCLUDED.inventory_status,
+      |  discount_text = EXCLUDED.discount_text,
+      |  updated_at = now()
+      |""".stripMargin
+
+  private[merchant] def upsert(connection: Connection, product: Product): IO[Product] =
+    IO.blocking {
+      val statement = connection.prepareStatement(upsertSql)
+      try
+        bindProduct(statement, product)
+        val _ = statement.executeUpdate()
+        product
+      finally statement.close()
+    }
+
+  private val listSql: String =
+    """
+      |SELECT id, merchant_id, name, price, description, image_url, monthly_sales,
+      |       remaining_stock, listing_status, inventory_status, discount_text
+      |FROM catalog_products
+      |ORDER BY updated_at DESC
+      |""".stripMargin
+
+  private[merchant] def list(connection: Connection): IO[List[Product]] =
+    IO.blocking {
+      val statement = connection.prepareStatement(listSql)
+      try
+        val resultSet = statement.executeQuery()
+        try
+          val builder = List.newBuilder[Product]
+          while resultSet.next() do builder += readProduct(resultSet)
+          builder.result()
+        finally resultSet.close()
+      finally statement.close()
+    }
+
+  private def bindProduct(statement: PreparedStatement, product: Product): Unit =
+    statement.setString(1, product.id)
+    statement.setString(2, product.merchantId)
+    statement.setString(3, product.name)
+    statement.setDouble(4, product.price)
+    statement.setString(5, product.description)
+    statement.setString(6, product.imageUrl)
+    statement.setInt(7, product.monthlySales)
+    statement.setInt(8, product.remainingStock)
+    statement.setString(9, product.listingStatus)
+    statement.setString(10, product.inventoryStatus)
+    product.discountText match
+      case Some(value) => statement.setString(11, value)
+      case None        => statement.setNull(11, java.sql.Types.VARCHAR)
+
+  private def readProduct(resultSet: ResultSet): Product =
+    Product(
+      id = resultSet.getString("id"),
+      merchantId = resultSet.getString("merchant_id"),
+      name = resultSet.getString("name"),
+      price = resultSet.getBigDecimal("price").doubleValue(),
+      description = resultSet.getString("description"),
+      imageUrl = resultSet.getString("image_url"),
+      monthlySales = resultSet.getInt("monthly_sales"),
+      remainingStock = resultSet.getInt("remaining_stock"),
+      listingStatus = resultSet.getString("listing_status"),
+      inventoryStatus = resultSet.getString("inventory_status"),
+      discountText = Option(resultSet.getString("discount_text"))
+    )
+
+end CatalogProductTable

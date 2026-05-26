@@ -37,6 +37,8 @@ export default function CustomerPortal() {
   const setIsRechargeOpen = useCustomerPortalStore((state) => state.setIsRechargeOpen)
   const setRechargeAmountInput = useCustomerPortalStore((state) => state.setRechargeAmountInput)
   const setSelectedOrder = useCustomerPortalStore((state) => state.setSelectedOrder)
+  const openOrderDetail = useCustomerPortalStore((state) => state.openOrderDetail)
+  const cancelOrder = useCustomerPortalStore((state) => state.cancelOrder)
   const refreshPortal = useCustomerPortalStore((state) => state.refreshPortal)
   const recharge = useCustomerPortalStore((state) => state.recharge)
 
@@ -65,6 +67,23 @@ export default function CustomerPortal() {
     const result = await recharge()
     if (result.ok) {
       showNotice(`充值成功，到账 ¥${result.amount.toFixed(2)}。`, 'success')
+      return
+    }
+
+    showNotice(result.message, 'error')
+  }
+
+  const handleOpenOrderDetail = async (orderId: string) => {
+    const result = await openOrderDetail(orderId)
+    if (!result.ok) {
+      showNotice(result.message, 'error')
+    }
+  }
+
+  const handleCancelOrder = async (orderId: string) => {
+    const result = await cancelOrder(orderId)
+    if (result.ok) {
+      showNotice('订单已取消，金额已退回钱包。', 'success')
       return
     }
 
@@ -161,7 +180,7 @@ export default function CustomerPortal() {
             pendingOrders={pendingOrders}
             historyOrders={historyOrders}
             onOpenRecharge={() => setIsRechargeOpen(true)}
-            onSelectOrder={setSelectedOrder}
+            onSelectOrder={(orderId) => void handleOpenOrderDetail(orderId)}
           />
         </TabsContent>
       </Tabs>
@@ -177,6 +196,7 @@ export default function CustomerPortal() {
         selectedOrder={selectedOrder}
         onOpenChange={(open) => !open && setSelectedOrder(null)}
         onClose={() => setSelectedOrder(null)}
+        onCancelOrder={(order) => void handleCancelOrder(order.id)}
       />
     </DeliveryPageShell>
   )

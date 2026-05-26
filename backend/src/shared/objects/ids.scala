@@ -3,15 +3,12 @@ package delivery.shared.objects
 type UserId = String
 type MerchantId = String
 type RiderId = String
-type CustomerServiceAgentId = String
-type OperationsManagerId = String
 type ProductId = String
 type OrderId = String
 type VoucherId = String
-type CampaignId = String
 
 enum UserRole derives CanEqual:
-  case customer, merchant, rider, admin
+  case customer, merchant, rider
 end UserRole
 
 enum MerchantCategory derives CanEqual:

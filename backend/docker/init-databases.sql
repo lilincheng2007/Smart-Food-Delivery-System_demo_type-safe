@@ -4,4 +4,3 @@ CREATE DATABASE delivery_user;
 CREATE DATABASE delivery_order;
 CREATE DATABASE delivery_merchant;
 CREATE DATABASE delivery_rider;
-CREATE DATABASE delivery_admin;
