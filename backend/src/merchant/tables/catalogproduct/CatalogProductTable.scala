@@ -28,7 +28,7 @@ object CatalogProductTable:
       |  updated_at = now()
       |""".stripMargin
 
-  private[merchant] def upsert(connection: Connection, product: Product): IO[Product] =
+  def upsert(connection: Connection, product: Product): IO[Product] =
     IO.blocking {
       val statement = connection.prepareStatement(upsertSql)
       try
@@ -46,7 +46,7 @@ object CatalogProductTable:
       |ORDER BY updated_at DESC
       |""".stripMargin
 
-  private[merchant] def list(connection: Connection): IO[List[Product]] =
+  def list(connection: Connection): IO[List[Product]] =
     IO.blocking {
       val statement = connection.prepareStatement(listSql)
       try
@@ -55,6 +55,27 @@ object CatalogProductTable:
           val builder = List.newBuilder[Product]
           while resultSet.next() do builder += readProduct(resultSet)
           builder.result()
+        finally resultSet.close()
+      finally statement.close()
+    }
+
+  private val findByIdSql: String =
+    """
+      |SELECT id, merchant_id, name, price, description, image_url, monthly_sales,
+      |       remaining_stock, listing_status, inventory_status, discount_text
+      |FROM catalog_products
+      |WHERE id = ?
+      |""".stripMargin
+
+  private[merchant] def findById(connection: Connection, id: String): IO[Option[Product]] =
+    IO.blocking {
+      val statement = connection.prepareStatement(findByIdSql)
+      try
+        statement.setString(1, id)
+        val resultSet = statement.executeQuery()
+        try
+          if resultSet.next() then Some(readProduct(resultSet))
+          else None
         finally resultSet.close()
       finally statement.close()
     }

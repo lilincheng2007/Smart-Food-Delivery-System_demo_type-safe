@@ -49,7 +49,7 @@ object MerchantStoreTable:
       |  updated_at = now()
       |""".stripMargin
 
-  private[merchant] def upsert(connection: Connection, ownerUsername: String, merchant: Merchant): IO[Merchant] =
+  def upsert(connection: Connection, ownerUsername: String, merchant: Merchant): IO[Merchant] =
     IO.blocking {
       val statement = connection.prepareStatement(upsertSql)
       try
@@ -76,6 +76,28 @@ object MerchantStoreTable:
     IO.blocking {
       val statement = connection.prepareStatement(listCatalogSql)
       try
+        val resultSet = statement.executeQuery()
+        try
+          val builder = List.newBuilder[Merchant]
+          while resultSet.next() do builder += readMerchant(resultSet)
+          builder.result()
+        finally resultSet.close()
+      finally statement.close()
+    }
+
+  private val listByOwnerSql: String =
+    """
+      |SELECT id, store_name, category, address, phone, rating, tags, featured_product_ids, image_url
+      |FROM merchant_stores
+      |WHERE owner_username = ?
+      |ORDER BY updated_at DESC
+      |""".stripMargin
+
+  private[merchant] def listByOwner(connection: Connection, ownerUsername: String): IO[List[Merchant]] =
+    IO.blocking {
+      val statement = connection.prepareStatement(listByOwnerSql)
+      try
+        statement.setString(1, ownerUsername)
         val resultSet = statement.executeQuery()
         try
           val builder = List.newBuilder[Merchant]

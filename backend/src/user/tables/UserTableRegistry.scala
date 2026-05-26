@@ -9,14 +9,13 @@ import delivery.user.tables.customersession.CustomerSessionTableInitializer
 
 import java.sql.Connection
 
-object UserTables:
-  val ServiceState = "user_service_state"
+object UserTableRegistry:
   val Credentials = "auth_credentials"
   val Customers = "customers"
   val CustomerProfiles = "customer_profiles"
   val CustomerSessions = "customer_sessions"
 
-  val all: List[String] = List(ServiceState, Credentials, Customers, CustomerProfiles, CustomerSessions)
+  val all: List[String] = List(Credentials, Customers, CustomerProfiles, CustomerSessions)
 
   def initialize(connection: Connection): IO[Unit] =
     List(
@@ -26,4 +25,4 @@ object UserTables:
       CustomerSessionTableInitializer.initialize(connection)
     ).sequence_.void
 
-end UserTables
+end UserTableRegistry

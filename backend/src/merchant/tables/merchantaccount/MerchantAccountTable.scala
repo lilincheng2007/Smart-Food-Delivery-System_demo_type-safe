@@ -2,7 +2,7 @@ package delivery.merchant.tables.merchantaccount
 
 import cats.effect.IO
 import delivery.merchant.objects.MerchantProfile
-import delivery.merchant.tables.MerchantAccount
+import delivery.merchant.tables.MerchantAccountRecord
 
 import java.sql.{Connection, PreparedStatement, ResultSet}
 
@@ -20,7 +20,7 @@ object MerchantAccountTable:
       |  updated_at = now()
       |""".stripMargin
 
-  private[merchant] def upsert(connection: Connection, account: MerchantAccount): IO[MerchantAccount] =
+  def upsert(connection: Connection, account: MerchantAccountRecord): IO[MerchantAccountRecord] =
     IO.blocking {
       val statement = connection.prepareStatement(upsertSql)
       try
@@ -41,10 +41,10 @@ object MerchantAccountTable:
       |WHERE username = ?
       |""".stripMargin
 
-  private[merchant] def findByUsername(connection: Connection, username: String): IO[Option[MerchantAccount]] =
+  private[merchant] def findByUsername(connection: Connection, username: String): IO[Option[MerchantAccountRecord]] =
     queryOne(connection.prepareStatement(findSql))(_.setString(1, username))
 
-  private def queryOne(statement: PreparedStatement)(bind: PreparedStatement => Unit): IO[Option[MerchantAccount]] =
+  private def queryOne(statement: PreparedStatement)(bind: PreparedStatement => Unit): IO[Option[MerchantAccountRecord]] =
     IO.blocking {
       try
         bind(statement)
@@ -56,8 +56,8 @@ object MerchantAccountTable:
       finally statement.close()
     }
 
-  private def readAccount(resultSet: ResultSet): MerchantAccount =
-    MerchantAccount(
+  private def readAccount(resultSet: ResultSet): MerchantAccountRecord =
+    MerchantAccountRecord(
       role = resultSet.getString("role"),
       username = resultSet.getString("username"),
       password = resultSet.getString("password"),

@@ -3,7 +3,7 @@ package delivery.rider.tables.rideraccount
 import cats.effect.IO
 import cats.syntax.all.*
 import delivery.rider.objects.RiderProfile
-import delivery.rider.tables.RiderAccount
+import delivery.rider.tables.RiderAccountRecord
 import delivery.rider.tables.riderprofile.RiderProfileTable
 
 import java.sql.{Connection, PreparedStatement, ResultSet}
@@ -19,7 +19,7 @@ object RiderAccountTable:
       |  rider_id = EXCLUDED.rider_id
       |""".stripMargin
 
-  private[rider] def upsert(connection: Connection, account: RiderAccount): IO[RiderAccount] =
+  def upsert(connection: Connection, account: RiderAccountRecord): IO[RiderAccountRecord] =
     RiderProfileTable.upsert(connection, account.profile.rider, account.profile.walletBalance) *>
       IO.blocking {
         val statement = connection.prepareStatement(upsertSql)
@@ -42,7 +42,7 @@ object RiderAccountTable:
       |WHERE a.username = ?
       |""".stripMargin
 
-  private[rider] def findByUsername(connection: Connection, username: String): IO[Option[RiderAccount]] =
+  private[rider] def findByUsername(connection: Connection, username: String): IO[Option[RiderAccountRecord]] =
     IO.blocking {
       val statement = connection.prepareStatement(findSql)
       try
@@ -55,7 +55,7 @@ object RiderAccountTable:
       finally statement.close()
     }
 
-  private def readAccount(connection: Connection, resultSet: ResultSet): RiderAccount =
+  private def readAccount(connection: Connection, resultSet: ResultSet): RiderAccountRecord =
     val rider = delivery.rider.objects.Rider(
       id = resultSet.getString("rider_id"),
       name = resultSet.getString("name"),
@@ -67,7 +67,7 @@ object RiderAccountTable:
       station = resultSet.getString("station"),
       salary = resultSet.getBigDecimal("salary").doubleValue()
     )
-    RiderAccount(
+    RiderAccountRecord(
       role = resultSet.getString("role"),
       username = resultSet.getString("username"),
       password = resultSet.getString("password"),

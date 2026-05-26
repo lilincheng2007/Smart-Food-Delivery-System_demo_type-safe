@@ -29,7 +29,7 @@ object OrderTable:
       |  updated_at = now()
       |""".stripMargin
 
-  private[order] def upsert(connection: Connection, order: Order): IO[Order] =
+  def upsert(connection: Connection, order: Order): IO[Order] =
     IO.blocking {
       val statement = connection.prepareStatement(insertSql)
       try
@@ -47,7 +47,7 @@ object OrderTable:
       |ORDER BY created_at DESC
       |""".stripMargin
 
-  private[order] def list(connection: Connection): IO[List[Order]] =
+  def list(connection: Connection): IO[List[Order]] =
     queryMany(connection.prepareStatement(listSql))
 
   private val findByIdSql: String =
@@ -58,7 +58,7 @@ object OrderTable:
       |WHERE id = ?
       |""".stripMargin
 
-  private[order] def findById(connection: Connection, id: String): IO[Option[Order]] =
+  def findById(connection: Connection, id: String): IO[Option[Order]] =
     queryOne(connection.prepareStatement(findByIdSql))(_.setString(1, id))
 
   private val updateStatusSql: String =

@@ -28,7 +28,7 @@ object CustomerTable:
       |  updated_at = now()
       |""".stripMargin
 
-  private[user] def upsert(connection: Connection, customer: Customer): IO[Customer] =
+  def upsert(connection: Connection, customer: Customer): IO[Customer] =
     IO.blocking {
       val statement = connection.prepareStatement(upsertSql)
       try

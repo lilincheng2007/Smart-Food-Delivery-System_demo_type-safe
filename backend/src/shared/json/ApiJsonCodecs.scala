@@ -18,15 +18,13 @@ import io.circe.syntax.*
 
 object ApiJsonCodecs:
 
-  given Codec[DeliveryState] = deriveCodec
   given Codec[HealthOk] = deriveCodec
   given Codec[OkResponse] = deriveCodec
   given Codec[ErrorBody] = deriveCodec
 
-  given Codec[AuthCredential] = deriveCodec
+  given Codec[AuthCredentialRecord] = deriveCodec
   given Codec[Customer] = deriveCodec
-  given Codec[CustomerAccount] = deriveCodec
-  given Codec[UserServiceState] = deriveCodec
+  given Codec[CustomerAccountRecord] = deriveCodec
   given Codec[LoginRequest] = deriveCodec
   given Codec[RegisterRequest] = deriveCodec
   given Codec[LoginResponse] = deriveCodec
@@ -78,7 +76,6 @@ object ApiJsonCodecs:
   given Decoder[Order] = orderDecoder0
   given Encoder[Order] = orderEncoder0
   given Codec[Order] = Codec.from(orderDecoder0, orderEncoder0)
-  given Codec[OrderServiceState] = deriveCodec
 
   given Codec[CustomerDeliveryContact] = deriveCodec
 
@@ -157,8 +154,7 @@ object ApiJsonCodecs:
 
   given Codec[Product] = deriveCodec
   given Codec[Merchant] = deriveCodec
-  given Codec[MerchantAccount] = deriveCodec
-  given Codec[MerchantServiceState] = deriveCodec
+  given Codec[MerchantAccountRecord] = deriveCodec
   given Codec[MerchantStoreProfile] = deriveCodec
   given Codec[MerchantProfile] = deriveCodec
   given Codec[MerchantProfileBody] = deriveCodec
@@ -171,8 +167,7 @@ object ApiJsonCodecs:
   given Codec[MerchantMeResponse] = deriveCodec
 
   given Codec[Rider] = deriveCodec
-  given Codec[RiderAccount] = deriveCodec
-  given Codec[RiderServiceState] = deriveCodec
+  given Codec[RiderAccountRecord] = deriveCodec
   given Codec[RiderProfile] = deriveCodec
   given Codec[RiderAccountPublic] = deriveCodec
   given Codec[RiderMeResponse] = deriveCodec

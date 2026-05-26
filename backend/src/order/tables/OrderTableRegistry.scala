@@ -8,13 +8,12 @@ import delivery.order.tables.orderitem.OrderItemTableInitializer
 
 import java.sql.Connection
 
-object OrderTables:
-  val ServiceState = "order_service_state"
+object OrderTableRegistry:
   val Orders = "orders"
   val OrderItems = "order_items"
   val CheckoutRequests = "checkout_requests"
 
-  val all: List[String] = List(ServiceState, Orders, OrderItems, CheckoutRequests)
+  val all: List[String] = List(Orders, OrderItems, CheckoutRequests)
 
   def initialize(connection: Connection): IO[Unit] =
     List(
@@ -23,4 +22,4 @@ object OrderTables:
       CheckoutRequestTableInitializer.initialize(connection)
     ).sequence_.void
 
-end OrderTables
+end OrderTableRegistry

@@ -1,10 +1,12 @@
 package delivery.shared.api
 
+import delivery.shared.db.DatabaseSession
+
 import javax.sql.DataSource
 
 object sendAPI:
 
   def apply[Response](message: APIMessage[Response], ds: DataSource): TaskIO.TaskIO[Response] =
-    message.plan(ds)
+    DatabaseSession.withTransactionConnection(ds)(message.plan)
 
 end sendAPI

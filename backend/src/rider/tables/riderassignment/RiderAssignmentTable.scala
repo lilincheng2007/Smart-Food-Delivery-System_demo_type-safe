@@ -16,7 +16,7 @@ object RiderAssignmentTable:
       |  completed_at = EXCLUDED.completed_at
       |""".stripMargin
 
-  private[rider] def upsert(connection: Connection, riderId: String, orderId: String, status: String): IO[Unit] =
+  def upsert(connection: Connection, riderId: String, orderId: String, status: String): IO[Unit] =
     IO.blocking {
       val statement = connection.prepareStatement(upsertSql)
       try

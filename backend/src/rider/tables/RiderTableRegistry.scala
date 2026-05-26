@@ -8,13 +8,12 @@ import delivery.rider.tables.riderprofile.RiderProfileTableInitializer
 
 import java.sql.Connection
 
-object RiderTables:
-  val ServiceState = "rider_service_state"
+object RiderTableRegistry:
   val RiderAccounts = "rider_accounts"
   val RiderProfiles = "rider_profiles"
   val RiderAssignments = "rider_assignments"
 
-  val all: List[String] = List(ServiceState, RiderAccounts, RiderProfiles, RiderAssignments)
+  val all: List[String] = List(RiderAccounts, RiderProfiles, RiderAssignments)
 
   def initialize(connection: Connection): IO[Unit] =
     List(
@@ -23,4 +22,4 @@ object RiderTables:
       RiderAssignmentTableInitializer.initialize(connection)
     ).sequence_.void
 
-end RiderTables
+end RiderTableRegistry

@@ -5,7 +5,7 @@ import delivery.order.objects.Order
 import delivery.shared.json.ApiJsonCodecs.given
 import delivery.shared.objects.Voucher
 import delivery.user.objects.{CustomerDeliveryContact, CustomerProfile}
-import delivery.user.tables.CustomerAccount
+import delivery.user.tables.CustomerAccountRecord
 import io.circe.parser.decode
 import io.circe.syntax.*
 import org.postgresql.util.PGobject
@@ -34,7 +34,7 @@ object CustomerProfileTable:
       |  updated_at = now()
       |""".stripMargin
 
-  private[user] def upsert(connection: Connection, account: CustomerAccount): IO[CustomerAccount] =
+  def upsert(connection: Connection, account: CustomerAccountRecord): IO[CustomerAccountRecord] =
     IO.blocking {
       val p = account.profile
       val statement = connection.prepareStatement(upsertSql)
@@ -62,10 +62,10 @@ object CustomerProfileTable:
       |WHERE username = ?
       |""".stripMargin
 
-  private[user] def findByUsername(connection: Connection, username: String): IO[Option[CustomerAccount]] =
+  def findByUsername(connection: Connection, username: String): IO[Option[CustomerAccountRecord]] =
     queryOne(connection.prepareStatement(findSql))(_.setString(1, username))
 
-  private def queryOne(statement: PreparedStatement)(bind: PreparedStatement => Unit): IO[Option[CustomerAccount]] =
+  private def queryOne(statement: PreparedStatement)(bind: PreparedStatement => Unit): IO[Option[CustomerAccountRecord]] =
     IO.blocking {
       try
         bind(statement)
@@ -77,8 +77,8 @@ object CustomerProfileTable:
       finally statement.close()
     }
 
-  private def readAccount(resultSet: ResultSet): CustomerAccount =
-    CustomerAccount(
+  private def readAccount(resultSet: ResultSet): CustomerAccountRecord =
+    CustomerAccountRecord(
       role = resultSet.getString("role"),
       username = resultSet.getString("username"),
       password = "",

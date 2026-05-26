@@ -3,6 +3,7 @@ package delivery.shared.api
 import cats.effect.IO
 import cats.syntax.all.*
 import delivery.shared.auth.JwtSupport
+import delivery.shared.db.DatabaseSession
 import delivery.shared.json.ApiJsonCodecs.given
 import delivery.shared.objects.ErrorBody
 import io.circe.{Decoder, Encoder, Json}
@@ -12,22 +13,23 @@ import org.http4s.circe.CirceEntityCodec.given
 import org.http4s.dsl.io.*
 import org.http4s.headers.Authorization
 
+import java.sql.Connection
 import javax.sql.DataSource
 import scala.reflect.ClassTag
 
 trait APIMessage[Response]:
-  def plan(ds: DataSource): IO[Response]
+  def plan(connection: Connection): IO[Response]
 
 trait APIWithRoleMessage[Response] extends APIMessage[Response]:
-  def plan(ds: DataSource, username: String): IO[Response]
+  def plan(connection: Connection, username: String): IO[Response]
 
-  final override def plan(ds: DataSource): IO[Response] =
+  final override def plan(connection: Connection): IO[Response] =
     IO.raiseError(HttpApiError.Unauthorized("缺少 Authorization Bearer token"))
 
 final case class RegisteredAPIMessage(
     apiName: String,
     requiredRole: Option[String],
-    planJson: (Json, DataSource, Option[String]) => IO[Json]
+    planJson: (Json, Connection, Option[String]) => IO[Json]
 )
 
 object APIMessage:
@@ -47,10 +49,10 @@ object RegisteredAPIMessage:
     RegisteredAPIMessage(
       apiName = nameOf[Message],
       requiredRole = None,
-      planJson = (payload, ds, _) =>
+      planJson = (payload, connection, _) =>
         for
           message <- IO.fromEither(payload.as[Message].left.map(error => HttpApiError.BadRequest(s"请求体格式错误：${error.getMessage}")))
-          response <- message.plan(ds)
+          response <- message.plan(connection)
         yield response.asJson
     )
 
@@ -62,11 +64,11 @@ object RegisteredAPIMessage:
     RegisteredAPIMessage(
       apiName = nameOf[Message],
       requiredRole = Some(role),
-      planJson = (payload, ds, username) =>
+      planJson = (payload, connection, username) =>
         for
           message <- IO.fromEither(payload.as[Message].left.map(error => HttpApiError.BadRequest(s"请求体格式错误：${error.getMessage}")))
           user <- IO.fromOption(username)(HttpApiError.Unauthorized("缺少 Authorization Bearer token"))
-          response <- message.plan(ds, user)
+          response <- message.plan(connection, user)
         yield response.asJson
     )
 
@@ -93,7 +95,7 @@ object APIMessageRouter:
           apiMessage <- IO.fromOption(apiMessagesByName.get(normalize(apiName)))(HttpApiError.NotFound(s"不支持的 API：$apiName"))
           username <- resolveUsername(req, apiMessage.requiredRole)
           payload <- req.as[Json]
-          response <- apiMessage.planJson(payload, ds, username)
+          response <- DatabaseSession.withTransactionConnection(ds)(connection => apiMessage.planJson(payload, connection, username))
           httpResponse <- Ok(response)
         yield httpResponse
       }
