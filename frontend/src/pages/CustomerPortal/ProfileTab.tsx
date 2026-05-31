@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import type { AIDietWeeklyReportResponse } from '@/objects/ai/AIDietWeeklyReportResponse'
+import type { AIOrderProgressNarrativesResponse } from '@/objects/ai/AIOrderProgressNarrativesResponse'
 import type { Merchant } from '@/objects/merchant/Merchant'
 import type { Order } from '@/objects/order/Order'
-import type { OrderId } from '@/objects/shared/ids'
+import { OrderStatuses, type OrderId } from '@/objects/shared/ids'
 
 type ProfileTabProps = {
   username: string
@@ -20,8 +21,10 @@ type ProfileTabProps = {
   aiDietReport: AIDietWeeklyReportResponse | null
   aiDietReportLoading: boolean
   aiDietReportError: string | null
+  aiOrderProgressNarratives: AIOrderProgressNarrativesResponse | null
   onOpenRecharge: () => void
   onSelectOrder: (orderId: OrderId) => void
+  onCompleteOrder: (orderId: OrderId) => void
   onGenerateAIDietReport: () => void
 }
 
@@ -34,12 +37,55 @@ export function ProfileTab({
   aiDietReport,
   aiDietReportLoading,
   aiDietReportError,
+  aiOrderProgressNarratives,
   onOpenRecharge,
   onSelectOrder,
+  onCompleteOrder,
   onGenerateAIDietReport,
 }: ProfileTabProps) {
   const getMerchantName = (merchantId: string) =>
     merchants.find((merchant) => merchant.id === merchantId)?.storeName ?? '未知商家'
+
+  const getOrderStatusDescription = (order: Order) => {
+    if (order.status === OrderStatuses.waitingForPickup) {
+      return '商家已出餐，正在等待骑手接单取餐'
+    }
+    if (order.status === OrderStatuses.delivered) {
+      return '餐品已送达，可确认完成'
+    }
+    return null
+  }
+
+  const buildOrderProgressNarratives = (orders: Order[]) => {
+    const usedMessages = new Set<string>()
+    const cycleSeed = Math.floor(Date.now() / 15000)
+
+    return orders.reduce<Map<OrderId, string>>((narratives, order, index) => {
+      if (order.status === OrderStatuses.completed) {
+        return narratives
+      }
+
+      const messages = aiOrderProgressNarratives?.groups.find((group) => group.status === order.status)?.messages ?? []
+      if (messages.length === 0) {
+        return narratives
+      }
+
+      const orderSeed = [...order.id].reduce((sum, char) => sum + char.charCodeAt(0), 0)
+      const offset = (orderSeed + cycleSeed + index) % messages.length
+      const message = messages
+        .map((_, messageIndex) => messages[(offset + messageIndex) % messages.length])
+        .find((candidate) => !usedMessages.has(candidate))
+
+      if (message) {
+        usedMessages.add(message)
+        narratives.set(order.id, message)
+      }
+
+      return narratives
+    }, new Map<OrderId, string>())
+  }
+
+  const orderProgressNarratives = buildOrderProgressNarratives([...pendingOrders, ...historyOrders])
 
   return (
     <div className="space-y-6">
@@ -256,6 +302,12 @@ export function ProfileTab({
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">商家：{getMerchantName(order.merchantId)}</p>
                 <p className="mt-1 text-sm text-muted-foreground">收货地址：{order.deliveryAddress}</p>
+                {orderProgressNarratives.get(order.id) && (
+                  <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-sm text-primary shadow-sm">
+                    <Sparkles className="size-4 shrink-0" aria-hidden />
+                    <span>{orderProgressNarratives.get(order.id)}</span>
+                  </div>
+                )}
                 <div className="mt-3 flex justify-end">
                   <Button
                     size="sm"
@@ -300,7 +352,25 @@ export function ProfileTab({
                 <p className="mt-1 text-sm text-muted-foreground">
                   金额：{order.totalAmount} 元 · 下单时间：{order.placedAt}
                 </p>
-                <div className="mt-3 flex justify-end">
+                {getOrderStatusDescription(order) && (
+                  <p className="mt-2 text-xs font-medium text-primary">{getOrderStatusDescription(order)}</p>
+                )}
+                {orderProgressNarratives.get(order.id) && (
+                  <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-sm text-primary shadow-sm">
+                    <Sparkles className="size-4 shrink-0" aria-hidden />
+                    <span>{orderProgressNarratives.get(order.id)}</span>
+                  </div>
+                )}
+                <div className="mt-3 flex justify-end gap-2">
+                  {order.status === OrderStatuses.delivered && (
+                    <Button
+                      size="sm"
+                      className="cursor-pointer bg-primary text-primary-foreground transition-[filter] hover:brightness-110"
+                      onClick={() => onCompleteOrder(order.id)}
+                    >
+                      完成订单
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"

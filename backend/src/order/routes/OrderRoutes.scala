@@ -13,6 +13,7 @@ object OrderRoutes:
     apiWithRole[CustomerOrdersAPIMessage, CustomerOrdersResponse]("customer"),
     apiWithRole[OrderDetailAPIMessage, Order]("customer"),
     apiWithRole[OrderCancelAPIMessage, OrderCancelResponse]("customer"),
+    apiWithRole[OrderCompleteAPIMessage, Order]("customer"),
     apiWithRole[CheckoutAPIMessage, CheckoutResponse]("customer")
   )
 

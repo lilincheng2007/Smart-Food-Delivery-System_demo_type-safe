@@ -1,7 +1,7 @@
 package delivery.ai.routes
 
-import delivery.ai.api.{AIDietWeeklyReportAPIMessage, AISearchAPIMessage}
-import delivery.ai.objects.{AIDietWeeklyReportResponse, AISearchResponse}
+import delivery.ai.api.{AIDietWeeklyReportAPIMessage, AIOrderProgressNarrativesAPIMessage, AISearchAPIMessage}
+import delivery.ai.objects.{AIDietWeeklyReportResponse, AIOrderProgressNarrativesResponse, AISearchResponse}
 import delivery.shared.api.RegisteredAPIMessage
 import delivery.shared.api.RegisteredAPIMessage.apiWithRole
 import delivery.shared.json.ApiJsonCodecs.given
@@ -11,7 +11,8 @@ object AIRoutes:
 
   val apiMessages: List[RegisteredAPIMessage] = List(
     apiWithRole[AISearchAPIMessage, AISearchResponse]("customer"),
-    apiWithRole[AIDietWeeklyReportAPIMessage, AIDietWeeklyReportResponse]("customer")
+    apiWithRole[AIDietWeeklyReportAPIMessage, AIDietWeeklyReportResponse]("customer"),
+    apiWithRole[AIOrderProgressNarrativesAPIMessage, AIOrderProgressNarrativesResponse]("customer")
   )
 
 end AIRoutes

@@ -44,7 +44,7 @@ export function OrdersTab({ selectedStore, onFinishCooking }: OrdersTabProps) {
             <Workflow className="size-5 text-orange-500" />
             出餐处理
           </CardTitle>
-          <CardDescription>订单创建后自动接单，这里只处理制作中的出餐完成操作</CardDescription>
+          <CardDescription>订单创建后进入制作中；出餐完成后会变为待接单，等待骑手接单取餐。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {activeCookingOrders.length === 0 ? (

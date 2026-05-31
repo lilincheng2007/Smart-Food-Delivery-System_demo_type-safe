@@ -8,6 +8,7 @@ import delivery.order.objects.{CheckoutLine, CheckoutRequest, CheckoutResponse, 
 import delivery.order.tables.checkoutrequest.CheckoutRequestTable
 import delivery.order.tables.order.OrderTable
 import delivery.order.utils.OrderApiSupport
+import delivery.rider.tables.riderassignment.RiderAssignmentTable
 import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
 import delivery.shared.objects.{OrderId, OrderStatus}
 import delivery.user.objects.CustomerProfile
@@ -113,6 +114,34 @@ final case class OrderCancelAPIMessage(orderId: OrderId) extends APIWithRoleMess
       _ <- OrderTable.upsert(connection, canceledOrder)
       _ <- CustomerProfileTable.upsert(connection, nextAccount)
     yield OrderCancelResponse(canceledOrder, nextAccount.profile.walletBalance)
+
+final case class OrderCompleteAPIMessage(orderId: OrderId) extends APIWithRoleMessage[Order]:
+  override def plan(connection: Connection, username: String): IO[Order] =
+    for
+      account <- CustomerProfileTable.findByUsername(connection, username).flatMap {
+        case Some(value) => IO.pure(value)
+        case None        => IO.raiseError(HttpApiError.BadRequest("未找到顾客账号"))
+      }
+      order <- OrderTable.findById(connection, orderId).flatMap {
+        case Some(value) => IO.pure(value)
+        case None        => IO.raiseError(HttpApiError.BadRequest("未找到订单"))
+      }
+      _ <-
+        if order.customerId != account.profile.id then IO.raiseError(HttpApiError.BadRequest("无权操作该订单"))
+        else if order.status == OrderStatus.已完成 then IO.raiseError(HttpApiError.BadRequest("订单已完成"))
+        else if order.status != OrderStatus.已送达 then IO.raiseError(HttpApiError.BadRequest(s"当前状态不可确认完成：${order.status}"))
+        else IO.unit
+      completedOrder = order.copy(status = OrderStatus.已完成)
+      nextAccount = account.copy(profile = account.profile.copy(
+        pendingOrders = account.profile.pendingOrders.filterNot(_.id == orderId),
+        historyOrders = completedOrder :: account.profile.historyOrders.filterNot(_.id == orderId)
+      ))
+      _ <- OrderTable.upsert(connection, completedOrder)
+      _ <- order.riderId match
+        case Some(riderId) => RiderAssignmentTable.upsert(connection, riderId, completedOrder.id, completedOrder.status)
+        case None          => IO.unit
+      _ <- CustomerProfileTable.upsert(connection, nextAccount)
+    yield completedOrder
 
 final case class CheckoutAPIMessage(
     lines: List[CheckoutLine],

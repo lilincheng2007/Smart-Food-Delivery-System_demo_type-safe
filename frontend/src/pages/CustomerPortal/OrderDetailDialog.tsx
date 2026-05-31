@@ -9,6 +9,7 @@ type OrderDetailDialogProps = {
   onOpenChange: (open: boolean) => void
   onClose: () => void
   onCancelOrder: (order: Order) => void
+  onCompleteOrder: (order: Order) => void
 }
 
 const nonCancelableStatuses: OrderStatus[] = [
@@ -22,7 +23,27 @@ function canCancel(order: Order): boolean {
   return !nonCancelableStatuses.includes(order.status) && !order.riderId
 }
 
-export function OrderDetailDialog({ selectedOrder, onOpenChange, onClose, onCancelOrder }: OrderDetailDialogProps) {
+function canComplete(order: Order): boolean {
+  return order.status === OrderStatuses.delivered
+}
+
+function orderStatusDescription(order: Order): string | null {
+  if (order.status === OrderStatuses.waitingForPickup) {
+    return '商家已出餐，正在等待骑手接单取餐。'
+  }
+  if (order.status === OrderStatuses.delivered) {
+    return '餐品已送达，可确认完成。'
+  }
+  return null
+}
+
+export function OrderDetailDialog({
+  selectedOrder,
+  onOpenChange,
+  onClose,
+  onCancelOrder,
+  onCompleteOrder,
+}: OrderDetailDialogProps) {
   return (
     <Dialog open={selectedOrder !== null} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md rounded-2xl border border-orange-100 bg-white p-6">
@@ -35,6 +56,13 @@ export function OrderDetailDialog({ selectedOrder, onOpenChange, onClose, onCanc
             <div className="rounded-xl bg-orange-50 px-3 py-2 text-sm text-slate-700">
               订单金额：
               <span className="ml-1 font-semibold text-orange-600">¥{selectedOrder.totalAmount.toFixed(2)}</span>
+            </div>
+            <div className="rounded-xl bg-orange-50 px-3 py-2 text-sm text-slate-700">
+              当前状态：
+              <span className="ml-1 font-semibold text-orange-600">{selectedOrder.status}</span>
+              {orderStatusDescription(selectedOrder) ? (
+                <p className="mt-1 text-xs text-slate-500">{orderStatusDescription(selectedOrder)}</p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <p className="text-sm font-medium text-slate-900">商品明细</p>
@@ -54,6 +82,11 @@ export function OrderDetailDialog({ selectedOrder, onOpenChange, onClose, onCanc
           </div>
         ) : null}
         <DialogFooter>
+          {selectedOrder && canComplete(selectedOrder) ? (
+            <Button onClick={() => onCompleteOrder(selectedOrder)}>
+              完成订单
+            </Button>
+          ) : null}
           {selectedOrder && canCancel(selectedOrder) ? (
             <Button variant="destructive" onClick={() => onCancelOrder(selectedOrder)}>
               取消订单

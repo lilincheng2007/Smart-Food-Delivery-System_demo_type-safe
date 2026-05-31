@@ -1,9 +1,11 @@
 import { create } from 'zustand'
 
 import { aiDietWeeklyReportIO } from '@/api/ai/AIDietWeeklyReportApi'
+import { aiOrderProgressNarrativesIO } from '@/api/ai/AIOrderProgressNarrativesApi'
 import { fetchCustomerOrdersIO } from '@/api/order/CustomerOrdersApi'
 import { fetchCatalogIO } from '@/api/merchant/CatalogApi'
 import { cancelOrderIO } from '@/api/order/OrderCancelApi'
+import { completeOrderIO } from '@/api/order/OrderCompleteApi'
 import { checkoutIO, type CheckoutDeliverySnapshot } from '@/api/order/CheckoutApi'
 import { fetchOrderDetailIO } from '@/api/order/OrderDetailApi'
 import { runTask } from '@/api/shared/client'
@@ -17,6 +19,7 @@ import type { MerchantId } from '@/objects/shared/ids'
 import type { OrderId } from '@/objects/shared/ids'
 import type { ProductId } from '@/objects/shared/ids'
 import type { AIDietWeeklyReportResponse } from '@/objects/ai/AIDietWeeklyReportResponse'
+import type { AIOrderProgressNarrativesResponse } from '@/objects/ai/AIOrderProgressNarrativesResponse'
 import { validateDeliveryContacts } from '@/lib/deliveryContacts'
 import type { CustomerAccountPublic } from '@/objects/user/CustomerAccountPublic'
 import type { CustomerDeliveryContact } from '@/objects/user/CustomerDeliveryContact'
@@ -47,8 +50,12 @@ type CustomerPortalStore = {
   aiDietReport: AIDietWeeklyReportResponse | null
   aiDietReportLoading: boolean
   aiDietReportError: string | null
+  aiOrderProgressNarratives: AIOrderProgressNarrativesResponse | null
+  aiOrderProgressNarrativesLoading: boolean
+  aiOrderProgressNarrativesError: string | null
   resetPage: () => void
   refreshPortal: () => Promise<void>
+  ensureAIOrderProgressNarratives: () => Promise<void>
   bootstrap: () => Promise<void>
   setActiveTab: (tab: CustomerTab) => void
   setSelectedMerchantId: (merchantId: MerchantId) => void
@@ -59,6 +66,7 @@ type CustomerPortalStore = {
   setSelectedOrder: (order: Order | null) => void
   openOrderDetail: (orderId: OrderId) => Promise<{ ok: true } | { ok: false; message: string }>
   cancelOrder: (orderId: OrderId) => Promise<{ ok: true } | { ok: false; message: string }>
+  completeOrder: (orderId: OrderId) => Promise<{ ok: true } | { ok: false; message: string }>
   checkout: (options?: {
     merchantId?: MerchantId
     delivery?: CheckoutDeliverySnapshot
@@ -68,6 +76,14 @@ type CustomerPortalStore = {
     contacts: CustomerDeliveryContact[],
   ) => Promise<{ ok: true } | { ok: false; message: string }>
   generateAIDietReport: () => Promise<{ ok: true } | { ok: false; message: string }>
+}
+
+const getLocalDateKey = () => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = `${now.getMonth() + 1}`.padStart(2, '0')
+  const day = `${now.getDate()}`.padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 const initialState = {
@@ -88,6 +104,9 @@ const initialState = {
   aiDietReport: null as AIDietWeeklyReportResponse | null,
   aiDietReportLoading: false,
   aiDietReportError: null as string | null,
+  aiOrderProgressNarratives: null as AIOrderProgressNarrativesResponse | null,
+  aiOrderProgressNarrativesLoading: false,
+  aiOrderProgressNarrativesError: null as string | null,
 }
 
 export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) => ({
@@ -116,10 +135,29 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
       cartLines: nextCartLines,
     })
   },
+  ensureAIOrderProgressNarratives: async () => {
+    const today = getLocalDateKey()
+    const current = get().aiOrderProgressNarratives
+    if (get().aiOrderProgressNarrativesLoading || current?.generatedFor === today) {
+      return
+    }
+
+    set({ aiOrderProgressNarrativesLoading: true, aiOrderProgressNarrativesError: null })
+    try {
+      const result = await runTask(aiOrderProgressNarrativesIO({}))
+      set({ aiOrderProgressNarratives: result, aiOrderProgressNarrativesLoading: false })
+    } catch (error) {
+      set({
+        aiOrderProgressNarrativesError: error instanceof Error ? error.message : 'AI 订单进度叙事生成失败',
+        aiOrderProgressNarrativesLoading: false,
+      })
+    }
+  },
   bootstrap: async () => {
     set({ bootstrapDone: false, loadError: null })
     try {
       await get().refreshPortal()
+      await get().ensureAIOrderProgressNarratives()
     } catch (error) {
       set({ loadError: error instanceof Error ? error.message : '加载失败' })
     } finally {
@@ -182,6 +220,18 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
       return { ok: true }
     } catch (error) {
       return { ok: false, message: error instanceof Error ? error.message : '订单取消失败' }
+    }
+  },
+  completeOrder: async (orderId) => {
+    try {
+      const order = await runTask(completeOrderIO(orderId))
+      await get().refreshPortal()
+      set((state) => ({
+        selectedOrder: state.selectedOrder?.id === orderId ? order : state.selectedOrder,
+      }))
+      return { ok: true }
+    } catch (error) {
+      return { ok: false, message: error instanceof Error ? error.message : '确认完成失败' }
     }
   },
   checkout: async (options?: { merchantId?: MerchantId; delivery?: CheckoutDeliverySnapshot }) => {

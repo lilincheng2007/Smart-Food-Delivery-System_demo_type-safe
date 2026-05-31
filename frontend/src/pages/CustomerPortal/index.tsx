@@ -39,12 +39,15 @@ export default function CustomerPortal() {
   const setSelectedOrder = useCustomerPortalStore((state) => state.setSelectedOrder)
   const openOrderDetail = useCustomerPortalStore((state) => state.openOrderDetail)
   const cancelOrder = useCustomerPortalStore((state) => state.cancelOrder)
+  const completeOrder = useCustomerPortalStore((state) => state.completeOrder)
   const refreshPortal = useCustomerPortalStore((state) => state.refreshPortal)
   const recharge = useCustomerPortalStore((state) => state.recharge)
   const aiDietReport = useCustomerPortalStore((state) => state.aiDietReport)
   const aiDietReportLoading = useCustomerPortalStore((state) => state.aiDietReportLoading)
   const aiDietReportError = useCustomerPortalStore((state) => state.aiDietReportError)
+  const aiOrderProgressNarratives = useCustomerPortalStore((state) => state.aiOrderProgressNarratives)
   const generateAIDietReport = useCustomerPortalStore((state) => state.generateAIDietReport)
+  const ensureAIOrderProgressNarratives = useCustomerPortalStore((state) => state.ensureAIOrderProgressNarratives)
 
   useEffect(() => {
     void (async () => {
@@ -53,19 +56,23 @@ export default function CustomerPortal() {
         await bootstrap()
       } else {
         await refreshPortal().catch(() => {})
+        await ensureAIOrderProgressNarratives().catch(() => {})
       }
     })()
-  }, [bootstrap, refreshPortal])
+  }, [bootstrap, ensureAIOrderProgressNarratives, refreshPortal])
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      void refreshPortal().catch(() => {})
+      void (async () => {
+        await refreshPortal().catch(() => {})
+        await ensureAIOrderProgressNarratives().catch(() => {})
+      })()
     }, 5000)
 
     return () => {
       window.clearInterval(timer)
     }
-  }, [refreshPortal])
+  }, [ensureAIOrderProgressNarratives, refreshPortal])
 
   const handleRechargeConfirm = async () => {
     const result = await recharge()
@@ -88,6 +95,16 @@ export default function CustomerPortal() {
     const result = await cancelOrder(orderId)
     if (result.ok) {
       showNotice('订单已取消，金额已退回钱包。', 'success')
+      return
+    }
+
+    showNotice(result.message, 'error')
+  }
+
+  const handleCompleteOrder = async (orderId: string) => {
+    const result = await completeOrder(orderId)
+    if (result.ok) {
+      showNotice('订单已确认完成。', 'success')
       return
     }
 
@@ -193,8 +210,10 @@ export default function CustomerPortal() {
             aiDietReport={aiDietReport}
             aiDietReportLoading={aiDietReportLoading}
             aiDietReportError={aiDietReportError}
+            aiOrderProgressNarratives={aiOrderProgressNarratives}
             onOpenRecharge={() => setIsRechargeOpen(true)}
             onSelectOrder={(orderId) => void handleOpenOrderDetail(orderId)}
+            onCompleteOrder={(orderId) => void handleCompleteOrder(orderId)}
             onGenerateAIDietReport={() => void handleGenerateAIDietReport()}
           />
         </TabsContent>
@@ -212,6 +231,7 @@ export default function CustomerPortal() {
         onOpenChange={(open) => !open && setSelectedOrder(null)}
         onClose={() => setSelectedOrder(null)}
         onCancelOrder={(order) => void handleCancelOrder(order.id)}
+        onCompleteOrder={(order) => void handleCompleteOrder(order.id)}
       />
     </DeliveryPageShell>
   )

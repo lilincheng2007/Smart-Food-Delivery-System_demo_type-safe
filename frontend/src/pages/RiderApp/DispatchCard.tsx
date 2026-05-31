@@ -2,7 +2,7 @@ import { Bike } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Order } from '@/objects/order/Order'
 
 interface DispatchCardProps {
@@ -18,6 +18,7 @@ export function DispatchCard({ availableOrders, onGrabOrder }: DispatchCardProps
           <Bike className="size-5 text-orange-500" />
           抢单
         </CardTitle>
+        <CardDescription>这里展示商家已出餐、正在等待骑手接单取餐的订单</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {availableOrders.length === 0 ? (
@@ -30,6 +31,7 @@ export function DispatchCard({ availableOrders, onGrabOrder }: DispatchCardProps
                 <Badge variant="outline">{order.status}</Badge>
               </div>
               <p className="mt-1 text-sm text-slate-600">配送地址：{order.deliveryAddress}</p>
+              <p className="mt-1 text-sm text-slate-600">取餐说明：商家已出餐，接单后请前往取餐。</p>
               <p className="mt-1 text-sm text-slate-600">金额：{order.totalAmount} 元</p>
               <Button className="mt-3" size="sm" onClick={() => onGrabOrder(order.id)}>
                 抢这一单
