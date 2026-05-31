@@ -12,9 +12,10 @@ object RiderProfileTable:
     """
       |INSERT INTO rider_profiles (
       |  id, name, phone, realtime_location, status, total_orders,
-      |  rating, station, salary, wallet_balance, updated_at
+      |  rating, station, salary, energy_points, timeout_card_count,
+      |  timeout_count, timeout_exempted_count, wallet_balance, updated_at
       |)
-      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
+      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
       |ON CONFLICT (id) DO UPDATE SET
       |  name = EXCLUDED.name,
       |  phone = EXCLUDED.phone,
@@ -24,6 +25,10 @@ object RiderProfileTable:
       |  rating = EXCLUDED.rating,
       |  station = EXCLUDED.station,
       |  salary = EXCLUDED.salary,
+      |  energy_points = EXCLUDED.energy_points,
+      |  timeout_card_count = EXCLUDED.timeout_card_count,
+      |  timeout_count = EXCLUDED.timeout_count,
+      |  timeout_exempted_count = EXCLUDED.timeout_exempted_count,
       |  wallet_balance = EXCLUDED.wallet_balance,
       |  updated_at = now()
       |""".stripMargin
@@ -40,7 +45,8 @@ object RiderProfileTable:
 
   private val findSql: String =
     """
-      |SELECT id, name, phone, realtime_location, status, total_orders, rating, station, salary
+      |SELECT id, name, phone, realtime_location, status, total_orders, rating, station, salary,
+      |       energy_points, timeout_card_count, timeout_count, timeout_exempted_count
       |FROM rider_profiles
       |WHERE id = ?
       |""".stripMargin
@@ -70,7 +76,11 @@ object RiderProfileTable:
     statement.setDouble(7, rider.rating)
     statement.setString(8, rider.station)
     statement.setDouble(9, rider.salary)
-    statement.setDouble(10, walletBalance)
+    statement.setInt(10, rider.energyPoints)
+    statement.setInt(11, rider.timeoutCardCount)
+    statement.setInt(12, rider.timeoutCount)
+    statement.setInt(13, rider.timeoutExemptedCount)
+    statement.setDouble(14, walletBalance)
 
   private def readRider(resultSet: ResultSet): Rider =
     Rider(
@@ -82,7 +92,11 @@ object RiderProfileTable:
       totalOrders = resultSet.getInt("total_orders"),
       rating = resultSet.getBigDecimal("rating").doubleValue(),
       station = resultSet.getString("station"),
-      salary = resultSet.getBigDecimal("salary").doubleValue()
+      salary = resultSet.getBigDecimal("salary").doubleValue(),
+      energyPoints = resultSet.getInt("energy_points"),
+      timeoutCardCount = resultSet.getInt("timeout_card_count"),
+      timeoutCount = resultSet.getInt("timeout_count"),
+      timeoutExemptedCount = resultSet.getInt("timeout_exempted_count")
     )
 
 end RiderProfileTable

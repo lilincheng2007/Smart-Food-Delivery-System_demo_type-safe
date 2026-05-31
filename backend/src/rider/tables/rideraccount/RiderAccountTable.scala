@@ -37,7 +37,8 @@ object RiderAccountTable:
     """
       |SELECT a.username, a.role, a.password, a.rider_id,
       |       p.name, p.phone, p.realtime_location, p.status, p.total_orders,
-      |       p.rating, p.station, p.salary, p.wallet_balance
+      |       p.rating, p.station, p.salary, p.energy_points, p.timeout_card_count,
+      |       p.timeout_count, p.timeout_exempted_count, p.wallet_balance
       |FROM rider_accounts a
       |JOIN rider_profiles p ON p.id = a.rider_id
       |WHERE a.username = ?
@@ -66,7 +67,11 @@ object RiderAccountTable:
       totalOrders = resultSet.getInt("total_orders"),
       rating = resultSet.getBigDecimal("rating").doubleValue(),
       station = resultSet.getString("station"),
-      salary = resultSet.getBigDecimal("salary").doubleValue()
+      salary = resultSet.getBigDecimal("salary").doubleValue(),
+      energyPoints = resultSet.getInt("energy_points"),
+      timeoutCardCount = resultSet.getInt("timeout_card_count"),
+      timeoutCount = resultSet.getInt("timeout_count"),
+      timeoutExemptedCount = resultSet.getInt("timeout_exempted_count")
     )
     RiderAccountRecord(
       role = resultSet.getString("role"),

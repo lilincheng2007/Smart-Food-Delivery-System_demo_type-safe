@@ -1,4 +1,6 @@
 export * from './RiderAvailableOrdersApi'
 export * from './RiderGrabOrderApi'
 export * from './RiderMeApi'
+export * from './RiderRedeemTimeoutCardApi'
 export * from './RiderUpdateOrderStatusApi'
+export * from './RiderUseTimeoutCardApi'

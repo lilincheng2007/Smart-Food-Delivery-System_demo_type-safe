@@ -11,5 +11,9 @@ final case class Rider(
     totalOrders: Int,
     rating: Double,
     station: String,
-    salary: Double
+    salary: Double,
+    energyPoints: Int = 0,
+    timeoutCardCount: Int = 0,
+    timeoutCount: Int = 0,
+    timeoutExemptedCount: Int = 0
 )

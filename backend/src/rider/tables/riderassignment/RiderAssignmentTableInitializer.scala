@@ -21,8 +21,21 @@ object RiderAssignmentTableInitializer:
       |  status VARCHAR(32) NOT NULL CHECK (status IN ($assignmentStatusSql)),
       |  assigned_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       |  completed_at TIMESTAMPTZ,
+      |  deadline_at TIMESTAMPTZ,
+      |  was_timeout BOOLEAN NOT NULL DEFAULT false,
+      |  timeout_exempted BOOLEAN NOT NULL DEFAULT false,
+      |  timeout_card_used BOOLEAN NOT NULL DEFAULT false,
+      |  overtime_seconds INTEGER NOT NULL DEFAULT 0 CHECK (overtime_seconds >= 0),
+      |  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       |  UNIQUE (rider_id, order_id)
       |);
+      |
+      |ALTER TABLE rider_assignments ADD COLUMN IF NOT EXISTS deadline_at TIMESTAMPTZ;
+      |ALTER TABLE rider_assignments ADD COLUMN IF NOT EXISTS was_timeout BOOLEAN NOT NULL DEFAULT false;
+      |ALTER TABLE rider_assignments ADD COLUMN IF NOT EXISTS timeout_exempted BOOLEAN NOT NULL DEFAULT false;
+      |ALTER TABLE rider_assignments ADD COLUMN IF NOT EXISTS timeout_card_used BOOLEAN NOT NULL DEFAULT false;
+      |ALTER TABLE rider_assignments ADD COLUMN IF NOT EXISTS overtime_seconds INTEGER NOT NULL DEFAULT 0 CHECK (overtime_seconds >= 0);
+      |ALTER TABLE rider_assignments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
       |
       |CREATE INDEX IF NOT EXISTS rider_assignments_rider_id_idx ON rider_assignments(rider_id);
       |CREATE INDEX IF NOT EXISTS rider_assignments_order_id_idx ON rider_assignments(order_id);

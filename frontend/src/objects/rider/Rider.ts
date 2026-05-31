@@ -10,4 +10,8 @@ export interface Rider {
   rating: number
   station: string
   salary: number
+  energyPoints: number
+  timeoutCardCount: number
+  timeoutCount: number
+  timeoutExemptedCount: number
 }

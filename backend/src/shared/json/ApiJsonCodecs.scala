@@ -221,6 +221,10 @@ object ApiJsonCodecs:
   given Codec[RiderProfile] = deriveCodec
   given Codec[RiderAccountPublic] = deriveCodec
   given Codec[RiderAvailableOrdersResponse] = deriveCodec
+  given Codec[RiderDeliveryStatus] = deriveCodec
+  given Codec[RiderDeliverySettlement] = deriveCodec
+  given Codec[RiderTimeoutCardRedeemResponse] = deriveCodec
+  given Codec[RiderUseTimeoutCardResponse] = deriveCodec
   given Codec[RiderMeResponse] = deriveCodec
 
   given Codec[AIRecommendedProduct] = deriveCodec

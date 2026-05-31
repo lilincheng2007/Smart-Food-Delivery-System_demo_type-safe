@@ -21,10 +21,19 @@ object RiderProfileTableInitializer:
       |  rating NUMERIC(3, 2) NOT NULL CHECK (rating >= 0 AND rating <= 5),
       |  station VARCHAR(120) NOT NULL,
       |  salary NUMERIC(12, 2) NOT NULL CHECK (salary >= 0),
+      |  energy_points INTEGER NOT NULL DEFAULT 0 CHECK (energy_points >= 0),
+      |  timeout_card_count INTEGER NOT NULL DEFAULT 0 CHECK (timeout_card_count >= 0),
+      |  timeout_count INTEGER NOT NULL DEFAULT 0 CHECK (timeout_count >= 0),
+      |  timeout_exempted_count INTEGER NOT NULL DEFAULT 0 CHECK (timeout_exempted_count >= 0),
       |  wallet_balance NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (wallet_balance >= 0),
       |  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       |  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       |);
+      |
+      |ALTER TABLE rider_profiles ADD COLUMN IF NOT EXISTS energy_points INTEGER NOT NULL DEFAULT 0 CHECK (energy_points >= 0);
+      |ALTER TABLE rider_profiles ADD COLUMN IF NOT EXISTS timeout_card_count INTEGER NOT NULL DEFAULT 0 CHECK (timeout_card_count >= 0);
+      |ALTER TABLE rider_profiles ADD COLUMN IF NOT EXISTS timeout_count INTEGER NOT NULL DEFAULT 0 CHECK (timeout_count >= 0);
+      |ALTER TABLE rider_profiles ADD COLUMN IF NOT EXISTS timeout_exempted_count INTEGER NOT NULL DEFAULT 0 CHECK (timeout_exempted_count >= 0);
       |""".stripMargin
 
   def initialize(connection: Connection): IO[Unit] =

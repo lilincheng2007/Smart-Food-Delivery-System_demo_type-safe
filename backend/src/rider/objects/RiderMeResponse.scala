@@ -7,5 +7,6 @@ final case class RiderMeResponse(
     username: String,
     role: UserRole,
     riderAccount: RiderAccountPublic,
-    availableOrders: List[Order]
+    availableOrders: List[Order],
+    deliveryStatuses: List[RiderDeliveryStatus] = Nil
 )
