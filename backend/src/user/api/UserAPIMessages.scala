@@ -131,7 +131,7 @@ final case class RegisterAPIMessage(role: UserRole, username: String, password: 
 
   private def registerMerchant(connection: Connection): IO[Unit] =
     IO.realTime.map(_.toMillis).flatMap { nowMillis =>
-      val merchant = Merchant(s"m-$nowMillis", s"${username}的店铺", MerchantCategory.中餐, "请完善店铺地址", "", 5, Nil, Nil, None)
+      val merchant = Merchant(s"m-$nowMillis", s"${username}的店铺", MerchantCategory.中餐, "请完善店铺地址", "", 5, Nil, Nil, None, "")
       val account = MerchantAccountRecord(
         role = UserRole.merchant.toString,
         username = username,

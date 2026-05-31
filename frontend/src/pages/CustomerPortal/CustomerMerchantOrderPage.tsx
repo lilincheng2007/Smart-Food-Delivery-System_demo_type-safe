@@ -119,6 +119,9 @@ export default function CustomerMerchantOrderPage() {
                 <Badge variant="outline" className="mt-1 w-fit border-primary/25 text-primary">
                   {merchant.category}
                 </Badge>
+                {(merchant.description ?? '').trim() ? (
+                  <p className="max-w-2xl text-sm leading-relaxed text-foreground/75">{merchant.description}</p>
+                ) : null}
               </div>
             </div>
             {merchant.imageUrl?.trim() ? (

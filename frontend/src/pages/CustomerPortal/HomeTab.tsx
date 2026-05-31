@@ -162,6 +162,9 @@ export function HomeTab({ merchants, products }: HomeTabProps) {
                 <div className="space-y-1">
                   <p className="font-semibold text-foreground">{merchant.storeName}</p>
                   <p className="text-sm leading-relaxed text-muted-foreground">{merchant.address}</p>
+                  {(merchant.description ?? '').trim() ? (
+                    <p className="line-clamp-2 text-sm leading-relaxed text-foreground/75">{merchant.description}</p>
+                  ) : null}
                 </div>
                 <Badge variant="outline" className="shrink-0 border-primary/25 text-primary">
                   {merchant.category}

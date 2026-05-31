@@ -169,7 +169,40 @@ object ApiJsonCodecs:
   given Codec[OrderCancelResponse] = deriveCodec
 
   given Codec[Product] = deriveCodec
-  given Codec[Merchant] = deriveCodec
+
+  private val merchantDecoder0: Decoder[Merchant] = Decoder.instance { c =>
+    for
+      id <- c.downField("id").as[String]
+      storeName <- c.downField("storeName").as[String]
+      category <- c.downField("category").as[MerchantCategory]
+      address <- c.downField("address").as[String]
+      phone <- c.downField("phone").as[String]
+      rating <- c.downField("rating").as[Double]
+      tags <- c.downField("tags").as[List[String]]
+      featuredProductIds <- c.downField("featuredProductIds").as[List[String]]
+      imageUrl <- c.downField("imageUrl").as[Option[String]]
+      description <- c.downField("description").as[Option[String]]
+    yield Merchant(id, storeName, category, address, phone, rating, tags, featuredProductIds, imageUrl, description.getOrElse(""))
+  }
+
+  private val merchantEncoder0: Encoder[Merchant] = Encoder.instance { m =>
+    Json.obj(
+      "id" -> m.id.asJson,
+      "storeName" -> m.storeName.asJson,
+      "category" -> m.category.asJson,
+      "address" -> m.address.asJson,
+      "phone" -> m.phone.asJson,
+      "rating" -> m.rating.asJson,
+      "tags" -> m.tags.asJson,
+      "featuredProductIds" -> m.featuredProductIds.asJson,
+      "imageUrl" -> m.imageUrl.asJson,
+      "description" -> m.description.asJson
+    )
+  }
+
+  given Decoder[Merchant] = merchantDecoder0
+  given Encoder[Merchant] = merchantEncoder0
+  given Codec[Merchant] = Codec.from(merchantDecoder0, merchantEncoder0)
   given Codec[MerchantAccountRecord] = deriveCodec
   given Codec[MerchantStoreProfile] = deriveCodec
   given Codec[MerchantProfile] = deriveCodec
@@ -178,6 +211,7 @@ object ApiJsonCodecs:
   given Codec[CreateStoreRequest] = deriveCodec
   given Codec[UpdateStoreImageRequest] = deriveCodec
   given Codec[UpdateProductRequest] = deriveCodec
+  given Codec[ProductDescriptionPatch] = deriveCodec
   given Codec[CatalogResponse] = deriveCodec
   given Codec[MerchantAccountPublic] = deriveCodec
   given Codec[MerchantMeResponse] = deriveCodec
@@ -193,5 +227,10 @@ object ApiJsonCodecs:
   given Codec[AIRecommendedMerchant] = deriveCodec
   given Codec[AISearchResponse] = deriveCodec
   given Codec[AISearchRequest] = deriveCodec
+  given Codec[AIMerchantStoreDescriptionRequest] = deriveCodec
+  given Codec[AIMerchantStoreDescriptionResponse] = deriveCodec
+  given Codec[AIMerchantProductDescriptionsRequest] = deriveCodec
+  given Codec[AIGeneratedProductDescription] = deriveCodec
+  given Codec[AIMerchantProductDescriptionsResponse] = deriveCodec
 
 end ApiJsonCodecs

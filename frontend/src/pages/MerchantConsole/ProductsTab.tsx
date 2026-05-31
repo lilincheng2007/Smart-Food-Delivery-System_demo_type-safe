@@ -23,6 +23,8 @@ import type { UpdateProductRequest } from '@/objects/merchant/UpdateProductReque
 import { ListingStatuses } from '@/objects/shared/ids'
 import type { ListingStatus, ProductId } from '@/objects/shared/ids'
 
+import { MerchantAICopywritingCard } from './MerchantAICopywritingCard'
+
 type ProductsTabProps = {
   selectedStore: MerchantStoreProfile | null
   onCreateProduct: (input: CreateProductRequest) => Promise<void>
@@ -133,6 +135,8 @@ export function ProductsTab({ selectedStore, onCreateProduct, onEditProduct }: P
           </CardHeader>
         </Card>
       </section>
+
+      <MerchantAICopywritingCard selectedStore={selectedStore} />
 
       <Card className="border-orange-100 bg-white/95">
         <CardHeader>

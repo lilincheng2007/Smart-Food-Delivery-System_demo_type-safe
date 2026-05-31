@@ -11,5 +11,6 @@ final case class Merchant(
     rating: Double,
     tags: List[String],
     featuredProductIds: List[ProductId],
-    imageUrl: Option[String]
+    imageUrl: Option[String],
+    description: String = ""
 )

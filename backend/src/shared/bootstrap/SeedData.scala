@@ -30,7 +30,8 @@ object SeedData:
       4.8,
       List("五星店铺", "出餐快"),
       List("p-3001", "p-3002"),
-      Some("https://picsum.photos/seed/m2001-store/480/280")
+      Some("https://picsum.photos/seed/m2001-store/480/280"),
+      "锅气十足的家常小炒店，主打热乎下饭的经典中餐。"
     ),
     Merchant(
       "m-2002",
@@ -41,7 +42,8 @@ object SeedData:
       4.7,
       List("下午茶首选"),
       List("p-3003"),
-      Some("https://picsum.photos/seed/m2002-store/480/280")
+      Some("https://picsum.photos/seed/m2002-store/480/280"),
+      "把水果、奶香与轻甜灵感装进每一杯的下午茶小星球。"
     )
   )
 

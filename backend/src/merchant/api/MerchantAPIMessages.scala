@@ -119,7 +119,7 @@ final case class MerchantStoreAPIMessage(storeName: String, address: String) ext
         account <- MerchantAccountTable.findByUsername(connection, username)
         _ <- IO.fromOption(account)(HttpApiError.BadRequest("未找到商家账号"))
         nowMillis <- IO.realTime.map(_.toMillis)
-        merchant = Merchant(s"m-local-$nowMillis", storeName.trim, MerchantCategory.中餐, address.trim, account.map(_.profile.phone).getOrElse(""), 5, List("新店"), Nil, None)
+        merchant = Merchant(s"m-local-$nowMillis", storeName.trim, MerchantCategory.中餐, address.trim, account.map(_.profile.phone).getOrElse(""), 5, List("新店"), Nil, None, "")
         _ <- MerchantStoreTable.upsert(connection, username, merchant)
       yield merchant.id
 

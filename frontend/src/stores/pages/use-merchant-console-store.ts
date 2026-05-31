@@ -1,17 +1,25 @@
 import { create } from 'zustand'
 
+import { aiMerchantProductDescriptionsIO } from '@/api/ai/AIMerchantProductDescriptionsApi'
+import { aiMerchantStoreDescriptionIO } from '@/api/ai/AIMerchantStoreDescriptionApi'
 import { finishMerchantOrderCookingIO } from '@/api/merchant/MerchantOrderReadyApi'
 import { createMerchantProductIO } from '@/api/merchant/MerchantCreateProductApi'
+import { updateMerchantProductDescriptionsIO } from '@/api/merchant/MerchantProductDescriptionsApi'
 import { updateMerchantProductIO } from '@/api/merchant/MerchantProductApi'
 import { fetchMerchantMeIO } from '@/api/merchant/MerchantMeApi'
 import { uploadMerchantStoreImageFileIO } from '@/api/merchant/MerchantStoreImageFileApi'
+import { updateMerchantStoreDescriptionIO } from '@/api/merchant/MerchantStoreDescriptionApi'
 import { updateMerchantStoreImageIO } from '@/api/merchant/MerchantStoreImageApi'
 import { createMerchantStoreIO } from '@/api/merchant/MerchantStoreApi'
 import { runTask } from '@/api/shared/client'
+import type { AIMerchantProductDescriptionsResponse } from '@/objects/ai/AIMerchantProductDescriptionsResponse'
+import type { AIMerchantStoreDescriptionResponse } from '@/objects/ai/AIMerchantStoreDescriptionResponse'
 import type { CreateProductRequest } from '@/objects/merchant/CreateProductRequest'
 import type { MerchantAccountPublic } from '@/objects/merchant/MerchantAccountPublic'
 import type { MerchantStoreProfile } from '@/objects/merchant/MerchantStoreProfile'
+import type { ProductDescriptionPatch } from '@/objects/merchant/ProductDescriptionPatch'
 import type { UpdateProductRequest } from '@/objects/merchant/UpdateProductRequest'
+import type { MerchantId } from '@/objects/shared/ids'
 
 export type MerchantTab = 'products' | 'orders' | 'profile'
 
@@ -37,6 +45,10 @@ type MerchantConsoleStore = {
   finishCooking: (orderId: string) => Promise<void>
   createProduct: (input: CreateProductRequest) => Promise<void>
   updateProduct: (productId: string, input: UpdateProductRequest) => Promise<void>
+  generateStoreDescription: (merchantId: MerchantId, keywords: string) => Promise<AIMerchantStoreDescriptionResponse>
+  saveStoreDescription: (merchantId: MerchantId, description: string) => Promise<void>
+  generateProductDescriptions: (merchantId: MerchantId, keywords: string) => Promise<AIMerchantProductDescriptionsResponse>
+  saveProductDescriptions: (merchantId: MerchantId, descriptions: ProductDescriptionPatch[]) => Promise<void>
   updateStoreImage: (merchantId: string, imageUrl: string) => Promise<void>
   uploadStoreImageFile: (merchantId: string, file: File) => Promise<void>
 }
@@ -117,6 +129,18 @@ export const useMerchantConsoleStore = create<MerchantConsoleStore>()((set, get)
   },
   updateProduct: async (productId, input) => {
     await runTask(updateMerchantProductIO(productId, input))
+    await get().refreshMerchant()
+  },
+  generateStoreDescription: async (merchantId, keywords) =>
+    runTask(aiMerchantStoreDescriptionIO({ merchantId, keywords })),
+  saveStoreDescription: async (merchantId, description) => {
+    await runTask(updateMerchantStoreDescriptionIO(merchantId, description))
+    await get().refreshMerchant()
+  },
+  generateProductDescriptions: async (merchantId, keywords) =>
+    runTask(aiMerchantProductDescriptionsIO({ merchantId, keywords })),
+  saveProductDescriptions: async (merchantId, descriptions) => {
+    await runTask(updateMerchantProductDescriptionsIO(merchantId, descriptions))
     await get().refreshMerchant()
   },
   updateStoreImage: async (merchantId, imageUrl) => {

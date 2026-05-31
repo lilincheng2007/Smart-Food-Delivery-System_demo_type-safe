@@ -47,10 +47,12 @@ object MerchantRoutes:
     apiWithRole[MerchantMeAPIMessage, MerchantMeResponse]("merchant"),
     apiWithRole[MerchantProfileAPIMessage, OkResponse]("merchant"),
     apiWithRole[MerchantStoreAPIMessage, String]("merchant"),
+    apiWithRole[MerchantStoreDescriptionAPIMessage, OkResponse]("merchant"),
     apiWithRole[MerchantStoreImageAPIMessage, OkResponse]("merchant"),
     apiWithRole[MerchantStoreImageFileAPIMessage, String]("merchant"),
     apiWithRole[MerchantCreateProductAPIMessage, Product]("merchant"),
     apiWithRole[MerchantProductAPIMessage, Product]("merchant"),
+    apiWithRole[MerchantProductDescriptionsAPIMessage, OkResponse]("merchant"),
     apiWithRole[MerchantOrderReadyAPIMessage, OkResponse]("merchant")
   )
 

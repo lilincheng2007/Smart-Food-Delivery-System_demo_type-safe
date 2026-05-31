@@ -16,9 +16,9 @@ object MerchantStoreTable:
     """
       |INSERT INTO merchant_stores (
       |  id, owner_username, store_name, category, address, phone, rating,
-      |  tags, featured_product_ids, image_url, updated_at
+      |  tags, featured_product_ids, image_url, description, updated_at
       |)
-      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
+      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
       |ON CONFLICT (id) DO UPDATE SET
       |  owner_username = EXCLUDED.owner_username,
       |  store_name = EXCLUDED.store_name,
@@ -29,15 +29,16 @@ object MerchantStoreTable:
       |  tags = EXCLUDED.tags,
       |  featured_product_ids = EXCLUDED.featured_product_ids,
       |  image_url = EXCLUDED.image_url,
+      |  description = EXCLUDED.description,
       |  updated_at = now()
       |""".stripMargin
 
   private val upsertCatalogSql: String =
     """
       |INSERT INTO catalog_merchants (
-      |  id, store_name, category, address, phone, rating, tags, featured_product_ids, image_url, updated_at
+      |  id, store_name, category, address, phone, rating, tags, featured_product_ids, image_url, description, updated_at
       |)
-      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, now())
+      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
       |ON CONFLICT (id) DO UPDATE SET
       |  store_name = EXCLUDED.store_name,
       |  category = EXCLUDED.category,
@@ -47,6 +48,7 @@ object MerchantStoreTable:
       |  tags = EXCLUDED.tags,
       |  featured_product_ids = EXCLUDED.featured_product_ids,
       |  image_url = EXCLUDED.image_url,
+      |  description = EXCLUDED.description,
       |  updated_at = now()
       |""".stripMargin
 
@@ -68,7 +70,7 @@ object MerchantStoreTable:
 
   private val listCatalogSql: String =
     """
-      |SELECT id, store_name, category, address, phone, rating, tags, featured_product_ids, image_url
+      |SELECT id, store_name, category, address, phone, rating, tags, featured_product_ids, image_url, description
       |FROM catalog_merchants
       |ORDER BY updated_at DESC
       |""".stripMargin
@@ -88,7 +90,7 @@ object MerchantStoreTable:
 
   private val listByOwnerSql: String =
     """
-      |SELECT id, store_name, category, address, phone, rating, tags, featured_product_ids, image_url
+      |SELECT id, store_name, category, address, phone, rating, tags, featured_product_ids, image_url, description
       |FROM merchant_stores
       |WHERE owner_username = ?
       |ORDER BY updated_at DESC
@@ -123,6 +125,7 @@ object MerchantStoreTable:
         merchant.imageUrl match
           case Some(value) => statement.setString(10, value)
           case None        => statement.setNull(10, java.sql.Types.VARCHAR)
+        statement.setString(11, merchant.description)
       case None =>
         statement.setString(2, merchant.storeName)
         statement.setString(3, merchant.category.toString)
@@ -134,6 +137,7 @@ object MerchantStoreTable:
         merchant.imageUrl match
           case Some(value) => statement.setString(9, value)
           case None        => statement.setNull(9, java.sql.Types.VARCHAR)
+        statement.setString(10, merchant.description)
 
   private def readMerchant(resultSet: ResultSet): Merchant =
     Merchant(
@@ -145,7 +149,8 @@ object MerchantStoreTable:
       rating = resultSet.getBigDecimal("rating").doubleValue(),
       tags = decode[List[String]](resultSet.getString("tags")).getOrElse(Nil),
       featuredProductIds = decode[List[String]](resultSet.getString("featured_product_ids")).getOrElse(Nil),
-      imageUrl = Option(resultSet.getString("image_url"))
+      imageUrl = Option(resultSet.getString("image_url")),
+      description = Option(resultSet.getString("description")).getOrElse("")
     )
 
   private def jsonb(value: String): PGobject =
