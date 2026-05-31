@@ -159,7 +159,7 @@ export default function CustomerPortal() {
         </Card>
 
         <TabsContent value="home">
-          <HomeTab merchants={merchants} />
+          <HomeTab merchants={merchants} products={products} />
         </TabsContent>
 
         <TabsContent value="cart">

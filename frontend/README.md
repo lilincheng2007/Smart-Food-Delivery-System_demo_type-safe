@@ -1,122 +1,172 @@
-# Frontend Template
+# Delivery Frontend
 
-这是一个可直接复用的 `Vite + React + TypeScript + Zustand + shadcn/ui` 模板。
+`frontend/` 是外卖平台的 Web 前端，基于 Vite + React + TypeScript 构建。前端只通过 HTTP 调用后端 `APIMessage` 网关，页面状态由 Zustand 管理，UI 使用 shadcn/ui 与 Tailwind CSS。
 
-当前模板额外内置了一套适合和 Codex / agent 协作的 mock 架构：
+## 技术栈
 
-- 用户点击 mock 结果时，只走前端本地状态和页面跳转
-- 用户输入文字反馈时，才通过 `control server -> agent` 发送
-- 前端不会直接连接本地 `stdio` 形式的 Codex，也不会直接访问本地子进程
+- Vite 8
+- React 19
+- TypeScript 5
+- React Router
+- Zustand
+- shadcn/ui + Radix UI
+- Tailwind CSS v4
+- lucide-react
 
-当前模板已经补齐了这些基础设施：
-
-- `npm` 作为默认包管理器，并固定 `packageManager: npm@10.9.2`
-- `@/*` 路径别名
-- `zustand` 状态管理模板 store
-- `shadcn/ui` 所需的 `components.json`
-- Tailwind CSS v4 基础能力
-- `cn()` 工具函数
-- 一组常用 `shadcn` 基础组件：`button`、`badge`、`card`、`dialog`、`input`、`label`、`separator`、`sheet`、`textarea`
-
-## 开发命令
+## 启动
 
 ```bash
+cd frontend
 npm install
 npm run dev
 ```
 
-常用脚本：
+默认 Vite dev server 会将 `/api` 代理到 `http://localhost:8787`。请先启动后端，或在仓库根目录直接运行：
 
 ```bash
-npm run typecheck
-npm run lint
-npm run lint:fix
-npm run build
-npm run preview
+npm run dev
 ```
 
-## shadcn/ui 使用方式
+## 常用命令
 
-这个项目已经完成了 `shadcn` 初始化需要的关键配置，后续只需要直接加组件：
+| 命令 | 说明 |
+|---|---|
+| `npm run dev` | 启动 Vite 开发服务器 |
+| `npm run typecheck` | TypeScript 类型检查 |
+| `npm run lint` | ESLint 检查 |
+| `npm run lint:fix` | 自动修复可修复的 lint 问题 |
+| `npm run build` | 类型检查并构建生产产物 |
+| `npm run preview` | 预览生产构建 |
+| `npm run ui:add -- <component>` | 添加 shadcn/ui 组件 |
+
+## 环境变量
+
+| 变量 | 默认值 | 说明 |
+|---|---|---|
+| `VITE_BACKEND_URL` | `http://localhost:8787` | Vite dev proxy 的后端目标 |
+| `VITE_API_BASE` | `/api` | 前端 API base path |
+
+示例：
+
+```bash
+VITE_BACKEND_URL=http://localhost:8787 npm run dev
+```
+
+## 目录结构
+
+```text
+src/
+├── api/                    # APIMessage 封装
+│   ├── ai/                 # AI 搜索 API
+│   ├── merchant/           # 商家/目录 API
+│   ├── order/              # 订单 API
+│   ├── rider/              # 骑手 API
+│   ├── user/               # 登录、注册、顾客资料 API
+│   └── shared/             # sendAPI、client、TaskIO、APIMessage 基类
+├── components/             # 通用组件
+│   ├── ui/                 # shadcn/ui 组件
+│   ├── AISearchBar.tsx
+│   └── AISearchResults.tsx
+├── lib/                    # auth session、媒体 URL、工具函数
+├── objects/                # 与后端对应的契约对象
+├── pages/                  # 页面模块
+├── stores/                 # Zustand store
+├── router.tsx              # 路由定义
+├── main.tsx                # React 入口
+└── index.css               # 全局样式与 Tailwind
+```
+
+## 页面路由
+
+| 路由 | 页面 | 角色 |
+|---|---|---|
+| `/auth/login` | 登录页 | 游客 |
+| `/auth/register` | 注册页 | 游客 |
+| `/delivery/customer` | 顾客首页/订单/钱包等 | 顾客 |
+| `/delivery/customer/m/:merchantId` | 店内点餐页 | 顾客 |
+| `/delivery/customer/checkout` | 顾客结算页 | 顾客 |
+| `/delivery/merchant` | 商家控制台 | 商家 |
+| `/delivery/rider` | 骑手工作台 | 骑手 |
+
+路由守卫位于 `src/components/RoleRouteGuards.tsx`，会根据 `src/lib/auth-session.ts` 中保存的 JWT 与角色控制访问。
+
+## API 调用方式
+
+前端 API 使用统一模式：
+
+```text
+APIMessage class -> sendAPI -> POST /api/{apiName}
+```
+
+关键文件：
+
+- `src/api/shared/APIMessage.ts`：前端 APIMessage 基类
+- `src/api/shared/sendAPI.ts`：根据 `apiName` 发起请求
+- `src/api/shared/client.ts`：注入 `Authorization: Bearer <token>`，统一处理错误
+- `src/api/shared/TaskIO.ts`：任务式异步封装
+
+示例：`src/api/ai/AISearchApi.ts` 中的 `AISearchAPI` 会调用：
+
+```text
+POST /api/aisearchapi
+```
+
+## 状态管理
+
+页面级业务状态使用 Zustand：
+
+```text
+src/stores/pages/
+├── use-login-page-store.ts
+├── use-customer-portal-store.ts
+├── use-merchant-console-store.ts
+└── use-rider-app-store.ts
+```
+
+注意：前端状态只负责页面展示和交互缓存，订单、钱包、商家商品等真实业务数据必须以后端返回为准。
+
+## AI 搜索
+
+顾客端首页集成 AI 搜索：
+
+- `src/components/AISearchBar.tsx`：搜索输入框，支持 500ms 防抖和回车搜索。
+- `src/components/AISearchResults.tsx`：按商家逐行展示推荐结果，店铺图在左侧，推荐菜品横向滚动展示。
+- `src/pages/CustomerPortal/HomeTab.tsx`：调用 `aiSearchIO({ query })` 并渲染搜索结果、加载骨架屏和错误重试。
+- `src/objects/ai/` 与 `src/api/ai/`：与后端 `backend/src/ai/` 保持契约对应。
+
+AI 返回商家与菜品 ID，前端结合当前目录数据补充店铺图、菜品图并跳转到对应店铺点餐页。
+
+## UI 与样式
+
+- `src/components/ui/` 存放 shadcn/ui 组件。
+- `src/lib/utils.ts` 提供 `cn()`。
+- `src/index.css` 定义 Tailwind CSS v4 与全局样式。
+
+添加 shadcn/ui 组件：
 
 ```bash
 npm run ui:add -- button
 npm run ui:add -- card dialog sheet
 ```
 
-生成组件时会默认使用这些别名：
+## 开发约定
 
-- `@/components`
-- `@/components/ui`
-- `@/hooks`
-- `@/lib`
-- `@/lib/utils`
+- 新增业务接口时，在 `src/api/<module>/` 增加一个对应 API 文件。
+- 新增契约对象时，在 `src/objects/<module>/` 增加同名对象文件，并同步后端 `objects/`。
+- 不在前端伪造真实业务结果；涉及下单、取消、充值、保存资料等操作必须调用后端 API。
+- 会话本地只保存 JWT、账号、角色和登录时间，业务数据通过 API 刷新。
 
-当前项目已经内置的常用组件目录：
+## 构建产物
 
-- [src/components/ui/button.tsx](/home/yang/projects/commons/frontend-sample/src/components/ui/button.tsx)
-- [src/components/ui/badge.tsx](/home/yang/projects/commons/frontend-sample/src/components/ui/badge.tsx)
-- [src/components/ui/card.tsx](/home/yang/projects/commons/frontend-sample/src/components/ui/card.tsx)
-- [src/components/ui/dialog.tsx](/home/yang/projects/commons/frontend-sample/src/components/ui/dialog.tsx)
-- [src/components/ui/input.tsx](/home/yang/projects/commons/frontend-sample/src/components/ui/input.tsx)
-- [src/components/ui/label.tsx](/home/yang/projects/commons/frontend-sample/src/components/ui/label.tsx)
-- [src/components/ui/separator.tsx](/home/yang/projects/commons/frontend-sample/src/components/ui/separator.tsx)
-- [src/components/ui/sheet.tsx](/home/yang/projects/commons/frontend-sample/src/components/ui/sheet.tsx)
-- [src/components/ui/textarea.tsx](/home/yang/projects/commons/frontend-sample/src/components/ui/textarea.tsx)
+生产构建输出到：
 
-## Zustand 模板入口
+```text
+dist/
+```
 
-默认 store 在 [src/stores/use-app-store.ts](/home/yang/projects/commons/frontend-sample/src/stores/use-app-store.ts)。
+运行：
 
-这个 store 目前已经放了这些模板字段：
-
-- `theme`
-- `activeToolPanel`
-- `mockRoute`
-
-你后续可以直接在这里继续扩展全局 UI 状态、用户信息或轻量业务状态。
-
-## Mock 约定
-
-这份模板现在明确区分两条链路：
-
-- `Mock result click -> local UI`
-  - 例如登录成功、权限不足、库存耗尽，这些都只更新前端状态并切换 mock 路由
-- `Typed feedback -> control server -> agent`
-  - 当你输入“还缺少一种情况”或“应该补一个页面”这类文字意见时，才会通过 feedback bridge 发给 agent
-
-默认示例页现在只保留一个左侧“事件”按钮，用来模拟非按钮交互。
-如果某个按钮交互本身还缺状态分支或跳转页，直接在对应的 mock 弹窗里点“这个交互有遗漏”即可进入文字反馈。
-
-对应实现文件：
-
-- [src/App.tsx](/home/yang/projects/commons/frontend-sample/src/App.tsx)
-- [src/components/MockSystemProvider.tsx](/home/yang/projects/commons/frontend-sample/src/components/MockSystemProvider.tsx)
-- [src/components/FeedbackModal.tsx](/home/yang/projects/commons/frontend-sample/src/components/FeedbackModal.tsx)
-- [src/components/MockInteractionModal.tsx](/home/yang/projects/commons/frontend-sample/src/components/MockInteractionModal.tsx)
-- [src/lib/agent-feedback-client.ts](/home/yang/projects/commons/frontend-sample/src/lib/agent-feedback-client.ts)
-
-## 关键文件
-
-- [components.json](/home/yang/projects/commons/frontend-sample/components.json)
-- [postcss.config.mjs](/home/yang/projects/commons/frontend-sample/postcss.config.mjs)
-- [vite.config.ts](/home/yang/projects/commons/frontend-sample/vite.config.ts)
-- [tsconfig.app.json](/home/yang/projects/commons/frontend-sample/tsconfig.app.json)
-- [src/index.css](/home/yang/projects/commons/frontend-sample/src/index.css)
-- [src/lib/utils.ts](/home/yang/projects/commons/frontend-sample/src/lib/utils.ts)
-- [src/components/ui/button.tsx](/home/yang/projects/commons/frontend-sample/src/components/ui/button.tsx)
-- [src/lib/agent-feedback-client.ts](/home/yang/projects/commons/frontend-sample/src/lib/agent-feedback-client.ts)
-
-## 关于 Tailwind 方案
-
-当前项目保留了 `vite@8`，因此没有使用 `@tailwindcss/vite` 插件，而是改用 Tailwind CSS v4 的 PostCSS 集成方式。这个方案对当前依赖树更稳定，也不影响 `shadcn/ui` 的后续使用。
-
-## Agent Bridge
-
-[src/lib/agent-feedback-client.ts](/home/yang/projects/commons/frontend-sample/src/lib/agent-feedback-client.ts) 里固定写死了：
-
-- `const CONTROL_SERVER_ORIGIN = 'http://127.0.0.1:4311'`
-- POST `http://127.0.0.1:4311/api/workspace/turn`
-- 请求体格式：`{ prompt: string, mode: 'mock' }`
-
-这部分是给“文字反馈”用的，不是给 mock 结果点击用的。
+```bash
+npm run build
+npm run preview
+```

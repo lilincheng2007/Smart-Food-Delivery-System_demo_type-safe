@@ -1,5 +1,6 @@
 package delivery.shared.json
 
+import delivery.ai.objects.*
 import delivery.merchant.objects.*
 import delivery.merchant.tables.*
 import delivery.order.objects.*
@@ -187,5 +188,10 @@ object ApiJsonCodecs:
   given Codec[RiderAccountPublic] = deriveCodec
   given Codec[RiderAvailableOrdersResponse] = deriveCodec
   given Codec[RiderMeResponse] = deriveCodec
+
+  given Codec[AIRecommendedProduct] = deriveCodec
+  given Codec[AIRecommendedMerchant] = deriveCodec
+  given Codec[AISearchResponse] = deriveCodec
+  given Codec[AISearchRequest] = deriveCodec
 
 end ApiJsonCodecs
