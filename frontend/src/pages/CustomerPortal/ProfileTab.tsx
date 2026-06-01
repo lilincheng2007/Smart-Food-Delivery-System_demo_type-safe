@@ -1,4 +1,4 @@
-import { Clock3, Loader2, Sparkles, TrendingUp, UserCircle, UserRound, Wallet } from 'lucide-react'
+import { Clock3, Crown, Loader2, Sparkles, TicketPercent, TrendingUp, UserCircle, UserRound, Wallet } from 'lucide-react'
 
 import { DeliveryLogoutBar } from '@/components/DeliveryLogoutBar'
 
@@ -6,11 +6,13 @@ import { DeliveryContactsSection } from './DeliveryContactsSection'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
 import type { AIDietWeeklyReportResponse } from '@/objects/ai/AIDietWeeklyReportResponse'
 import type { AIOrderProgressNarrativesResponse } from '@/objects/ai/AIOrderProgressNarrativesResponse'
 import type { Merchant } from '@/objects/merchant/Merchant'
 import type { Order } from '@/objects/order/Order'
 import { OrderStatuses, type OrderId } from '@/objects/shared/ids'
+import type { Voucher } from '@/objects/shared/Voucher'
 
 type ProfileTabProps = {
   username: string
@@ -18,6 +20,9 @@ type ProfileTabProps = {
   merchants: Merchant[]
   pendingOrders: Order[]
   historyOrders: Order[]
+  vouchers: Voucher[]
+  foodiePoints: number
+  foodieLevel: number
   aiDietReport: AIDietWeeklyReportResponse | null
   aiDietReportLoading: boolean
   aiDietReportError: string | null
@@ -34,6 +39,9 @@ export function ProfileTab({
   merchants,
   pendingOrders,
   historyOrders,
+  vouchers,
+  foodiePoints,
+  foodieLevel,
   aiDietReport,
   aiDietReportLoading,
   aiDietReportError,
@@ -86,6 +94,14 @@ export function ProfileTab({
   }
 
   const orderProgressNarratives = buildOrderProgressNarratives([...pendingOrders, ...historyOrders])
+  const safeFoodiePoints = Number.isFinite(foodiePoints) ? Math.max(0, Math.floor(foodiePoints)) : 0
+  const safeFoodieLevel =
+    Number.isFinite(foodieLevel) && foodieLevel > 0 ? Math.floor(foodieLevel) : Math.floor(safeFoodiePoints / 200) + 1
+  const levelBase = Math.max(0, (safeFoodieLevel - 1) * 200)
+  const pointsInLevel = Math.max(0, safeFoodiePoints - levelBase)
+  const pointsToNextLevel = Math.max(0, 200 - pointsInLevel)
+  const progress = Math.min(100, (pointsInLevel / 200) * 100)
+  const availableVouchers = vouchers.filter((voucher) => voucher.remainingCount > 0)
 
   return (
     <div className="space-y-6">
@@ -118,6 +134,58 @@ export function ProfileTab({
             </CardTitle>
             <p className="text-xs text-muted-foreground">登录账号，用于识别您的顾客身份</p>
           </CardHeader>
+        </Card>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <Card className="relative overflow-hidden border-orange-200/70 bg-gradient-to-br from-[#E11D48]/90 via-[#F97316]/90 to-[#FDBA74]/90 py-0 text-white shadow-[0_24px_70px_rgba(249,115,22,0.25)]">
+          <div className="pointer-events-none absolute -right-10 -top-10 size-36 rounded-full bg-white/20 blur-sm" />
+          <CardHeader className="relative gap-3 pb-3">
+            <div className="flex items-center justify-between gap-3">
+              <CardDescription className="text-white/80">吃货等级</CardDescription>
+              <span className="flex size-10 items-center justify-center rounded-2xl bg-white/20 shadow-inner backdrop-blur-sm">
+                <Crown className="size-5" aria-hidden />
+              </span>
+            </div>
+            <CardTitle className="text-3xl font-bold tracking-tight">Lv.{safeFoodieLevel} 美食探索家</CardTitle>
+            <p className="text-sm text-white/85">累计 {safeFoodiePoints} 积分 · 每 200 积分升 1 级，升级即得满30减10券</p>
+          </CardHeader>
+          <CardContent className="relative space-y-3 pb-5">
+            <Progress value={progress} className="h-2 bg-white/25" />
+            <div className="flex items-center justify-between text-xs text-white/85">
+              <span>本级进度 {Math.floor(pointsInLevel)}/200</span>
+              <span>{pointsToNextLevel === 0 ? '即将升级' : `距下一级还差 ${pointsToNextLevel} 积分`}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden border-orange-200/70 bg-gradient-to-br from-orange-50/95 via-card to-rose-50/80 py-0 shadow-[0_18px_50px_rgba(249,115,22,0.12)] backdrop-blur-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <span className="flex size-9 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
+                <TicketPercent className="size-5" aria-hidden />
+              </span>
+              我的优惠券
+            </CardTitle>
+            <CardDescription>当前可用 {availableVouchers.length} 张，结算时可选择抵扣</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 pb-5">
+            {availableVouchers.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-orange-200 bg-white/70 px-3 py-3 text-sm text-muted-foreground">
+                暂无可用券，完成订单升级后会自动发放满30减10券。
+              </p>
+            ) : (
+              availableVouchers.slice(0, 3).map((voucher) => (
+                <div key={voucher.id} className="flex items-center justify-between rounded-2xl border border-orange-200 bg-white/80 px-4 py-3 shadow-sm">
+                  <div>
+                    <p className="font-semibold text-orange-700">{voucher.title}</p>
+                    <p className="text-xs text-muted-foreground">满 ¥{voucher.minSpend.toFixed(0)} 可用 · 至 {voucher.expiresAt}</p>
+                  </div>
+                  <Badge className="bg-orange-500 text-white">×{voucher.remainingCount}</Badge>
+                </div>
+              ))
+            )}
+          </CardContent>
         </Card>
       </section>
 
@@ -302,6 +370,7 @@ export function ProfileTab({
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">商家：{getMerchantName(order.merchantId)}</p>
                 <p className="mt-1 text-sm text-muted-foreground">收货地址：{order.deliveryAddress}</p>
+                <p className="mt-1 text-sm text-muted-foreground">实付：¥{order.payableAmount.toFixed(2)} · 预计积分：{Math.floor(order.payableAmount)}</p>
                 {orderProgressNarratives.get(order.id) && (
                   <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-sm text-primary shadow-sm">
                     <Sparkles className="size-4 shrink-0" aria-hidden />
@@ -350,7 +419,7 @@ export function ProfileTab({
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">商家：{getMerchantName(order.merchantId)}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  金额：{order.totalAmount} 元 · 下单时间：{order.placedAt}
+                  实付：¥{order.payableAmount.toFixed(2)} · 获得积分：{order.pointsAwarded} · 下单时间：{order.placedAt}
                 </p>
                 {getOrderStatusDescription(order) && (
                   <p className="mt-2 text-xs font-medium text-primary">{getOrderStatusDescription(order)}</p>

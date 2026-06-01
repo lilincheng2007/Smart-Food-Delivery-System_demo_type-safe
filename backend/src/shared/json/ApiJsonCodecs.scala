@@ -72,7 +72,44 @@ object ApiJsonCodecs:
   given Codec[Voucher] = deriveCodec
   given Codec[OrderItem] = deriveCodec
 
-  private val orderDecoder0: Decoder[Order] = deriveDecoder
+  private val orderDecoder0: Decoder[Order] = Decoder.instance { c =>
+    for
+      id <- c.downField("id").as[String]
+      customerId <- c.downField("customerId").as[String]
+      customerName <- c.downField("customerName").as[String]
+      customerPhone <- c.downField("customerPhone").as[String]
+      merchantId <- c.downField("merchantId").as[String]
+      riderId <- c.downField("riderId").as[Option[String]]
+      items <- c.downField("items").as[List[OrderItem]]
+      totalAmount <- c.downField("totalAmount").as[Double]
+      deliveryAddress <- c.downField("deliveryAddress").as[String]
+      status <- c.downField("status").as[OrderStatus]
+      placedAt <- c.downField("placedAt").as[String]
+      originalAmount <- c.downField("originalAmount").as[Option[Double]]
+      discountAmount <- c.downField("discountAmount").as[Option[Double]]
+      payableAmount <- c.downField("payableAmount").as[Option[Double]]
+      usedVoucher <- c.downField("usedVoucher").as[Option[Voucher]]
+      pointsAwarded <- c.downField("pointsAwarded").as[Option[Int]]
+    yield Order(
+      id,
+      customerId,
+      customerName,
+      customerPhone,
+      merchantId,
+      riderId,
+      items,
+      totalAmount,
+      deliveryAddress,
+      status,
+      placedAt,
+      originalAmount.getOrElse(totalAmount),
+      discountAmount.getOrElse(0),
+      payableAmount.getOrElse(totalAmount),
+      usedVoucher,
+      pointsAwarded.getOrElse(0)
+    )
+  }
+
   private val orderEncoder0: Encoder[Order] = Encoder.instance { o =>
     val fields = List.newBuilder[(String, Json)]
     fields += "id" -> o.id.asJson
@@ -86,6 +123,11 @@ object ApiJsonCodecs:
     fields += "deliveryAddress" -> o.deliveryAddress.asJson
     fields += "status" -> o.status.asJson
     fields += "placedAt" -> o.placedAt.asJson
+    fields += "originalAmount" -> o.originalAmount.asJson
+    fields += "discountAmount" -> o.discountAmount.asJson
+    fields += "payableAmount" -> o.payableAmount.asJson
+    o.usedVoucher.foreach(voucher => fields += "usedVoucher" -> voucher.asJson)
+    fields += "pointsAwarded" -> o.pointsAwarded.asJson
     Json.obj(fields.result()*)
   }
 
@@ -106,6 +148,8 @@ object ApiJsonCodecs:
       pendingOrders <- c.downField("pendingOrders").as[List[Order]]
       historyOrders <- c.downField("historyOrders").as[List[Order]]
       contactsOpt <- c.downField("deliveryContacts").as[Option[List[CustomerDeliveryContact]]]
+      foodiePoints <- c.downField("foodiePoints").as[Option[Int]]
+      foodieLevel <- c.downField("foodieLevel").as[Option[Int]]
     yield
       val rawList = contactsOpt.getOrElse(Nil)
       val contacts =
@@ -120,7 +164,7 @@ object ApiJsonCodecs:
               isDefault = true
             )
           )
-      CustomerProfile(id, name, phone, defaultAddress, vouchers, walletBalance, pendingOrders, historyOrders, contacts)
+      CustomerProfile(id, name, phone, defaultAddress, vouchers, walletBalance, pendingOrders, historyOrders, contacts, foodiePoints.getOrElse(0), foodieLevel.getOrElse(1))
   }
 
   private val customerProfileEncoder: Encoder[CustomerProfile] = Encoder.instance { p =>
@@ -133,7 +177,9 @@ object ApiJsonCodecs:
       "walletBalance" -> p.walletBalance.asJson,
       "pendingOrders" -> p.pendingOrders.asJson,
       "historyOrders" -> p.historyOrders.asJson,
-      "deliveryContacts" -> p.deliveryContacts.asJson
+      "deliveryContacts" -> p.deliveryContacts.asJson,
+      "foodiePoints" -> p.foodiePoints.asJson,
+      "foodieLevel" -> p.foodieLevel.asJson
     )
   }
 
@@ -149,7 +195,8 @@ object ApiJsonCodecs:
       cn <- c.downField("customerName").as[Option[String]]
       cp <- c.downField("customerPhone").as[Option[String]]
       da <- c.downField("deliveryAddress").as[Option[String]]
-    yield CheckoutRequest(lines, cn, cp, da)
+      voucherId <- c.downField("voucherId").as[Option[String]]
+    yield CheckoutRequest(lines, cn, cp, da, voucherId)
   }
 
   private val checkoutRequestEncoder: Encoder[CheckoutRequest] = Encoder.instance { r =>
@@ -158,7 +205,8 @@ object ApiJsonCodecs:
         "lines" -> r.lines.asJson,
         "customerName" -> r.customerName.asJson,
         "customerPhone" -> r.customerPhone.asJson,
-        "deliveryAddress" -> r.deliveryAddress.asJson
+        "deliveryAddress" -> r.deliveryAddress.asJson,
+        "voucherId" -> r.voucherId.asJson
       )
       .dropNullValues
   }

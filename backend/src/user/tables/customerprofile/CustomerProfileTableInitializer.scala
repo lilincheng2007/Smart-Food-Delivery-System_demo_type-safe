@@ -20,8 +20,13 @@ object CustomerProfileTableInitializer:
       |  pending_orders JSONB NOT NULL DEFAULT '[]'::jsonb,
       |  history_orders JSONB NOT NULL DEFAULT '[]'::jsonb,
       |  delivery_contacts JSONB NOT NULL DEFAULT '[]'::jsonb,
+      |  foodie_points INTEGER NOT NULL DEFAULT 0 CHECK (foodie_points >= 0),
+      |  foodie_level INTEGER NOT NULL DEFAULT 1 CHECK (foodie_level >= 1),
       |  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       |);
+      |
+      |ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS foodie_points INTEGER NOT NULL DEFAULT 0 CHECK (foodie_points >= 0);
+      |ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS foodie_level INTEGER NOT NULL DEFAULT 1 CHECK (foodie_level >= 1);
       |
       |CREATE INDEX IF NOT EXISTS customer_profiles_username_idx ON customer_profiles(username);
       |""".stripMargin

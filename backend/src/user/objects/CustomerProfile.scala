@@ -12,5 +12,7 @@ final case class CustomerProfile(
     walletBalance: Double,
     pendingOrders: List[Order],
     historyOrders: List[Order],
-    deliveryContacts: List[CustomerDeliveryContact] = Nil
+    deliveryContacts: List[CustomerDeliveryContact] = Nil,
+    foodiePoints: Int = 0,
+    foodieLevel: Int = 1
 )

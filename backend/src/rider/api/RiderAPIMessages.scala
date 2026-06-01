@@ -39,18 +39,16 @@ final case class RiderMeAPIMessage() extends APIWithRoleMessage[RiderMeResponse]
         case None => IO.pure(None)
         case Some(value) =>
           for
-            orders <- OrderTable.list(connection)
+            assignedOrders <- OrderTable.listByRiderId(connection, value.profile.rider.id)
+            availableOrders <- OrderTable.listAvailableUnassigned(connection)
             records <- RiderAssignmentTable.listByRider(connection, value.profile.rider.id)
           yield
-            val riderId = value.profile.rider.id
-            val assignedOrders = orders.filter(_.riderId.contains(riderId))
             val nextAccount = value.copy(profile =
               value.profile.copy(
                 pendingOrders = assignedOrders.filterNot(order => isHistoryOrderStatus(order.status)),
                 historyOrders = assignedOrders.filter(order => isHistoryOrderStatus(order.status))
               )
             )
-            val availableOrders = orders.filter(order => isAvailableOrder(order.status) && order.riderId.isEmpty)
             val deliveryStatuses = records.map(record => statusView(record, nextAccount.profile.rider.timeoutCardCount > 0))
             Some(RiderApiSupport.riderMeResponse(username, nextAccount, availableOrders, deliveryStatuses))
       output <- response match
@@ -63,7 +61,7 @@ final case class RiderAvailableOrdersAPIMessage() extends APIWithRoleMessage[Rid
     RiderAccountTable.findByUsername(connection, username).flatMap {
       case None => IO.raiseError(HttpApiError.NotFound(RiderApiSupport.riderNotFound.error))
       case Some(_) =>
-        OrderTable.list(connection).map(orders => RiderAvailableOrdersResponse(orders.filter(order => isAvailableOrder(order.status) && order.riderId.isEmpty)))
+        OrderTable.listAvailableUnassigned(connection).map(RiderAvailableOrdersResponse(_))
     }
 
 final case class RiderGrabOrderAPIMessage(orderId: OrderId) extends APIWithRoleMessage[OkResponse]:
@@ -73,10 +71,9 @@ final case class RiderGrabOrderAPIMessage(orderId: OrderId) extends APIWithRoleM
         case Some(value) => IO.pure(value)
         case None        => IO.raiseError(HttpApiError.BadRequest("未找到骑手账号"))
       }
-      orders <- OrderTable.list(connection)
+      activeOrderCount <- OrderTable.countActiveByRider(connection, account.profile.rider.id)
       _ <-
-        if orders.count(order => order.riderId.contains(account.profile.rider.id) && !isHistoryOrderStatus(order.status)) >= 5 then
-          IO.raiseError(HttpApiError.BadRequest("当前骑手最多同时配送 5 单"))
+        if activeOrderCount >= 5 then IO.raiseError(HttpApiError.BadRequest("当前骑手最多同时配送 5 单"))
         else IO.unit
       order <- OrderTable.findById(connection, orderId).flatMap {
         case Some(value) => IO.pure(value)
@@ -119,9 +116,7 @@ final case class RiderUpdateOrderStatusAPIMessage(orderId: OrderId, targetStatus
       earnedEnergy = if wasTimeout then 0 else RiderTimeoutPolicy.EnergyPerDeliveredOrder
       autoUseCard = wasTimeout && account.profile.rider.timeoutCardCount > 0
       updatedOrder = order.copy(status = targetStatus)
-      remainingPending <- OrderTable.list(connection).map(_.count(existing =>
-        existing.id != orderId && existing.riderId.contains(account.profile.rider.id) && !isHistoryOrderStatus(existing.status)
-      ))
+      remainingPending <- OrderTable.countActiveByRider(connection, account.profile.rider.id, excludingOrderId = Some(orderId))
       nextStatus = if remainingPending > 0 then RiderStatus.配送中 else RiderStatus.空闲
       currentRider = account.profile.rider
       updatedRider = currentRider.copy(

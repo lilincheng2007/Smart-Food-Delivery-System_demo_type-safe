@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Separator } from '@/components/ui/separator'
 import type { Order } from '@/objects/order/Order'
 import { OrderStatuses } from '@/objects/shared/ids'
 import type { OrderStatus } from '@/objects/shared/ids'
@@ -53,9 +54,29 @@ export function OrderDetailDialog({
         </DialogHeader>
         {selectedOrder ? (
           <div className="space-y-3">
-            <div className="rounded-xl bg-orange-50 px-3 py-2 text-sm text-slate-700">
-              订单金额：
-              <span className="ml-1 font-semibold text-orange-600">¥{selectedOrder.totalAmount.toFixed(2)}</span>
+            <div className="space-y-2 rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-rose-50 px-4 py-3 text-sm text-slate-700">
+              <div className="flex items-center justify-between">
+                <span>商品原价</span>
+                <span className="tabular-nums">¥{selectedOrder.originalAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex items-center justify-between text-green-600">
+                <span>优惠抵扣</span>
+                <span className="tabular-nums">-¥{selectedOrder.discountAmount.toFixed(2)}</span>
+              </div>
+              {selectedOrder.usedVoucher ? (
+                <p className="rounded-lg bg-white/70 px-2 py-1 text-xs text-orange-700">
+                  已使用：{selectedOrder.usedVoucher.title}
+                </p>
+              ) : null}
+              <Separator className="bg-orange-100" />
+              <div className="flex items-center justify-between font-semibold text-orange-700">
+                <span>实付金额</span>
+                <span className="text-lg tabular-nums">¥{selectedOrder.payableAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <span>{selectedOrder.pointsAwarded > 0 ? '已获得积分' : '预计获得积分'}</span>
+                <span>+{selectedOrder.pointsAwarded > 0 ? selectedOrder.pointsAwarded : Math.floor(selectedOrder.payableAmount)}</span>
+              </div>
             </div>
             <div className="rounded-xl bg-orange-50 px-3 py-2 text-sm text-slate-700">
               当前状态：

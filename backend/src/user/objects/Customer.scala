@@ -9,5 +9,7 @@ final case class Customer(
     defaultAddress: String,
     walletBalance: Double,
     orderHistoryIds: List[OrderId],
-    vouchers: List[Voucher]
+    vouchers: List[Voucher],
+    foodiePoints: Int = 0,
+    foodieLevel: Int = 1
 )

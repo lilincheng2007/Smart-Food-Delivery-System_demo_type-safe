@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, ClipboardList, MapPin, Phone, User } from 'lucide-react'
+import { ArrowLeft, ClipboardList, MapPin, Phone, TicketPercent, User } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { DeliveryPageShell } from '@/components/DeliveryPageShell'
@@ -22,6 +22,7 @@ export default function CustomerCheckoutPage() {
   const [submitting, setSubmitting] = useState(false)
   const [addContactOpen, setAddContactOpen] = useState(false)
   const [selectedId, setSelectedId] = useState('')
+  const [selectedVoucherId, setSelectedVoucherId] = useState('none')
 
   const bootstrapDone = useCustomerPortalStore((s) => s.bootstrapDone)
   const loadError = useCustomerPortalStore((s) => s.loadError)
@@ -57,7 +58,23 @@ export default function CustomerCheckoutPage() {
     }, 0)
   }, [lines, products])
 
-  const insufficient = walletBalance < total
+  const vouchers = customerAccount?.profile.vouchers ?? []
+  const todayStart = useMemo(() => {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  }, [])
+  const isVoucherExpired = (expiresAt: string) => {
+    const time = Date.parse(`${expiresAt}T00:00:00`)
+    return Number.isNaN(time) || time < todayStart
+  }
+  const usableVouchers = vouchers.filter(
+    (voucher) => voucher.remainingCount > 0 && total >= voucher.minSpend && !isVoucherExpired(voucher.expiresAt),
+  )
+  const selectedVoucher = usableVouchers.find((voucher) => voucher.id === selectedVoucherId)
+  const discount = selectedVoucher ? Math.min(selectedVoucher.discountAmount, total) : 0
+  const payable = Math.max(0, total - discount)
+  const estimatedPoints = Math.floor(payable)
+  const insufficient = walletBalance < payable
 
   useEffect(() => {
     if (!bootstrapDone || loadError) return
@@ -69,6 +86,12 @@ export default function CustomerCheckoutPage() {
       navigate('/delivery/customer', { replace: true })
     }
   }, [bootstrapDone, customerAccount, lines.length, loadError, navigate])
+
+  useEffect(() => {
+    if (selectedVoucherId !== 'none' && !usableVouchers.some((voucher) => voucher.id === selectedVoucherId)) {
+      setSelectedVoucherId('none')
+    }
+  }, [selectedVoucherId, usableVouchers])
 
   const handleBack = () => {
     if (merchantIdParam) {
@@ -112,9 +135,10 @@ export default function CustomerCheckoutPage() {
     }
     setSubmitting(true)
     try {
+      const voucherId = selectedVoucherId === 'none' ? undefined : selectedVoucherId
       const result = merchantIdParam
-        ? await checkout({ merchantId: merchantIdParam, delivery })
-        : await checkout({ delivery })
+        ? await checkout({ merchantId: merchantIdParam, delivery, voucherId })
+        : await checkout({ delivery, voucherId })
       if (result.ok) {
         showNotice(`结算成功，已创建 ${result.createdCount} 笔待收货订单。`, 'success')
         setActiveTab('profile')
@@ -125,6 +149,13 @@ export default function CustomerCheckoutPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const voucherUnavailableReason = (voucher: (typeof vouchers)[number]) => {
+    if (voucher.remainingCount <= 0) return '已使用完'
+    if (isVoucherExpired(voucher.expiresAt)) return '已过期'
+    if (total < voucher.minSpend) return `还差 ¥${(voucher.minSpend - total).toFixed(2)} 可用`
+    return null
   }
 
   if (!bootstrapDone) {
@@ -266,6 +297,58 @@ export default function CustomerCheckoutPage() {
           </CardContent>
         </Card>
 
+        <Card className="overflow-hidden border-orange-200/70 bg-gradient-to-br from-orange-50/95 via-card to-rose-50/80 shadow-[0_18px_45px_rgba(249,115,22,0.12)]">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <TicketPercent className="size-5 text-orange-500" aria-hidden />
+              优惠券
+            </CardTitle>
+            <CardDescription>每单最多使用 1 张优惠券，最终优惠以后端结算为准。</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <RadioGroup value={selectedVoucherId} onValueChange={setSelectedVoucherId} className="gap-3">
+              <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-white/75 px-4 py-3 shadow-sm backdrop-blur-sm">
+                <Label htmlFor="checkout-voucher-none" className="cursor-pointer text-sm font-medium text-foreground">
+                  暂不使用优惠券
+                </Label>
+                <RadioGroupItem id="checkout-voucher-none" value="none" />
+              </div>
+              {vouchers.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-orange-200 bg-white/60 px-4 py-3 text-sm text-muted-foreground">
+                  暂无优惠券。确认完成订单升级后可继续获得满30减10券。
+                </p>
+              ) : null}
+              {vouchers.map((voucher) => {
+                const reason = voucherUnavailableReason(voucher)
+                const disabled = reason !== null
+                return (
+                  <div
+                    key={voucher.id}
+                    className={`relative overflow-hidden rounded-2xl border px-4 py-3 shadow-sm transition-[transform,border-color,box-shadow] duration-200 ${
+                      disabled
+                        ? 'border-border/50 bg-muted/35 text-muted-foreground opacity-70'
+                        : 'cursor-pointer border-orange-200 bg-white/85 hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-[0_14px_30px_rgba(249,115,22,0.16)]'
+                    }`}
+                  >
+                    <div className="pointer-events-none absolute -right-5 top-1/2 size-10 -translate-y-1/2 rounded-full bg-orange-50" />
+                    <div className="flex items-start justify-between gap-3">
+                      <Label htmlFor={`checkout-voucher-${voucher.id}`} className={`min-w-0 flex-1 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                        <span className="block text-base font-semibold text-foreground">{voucher.title}</span>
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          满 ¥{voucher.minSpend.toFixed(0)} 减 ¥{voucher.discountAmount.toFixed(0)} · 有效期至 {voucher.expiresAt}
+                        </span>
+                        <span className="mt-1 block text-xs text-muted-foreground">剩余 {voucher.remainingCount} 次</span>
+                        {reason ? <span className="mt-2 inline-flex rounded-full bg-muted px-2 py-0.5 text-xs">{reason}</span> : null}
+                      </Label>
+                      <RadioGroupItem id={`checkout-voucher-${voucher.id}`} value={voucher.id} disabled={disabled} className="mt-1" />
+                    </div>
+                  </div>
+                )
+              })}
+            </RadioGroup>
+          </CardContent>
+        </Card>
+
         <Card className="border-border/70 bg-card/90 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">金额</CardTitle>
@@ -273,7 +356,19 @@ export default function CustomerCheckoutPage() {
           <CardContent className="space-y-3 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">商品总金额</span>
-              <span className="text-lg font-semibold tabular-nums text-primary">¥{total.toFixed(1)}</span>
+              <span className="tabular-nums text-foreground">¥{total.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span>优惠抵扣</span>
+              <span className="tabular-nums text-green-600">-¥{discount.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-orange-50 px-3 py-2">
+              <span className="font-medium text-orange-900">实付金额</span>
+              <span className="text-xl font-semibold tabular-nums text-primary">¥{payable.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span>预计获得积分</span>
+              <span className="tabular-nums text-orange-600">+{estimatedPoints}</span>
             </div>
             <div className="flex items-center justify-between text-muted-foreground">
               <span>当前钱包余额</span>
@@ -297,7 +392,7 @@ export default function CustomerCheckoutPage() {
             disabled={insufficient || submitting}
             onClick={() => void handleConfirm()}
           >
-            {submitting ? '提交中…' : '确认下单并支付'}
+            {submitting ? '提交中…' : `确认支付 ¥${payable.toFixed(2)}`}
           </Button>
         </div>
       </div>

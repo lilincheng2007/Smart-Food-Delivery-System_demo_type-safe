@@ -18,9 +18,10 @@ object CustomerProfileTable:
     """
       |INSERT INTO customer_profiles (
       |  id, username, role, name, phone, default_address, wallet_balance,
-      |  vouchers, pending_orders, history_orders, delivery_contacts, updated_at
+      |  vouchers, pending_orders, history_orders, delivery_contacts,
+      |  foodie_points, foodie_level, updated_at
       |)
-      |VALUES (?, ?, 'customer', ?, ?, ?, ?, ?, ?, ?, ?, now())
+      |VALUES (?, ?, 'customer', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
       |ON CONFLICT (id) DO UPDATE SET
       |  username = EXCLUDED.username,
       |  name = EXCLUDED.name,
@@ -31,6 +32,8 @@ object CustomerProfileTable:
       |  pending_orders = EXCLUDED.pending_orders,
       |  history_orders = EXCLUDED.history_orders,
       |  delivery_contacts = EXCLUDED.delivery_contacts,
+      |  foodie_points = EXCLUDED.foodie_points,
+      |  foodie_level = EXCLUDED.foodie_level,
       |  updated_at = now()
       |""".stripMargin
 
@@ -49,6 +52,8 @@ object CustomerProfileTable:
         statement.setObject(8, jsonb(p.pendingOrders.asJson.noSpaces))
         statement.setObject(9, jsonb(p.historyOrders.asJson.noSpaces))
         statement.setObject(10, jsonb(p.deliveryContacts.asJson.noSpaces))
+        statement.setInt(11, p.foodiePoints)
+        statement.setInt(12, p.foodieLevel)
         val _ = statement.executeUpdate()
         account
       finally statement.close()
@@ -57,7 +62,7 @@ object CustomerProfileTable:
   private val findSql: String =
     """
       |SELECT id, username, role, name, phone, default_address, wallet_balance,
-      |       vouchers, pending_orders, history_orders, delivery_contacts
+      |       vouchers, pending_orders, history_orders, delivery_contacts, foodie_points, foodie_level
       |FROM customer_profiles
       |WHERE username = ?
       |""".stripMargin
@@ -91,7 +96,9 @@ object CustomerProfileTable:
         walletBalance = resultSet.getBigDecimal("wallet_balance").doubleValue(),
         pendingOrders = decode[List[Order]](resultSet.getString("pending_orders")).getOrElse(Nil),
         historyOrders = decode[List[Order]](resultSet.getString("history_orders")).getOrElse(Nil),
-        deliveryContacts = decode[List[CustomerDeliveryContact]](resultSet.getString("delivery_contacts")).getOrElse(Nil)
+        deliveryContacts = decode[List[CustomerDeliveryContact]](resultSet.getString("delivery_contacts")).getOrElse(Nil),
+        foodiePoints = resultSet.getInt("foodie_points"),
+        foodieLevel = resultSet.getInt("foodie_level")
       )
     )
 

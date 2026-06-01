@@ -19,6 +19,11 @@ object OrderTableInitializer:
       |  merchant_id VARCHAR(80) NOT NULL,
       |  rider_id VARCHAR(80),
       |  total_amount NUMERIC(12, 2) NOT NULL CHECK (total_amount >= 0),
+      |  original_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (original_amount >= 0),
+      |  discount_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (discount_amount >= 0),
+      |  payable_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (payable_amount >= 0),
+      |  used_voucher JSONB,
+      |  points_awarded INTEGER NOT NULL DEFAULT 0 CHECK (points_awarded >= 0),
       |  delivery_address TEXT NOT NULL,
       |  status VARCHAR(32) NOT NULL CHECK (status IN ($orderStatusSql)),
       |  placed_at VARCHAR(40) NOT NULL,
@@ -26,10 +31,22 @@ object OrderTableInitializer:
       |  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       |);
       |
+      |ALTER TABLE orders ADD COLUMN IF NOT EXISTS original_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (original_amount >= 0);
+      |ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (discount_amount >= 0);
+      |ALTER TABLE orders ADD COLUMN IF NOT EXISTS payable_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (payable_amount >= 0);
+      |ALTER TABLE orders ADD COLUMN IF NOT EXISTS used_voucher JSONB;
+      |ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_awarded INTEGER NOT NULL DEFAULT 0 CHECK (points_awarded >= 0);
+      |UPDATE orders SET original_amount = total_amount WHERE original_amount = 0;
+      |UPDATE orders SET payable_amount = total_amount WHERE payable_amount = 0;
+      |
       |CREATE INDEX IF NOT EXISTS orders_customer_id_idx ON orders(customer_id);
       |CREATE INDEX IF NOT EXISTS orders_merchant_id_idx ON orders(merchant_id);
       |CREATE INDEX IF NOT EXISTS orders_rider_id_idx ON orders(rider_id);
       |CREATE INDEX IF NOT EXISTS orders_status_idx ON orders(status);
+      |CREATE INDEX IF NOT EXISTS orders_customer_created_idx ON orders(customer_id, created_at DESC);
+      |CREATE INDEX IF NOT EXISTS orders_merchant_created_idx ON orders(merchant_id, created_at DESC);
+      |CREATE INDEX IF NOT EXISTS orders_rider_created_idx ON orders(rider_id, created_at DESC);
+      |CREATE INDEX IF NOT EXISTS orders_available_idx ON orders(status, rider_id, created_at DESC);
       |""".stripMargin
 
   def initialize(connection: Connection): IO[Unit] =

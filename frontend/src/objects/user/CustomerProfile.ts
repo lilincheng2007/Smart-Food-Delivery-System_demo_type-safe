@@ -15,4 +15,6 @@ export interface CustomerProfile {
   historyOrders: Order[]
   /** 收货用联系人组；旧数据可能缺省，前端按 name/phone/defaultAddress 兜底 */
   deliveryContacts?: CustomerDeliveryContact[] | null
+  foodiePoints: number
+  foodieLevel: number
 }

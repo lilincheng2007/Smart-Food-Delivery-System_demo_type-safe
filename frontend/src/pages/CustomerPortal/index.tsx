@@ -15,6 +15,8 @@ import { ProfileTab } from './ProfileTab'
 import { RechargeDialog } from './RechargeDialog'
 import { isCustomerTab } from './helpers'
 
+const CustomerPortalRefreshIntervalMs = 15_000
+
 export default function CustomerPortal() {
   const navigate = useNavigate()
   const { showNotice } = useAppChrome()
@@ -62,15 +64,43 @@ export default function CustomerPortal() {
   }, [bootstrap, ensureAIOrderProgressNarratives, refreshPortal])
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      void (async () => {
+    let stopped = false
+    let timer: number | undefined
+
+    const scheduleRefresh = () => {
+      if (!stopped) {
+        timer = window.setTimeout(() => {
+          void tick()
+        }, CustomerPortalRefreshIntervalMs)
+      }
+    }
+
+    const tick = async () => {
+      if (stopped) {
+        return
+      }
+      if (!document.hidden) {
         await refreshPortal().catch(() => {})
-        await ensureAIOrderProgressNarratives().catch(() => {})
-      })()
-    }, 5000)
+      }
+      scheduleRefresh()
+    }
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        void refreshPortal().catch(() => {})
+        void ensureAIOrderProgressNarratives().catch(() => {})
+      }
+    }
+
+    scheduleRefresh()
+    document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
-      window.clearInterval(timer)
+      stopped = true
+      if (timer !== undefined) {
+        window.clearTimeout(timer)
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [ensureAIOrderProgressNarratives, refreshPortal])
 
@@ -104,7 +134,7 @@ export default function CustomerPortal() {
   const handleCompleteOrder = async (orderId: string) => {
     const result = await completeOrder(orderId)
     if (result.ok) {
-      showNotice('订单已确认完成。', 'success')
+      showNotice('订单已确认完成，吃货积分已到账。', 'success')
       return
     }
 
@@ -207,6 +237,9 @@ export default function CustomerPortal() {
             merchants={merchants}
             pendingOrders={pendingOrders}
             historyOrders={historyOrders}
+            vouchers={customerAccount.profile.vouchers}
+            foodiePoints={customerAccount.profile.foodiePoints}
+            foodieLevel={customerAccount.profile.foodieLevel}
             aiDietReport={aiDietReport}
             aiDietReportLoading={aiDietReportLoading}
             aiDietReportError={aiDietReportError}

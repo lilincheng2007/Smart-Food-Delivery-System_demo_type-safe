@@ -44,7 +44,9 @@ object SeedBootstrap:
               address = customer.defaultAddress,
               isDefault = true
             )
-          )
+          ),
+          foodiePoints = customer.foodiePoints,
+          foodieLevel = customer.foodieLevel
         )
       )
     }

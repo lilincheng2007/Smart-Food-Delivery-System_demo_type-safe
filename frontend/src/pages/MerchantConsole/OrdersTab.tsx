@@ -60,7 +60,7 @@ export function OrdersTab({ selectedStore, onFinishCooking }: OrdersTabProps) {
                   <p className="font-medium text-slate-900">订单 {order.id}</p>
                   <Badge variant="outline">{order.status}</Badge>
                 </div>
-                <p className="mt-1 text-sm text-slate-600">总金额 {order.totalAmount} 元</p>
+                <p className="mt-1 text-sm text-slate-600">实付金额 ¥{order.payableAmount.toFixed(2)}</p>
                 <div className="mt-3 flex gap-2">
                   <Button
                     size="sm"
@@ -99,7 +99,7 @@ export function OrdersTab({ selectedStore, onFinishCooking }: OrdersTabProps) {
                   <p className="font-medium text-slate-900">订单 {order.id}</p>
                   <Badge variant="outline">{order.status}</Badge>
                 </div>
-                <p className="mt-1 text-sm text-slate-600">总金额 {order.totalAmount} 元</p>
+                <p className="mt-1 text-sm text-slate-600">实付金额 ¥{order.payableAmount.toFixed(2)}</p>
               </div>
             ))
           )}
@@ -115,8 +115,11 @@ export function OrdersTab({ selectedStore, onFinishCooking }: OrdersTabProps) {
           {selectedOrder ? (
             <div className="space-y-3">
               <div className="rounded-xl bg-orange-50 px-3 py-2 text-sm text-slate-700">
-                订单总金额：
-                <span className="ml-1 font-semibold text-orange-600">¥{selectedOrder.totalAmount.toFixed(2)}</span>
+                实付金额：
+                <span className="ml-1 font-semibold text-orange-600">¥{selectedOrder.payableAmount.toFixed(2)}</span>
+                {selectedOrder.discountAmount > 0 ? (
+                  <span className="ml-2 text-xs text-green-600">已优惠 ¥{selectedOrder.discountAmount.toFixed(2)}</span>
+                ) : null}
               </div>
               <div className="space-y-2">
                 {selectedOrder.items.map((item) => (

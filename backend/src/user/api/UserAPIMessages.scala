@@ -10,7 +10,7 @@ import delivery.rider.tables.RiderAccountRecord
 import delivery.rider.tables.rideraccount.RiderAccountTable
 import delivery.shared.api.{APIMessage, APIWithRoleMessage, HttpApiError}
 import delivery.shared.auth.JwtSupport
-import delivery.shared.objects.{MerchantCategory, OkResponse, RiderStatus, UserRole}
+import delivery.shared.objects.{MerchantCategory, OkResponse, RiderStatus, UserRole, Voucher}
 import delivery.user.objects.{Customer, CustomerDeliveryContact, CustomerMeResponse, CustomerProfile, CustomerProfilePatch, CustomerWalletTopUpResponse, LoginResponse}
 import delivery.user.tables.{AuthCredentialRecord, CustomerAccountRecord}
 import delivery.user.tables.authcredential.AuthCredentialTable
@@ -32,6 +32,9 @@ private def validateDeliveryContacts(list: List[CustomerDeliveryContact]): Eithe
     val defaults = trimmed.count(_.isDefault)
     if defaults != 1 then Left("收货信息中必须且只能指定一组为默认")
     else Right(trimmed)
+
+private def welcomeVoucher(customerId: String, nowMillis: Long): Voucher =
+  Voucher(s"v-welcome-$customerId-$nowMillis", "满30减10", 10, 30, "2026-12-31", 1)
 
 private def defaultContactsFromProfile(profile: CustomerProfile): List[CustomerDeliveryContact] =
   List(
@@ -102,14 +105,18 @@ final case class RegisterAPIMessage(role: UserRole, username: String, password: 
 
   private def registerCustomer(connection: Connection): IO[Unit] =
     IO.realTime.map(_.toMillis).flatMap { nowMillis =>
+      val customerId = s"u-$nowMillis"
+      val welcome = welcomeVoucher(customerId, nowMillis)
       val customer = Customer(
-        id = s"u-$nowMillis",
+        id = customerId,
         name = username,
         phone = "",
         defaultAddress = "请完善默认收货地址",
         walletBalance = 0,
         orderHistoryIds = Nil,
-        vouchers = Nil
+        vouchers = List(welcome),
+        foodiePoints = 0,
+        foodieLevel = 1
       )
       val deliveryContacts = List(
         CustomerDeliveryContact(
@@ -124,7 +131,7 @@ final case class RegisterAPIMessage(role: UserRole, username: String, password: 
         role = UserRole.customer.toString,
         username = username,
         password = password,
-        profile = CustomerProfile(customer.id, customer.name, customer.phone, customer.defaultAddress, Nil, 0, Nil, Nil, deliveryContacts)
+        profile = CustomerProfile(customer.id, customer.name, customer.phone, customer.defaultAddress, customer.vouchers, 0, Nil, Nil, deliveryContacts, 0, 1)
       )
       CustomerTable.upsert(connection, customer) *> CustomerProfileTable.upsert(connection, account).void
     }

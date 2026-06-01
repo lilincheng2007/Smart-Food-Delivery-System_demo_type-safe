@@ -18,6 +18,7 @@ import type { Order } from '@/objects/order/Order'
 import type { MerchantId } from '@/objects/shared/ids'
 import type { OrderId } from '@/objects/shared/ids'
 import type { ProductId } from '@/objects/shared/ids'
+import type { VoucherId } from '@/objects/shared/ids'
 import type { AIDietWeeklyReportResponse } from '@/objects/ai/AIDietWeeklyReportResponse'
 import type { AIOrderProgressNarrativesResponse } from '@/objects/ai/AIOrderProgressNarrativesResponse'
 import { validateDeliveryContacts } from '@/lib/deliveryContacts'
@@ -70,6 +71,7 @@ type CustomerPortalStore = {
   checkout: (options?: {
     merchantId?: MerchantId
     delivery?: CheckoutDeliverySnapshot
+    voucherId?: VoucherId
   }) => Promise<{ ok: true; createdCount: number } | { ok: false; message: string }>
   recharge: () => Promise<{ ok: true; amount: number } | { ok: false; message: string }>
   saveDeliveryContacts: (
@@ -109,31 +111,47 @@ const initialState = {
   aiOrderProgressNarrativesError: null as string | null,
 }
 
+let refreshPortalInFlight: Promise<void> | null = null
+
 export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) => ({
   ...initialState,
   resetPage: () => set(initialState),
   refreshPortal: async () => {
-    const me = await runTask(fetchCustomerMeIO())
-    const catalog = await runTask(fetchCatalogIO())
-    const orders = await runTask(fetchCustomerOrdersIO())
-    const visibleProductIds = new Set(catalog.products.map((product) => product.id))
-    const currentSelectedMerchantId = get().selectedMerchantId
-    const nextSelectedMerchantId =
-      currentSelectedMerchantId && catalog.merchants.some((merchant) => merchant.id === currentSelectedMerchantId)
-        ? currentSelectedMerchantId
-        : (catalog.merchants[0]?.id ?? '')
-    const nextCartLines = get().cartLines.filter((line) => visibleProductIds.has(line.productId))
+    if (refreshPortalInFlight) {
+      return refreshPortalInFlight
+    }
 
-    set({
-      customerAccount: me.customerAccount,
-      walletBalance: me.customerAccount.profile.walletBalance,
-      pendingOrders: orders.pendingOrders,
-      historyOrders: orders.historyOrders,
-      merchants: catalog.merchants,
-      products: catalog.products,
-      selectedMerchantId: nextSelectedMerchantId,
-      cartLines: nextCartLines,
-    })
+    refreshPortalInFlight = (async () => {
+      const [me, catalog, orders] = await Promise.all([
+        runTask(fetchCustomerMeIO()),
+        runTask(fetchCatalogIO()),
+        runTask(fetchCustomerOrdersIO()),
+      ])
+      const visibleProductIds = new Set(catalog.products.map((product) => product.id))
+      const currentSelectedMerchantId = get().selectedMerchantId
+      const nextSelectedMerchantId =
+        currentSelectedMerchantId && catalog.merchants.some((merchant) => merchant.id === currentSelectedMerchantId)
+          ? currentSelectedMerchantId
+          : (catalog.merchants[0]?.id ?? '')
+      const nextCartLines = get().cartLines.filter((line) => visibleProductIds.has(line.productId))
+
+      set({
+        customerAccount: me.customerAccount,
+        walletBalance: me.customerAccount.profile.walletBalance,
+        pendingOrders: orders.pendingOrders,
+        historyOrders: orders.historyOrders,
+        merchants: catalog.merchants,
+        products: catalog.products,
+        selectedMerchantId: nextSelectedMerchantId,
+        cartLines: nextCartLines,
+      })
+    })()
+
+    try {
+      await refreshPortalInFlight
+    } finally {
+      refreshPortalInFlight = null
+    }
   },
   ensureAIOrderProgressNarratives: async () => {
     const today = getLocalDateKey()
@@ -234,9 +252,9 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
       return { ok: false, message: error instanceof Error ? error.message : '确认完成失败' }
     }
   },
-  checkout: async (options?: { merchantId?: MerchantId; delivery?: CheckoutDeliverySnapshot }) => {
+  checkout: async (options?: { merchantId?: MerchantId; delivery?: CheckoutDeliverySnapshot; voucherId?: VoucherId }) => {
     const merchantId = options?.merchantId
-    const { cartLines, walletBalance, products, pendingOrders, customerAccount } = get()
+    const { cartLines, walletBalance, products, customerAccount } = get()
     const lines = merchantId ? cartLines.filter((line) => line.merchantId === merchantId) : cartLines
 
     if (lines.length === 0) {
@@ -251,32 +269,25 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
       return sum + (product ? product.price * line.quantity : 0)
     }, 0)
 
-    if (walletBalance < cartTotal) {
+    const selectedVoucher = customerAccount?.profile.vouchers.find((voucher) => voucher.id === options?.voucherId)
+    const estimatedDiscount = selectedVoucher && cartTotal >= selectedVoucher.minSpend && selectedVoucher.remainingCount > 0
+      ? Math.min(selectedVoucher.discountAmount, cartTotal)
+      : 0
+
+    if (walletBalance < cartTotal - estimatedDiscount) {
       return { ok: false, message: '余额不足，请先充值。' }
     }
 
     try {
-      const data = await runTask(checkoutIO(lines, options?.delivery))
-      const nextPendingOrders = [...data.orders, ...pendingOrders]
+      const data = await runTask(checkoutIO(lines, options?.delivery, options?.voucherId))
       const nextCartLines = merchantId
         ? cartLines.filter((line) => line.merchantId !== merchantId)
         : []
       set({
-        walletBalance: data.walletBalance,
-        pendingOrders: nextPendingOrders,
-        customerAccount: customerAccount
-          ? {
-              ...customerAccount,
-              profile: {
-                ...customerAccount.profile,
-                walletBalance: data.walletBalance,
-                pendingOrders: nextPendingOrders,
-              },
-            }
-          : customerAccount,
         cartLines: nextCartLines,
         activeTab: merchantId ? get().activeTab : 'profile',
       })
+      await get().refreshPortal()
       return { ok: true, createdCount: data.orders.length }
     } catch (error) {
       return { ok: false, message: error instanceof Error ? error.message : '结算失败' }

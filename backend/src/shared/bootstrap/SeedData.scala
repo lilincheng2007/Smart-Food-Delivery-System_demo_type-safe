@@ -16,7 +16,9 @@ object SeedData:
       defaultAddress = "浦东新区世纪大道 100 号 1203 室",
       walletBalance = 188.5,
       orderHistoryIds = Nil,
-      vouchers = List(Voucher("v-1", "满30减8", 8, 30, "2026-04-30", 2))
+      vouchers = List(Voucher("v-1", "满30减10", 10, 30, "2026-12-31", 1)),
+      foodiePoints = 0,
+      foodieLevel = 1
     )
   )
 

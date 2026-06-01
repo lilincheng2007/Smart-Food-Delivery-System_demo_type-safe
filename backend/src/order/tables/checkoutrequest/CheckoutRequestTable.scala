@@ -13,9 +13,9 @@ object CheckoutRequestTable:
   private val insertSql: String =
     """
       |INSERT INTO checkout_requests (
-      |  customer_username, lines, customer_name, customer_phone, delivery_address, created_order_ids
+      |  customer_username, lines, customer_name, customer_phone, delivery_address, voucher_id, created_order_ids
       |)
-      |VALUES (?, ?, ?, ?, ?, ?)
+      |VALUES (?, ?, ?, ?, ?, ?, ?)
       |RETURNING id
       |""".stripMargin
 
@@ -34,7 +34,10 @@ object CheckoutRequestTable:
         request.deliveryAddress match
           case Some(value) => statement.setString(5, value)
           case None        => statement.setNull(5, java.sql.Types.VARCHAR)
-        statement.setObject(6, jsonb(createdOrderIds.asJson.noSpaces))
+        request.voucherId match
+          case Some(value) => statement.setString(6, value)
+          case None        => statement.setNull(6, java.sql.Types.VARCHAR)
+        statement.setObject(7, jsonb(createdOrderIds.asJson.noSpaces))
         val resultSet = statement.executeQuery()
         try
           if resultSet.next() then resultSet.getLong("id")

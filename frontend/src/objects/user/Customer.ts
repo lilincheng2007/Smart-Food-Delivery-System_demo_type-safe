@@ -9,4 +9,6 @@ export interface Customer {
   walletBalance: number
   orderHistoryIds: OrderId[]
   vouchers: Voucher[]
+  foodiePoints: number
+  foodieLevel: number
 }

@@ -15,9 +15,10 @@ object CustomerTable:
   private val upsertSql: String =
     """
       |INSERT INTO customers (
-      |  id, name, phone, default_address, wallet_balance, order_history_ids, vouchers, updated_at
+      |  id, name, phone, default_address, wallet_balance, order_history_ids, vouchers,
+      |  foodie_points, foodie_level, updated_at
       |)
-      |VALUES (?, ?, ?, ?, ?, ?, ?, now())
+      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, now())
       |ON CONFLICT (id) DO UPDATE SET
       |  name = EXCLUDED.name,
       |  phone = EXCLUDED.phone,
@@ -39,6 +40,8 @@ object CustomerTable:
         statement.setDouble(5, customer.walletBalance)
         statement.setObject(6, jsonb(customer.orderHistoryIds.asJson.noSpaces))
         statement.setObject(7, jsonb(customer.vouchers.asJson.noSpaces))
+        statement.setInt(8, customer.foodiePoints)
+        statement.setInt(9, customer.foodieLevel)
         val _ = statement.executeUpdate()
         customer
       finally statement.close()
@@ -46,7 +49,8 @@ object CustomerTable:
 
   private val findSql: String =
     """
-      |SELECT id, name, phone, default_address, wallet_balance, order_history_ids, vouchers
+      |SELECT id, name, phone, default_address, wallet_balance, order_history_ids, vouchers,
+      |       foodie_points, foodie_level
       |FROM customers
       |WHERE id = ?
       |""".stripMargin
@@ -55,7 +59,7 @@ object CustomerTable:
     queryOne(connection.prepareStatement(findSql))(_.setString(1, id))
 
   private val listSql: String =
-    "SELECT id, name, phone, default_address, wallet_balance, order_history_ids, vouchers FROM customers ORDER BY created_at ASC"
+    "SELECT id, name, phone, default_address, wallet_balance, order_history_ids, vouchers, foodie_points, foodie_level FROM customers ORDER BY created_at ASC"
 
   private[user] def list(connection: Connection): IO[List[Customer]] =
     IO.blocking {
@@ -90,7 +94,9 @@ object CustomerTable:
       defaultAddress = resultSet.getString("default_address"),
       walletBalance = resultSet.getBigDecimal("wallet_balance").doubleValue(),
       orderHistoryIds = decode[List[String]](resultSet.getString("order_history_ids")).getOrElse(Nil),
-      vouchers = decode[List[Voucher]](resultSet.getString("vouchers")).getOrElse(Nil)
+      vouchers = decode[List[Voucher]](resultSet.getString("vouchers")).getOrElse(Nil),
+      foodiePoints = resultSet.getInt("foodie_points"),
+      foodieLevel = resultSet.getInt("foodie_level")
     )
 
   private def jsonb(value: String): PGobject =

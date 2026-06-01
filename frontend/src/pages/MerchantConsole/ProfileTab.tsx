@@ -36,7 +36,7 @@ export function ProfileTab({ selectedStore, onOpenStoreDialog }: ProfileTabProps
   const merchantHistoryOrders = selectedStore?.historyOrders ?? []
   const activeCookingOrders = merchantPendingOrders.filter((order) => order.status === OrderStatuses.cooking)
   const historyOrders = [...merchantPendingOrders.filter((order) => order.status !== OrderStatuses.cooking), ...merchantHistoryOrders]
-  const totalTurnover = historyOrders.reduce((sum, item) => sum + item.totalAmount, 0)
+  const totalTurnover = historyOrders.reduce((sum, item) => sum + item.payableAmount, 0)
 
   const handleSaveStoreImage = async () => {
     if (!selectedStore) {

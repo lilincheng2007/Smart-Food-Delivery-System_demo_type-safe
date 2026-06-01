@@ -1,6 +1,6 @@
 package delivery.order.objects
 
-import delivery.shared.objects.{MerchantId, OrderId, OrderStatus, RiderId, UserId}
+import delivery.shared.objects.{MerchantId, OrderId, OrderStatus, RiderId, UserId, Voucher}
 
 final case class Order(
     id: OrderId,
@@ -13,5 +13,10 @@ final case class Order(
     totalAmount: Double,
     deliveryAddress: String,
     status: OrderStatus,
-    placedAt: String
+    placedAt: String,
+    originalAmount: Double = 0,
+    discountAmount: Double = 0,
+    payableAmount: Double = 0,
+    usedVoucher: Option[Voucher] = None,
+    pointsAwarded: Int = 0
 )

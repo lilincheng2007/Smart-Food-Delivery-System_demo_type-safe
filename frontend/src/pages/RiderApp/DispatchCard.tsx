@@ -32,7 +32,7 @@ export function DispatchCard({ availableOrders, onGrabOrder }: DispatchCardProps
               </div>
               <p className="mt-1 text-sm text-slate-600">配送地址：{order.deliveryAddress}</p>
               <p className="mt-1 text-sm text-slate-600">取餐说明：商家已出餐，接单后请前往取餐。</p>
-              <p className="mt-1 text-sm text-slate-600">金额：{order.totalAmount} 元</p>
+              <p className="mt-1 text-sm text-slate-600">实付金额：¥{order.payableAmount.toFixed(2)}</p>
               <Button className="mt-3" size="sm" onClick={() => onGrabOrder(order.id)}>
                 抢这一单
               </Button>

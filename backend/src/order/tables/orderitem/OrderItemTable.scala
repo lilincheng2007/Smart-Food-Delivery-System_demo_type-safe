@@ -59,15 +59,47 @@ object OrderItemTable:
       finally resultSet.close()
     finally statement.close()
 
+  private[order] def listByOrderIds(connection: Connection, orderIds: List[String]): IO[Map[String, List[OrderItem]]] =
+    IO.blocking(listByOrderIdsSync(connection, orderIds))
+
+  private[order] def listByOrderIdsSync(connection: Connection, orderIds: List[String]): Map[String, List[OrderItem]] =
+    val distinctOrderIds = orderIds.distinct
+    if distinctOrderIds.isEmpty then Map.empty
+    else
+      val placeholders = List.fill(distinctOrderIds.size)("?").mkString(", ")
+      val statement = connection.prepareStatement(
+        s"""
+           |SELECT order_id, product_id, name, unit_price, quantity
+           |FROM order_items
+           |WHERE order_id IN ($placeholders)
+           |ORDER BY order_id ASC, id ASC
+           |""".stripMargin
+      )
+      try
+        distinctOrderIds.zipWithIndex.foreach { case (orderId, index) => statement.setString(index + 1, orderId) }
+        val resultSet = statement.executeQuery()
+        try readItemsByOrderId(resultSet)
+        finally resultSet.close()
+      finally statement.close()
+
   private def readItems(resultSet: ResultSet): List[OrderItem] =
     val builder = List.newBuilder[OrderItem]
     while resultSet.next() do
-      builder += OrderItem(
-        productId = resultSet.getString("product_id"),
-        name = resultSet.getString("name"),
-        unitPrice = resultSet.getBigDecimal("unit_price").doubleValue(),
-        quantity = resultSet.getInt("quantity")
-      )
+      builder += readItem(resultSet)
     builder.result()
+
+  private def readItemsByOrderId(resultSet: ResultSet): Map[String, List[OrderItem]] =
+    val builder = List.newBuilder[(String, OrderItem)]
+    while resultSet.next() do
+      builder += resultSet.getString("order_id") -> readItem(resultSet)
+    builder.result().groupMap(_._1)(_._2)
+
+  private def readItem(resultSet: ResultSet): OrderItem =
+    OrderItem(
+      productId = resultSet.getString("product_id"),
+      name = resultSet.getString("name"),
+      unitPrice = resultSet.getBigDecimal("unit_price").doubleValue(),
+      quantity = resultSet.getInt("quantity")
+    )
 
 end OrderItemTable

@@ -81,11 +81,13 @@ final case class MerchantMeAPIMessage() extends APIWithRoleMessage[MerchantMeRes
         case Some(value) =>
           for
             stores <- MerchantStoreTable.listByOwner(connection, username)
+            storeIds = stores.map(_.id)
             products <- CatalogProductTable.list(connection)
-            orders <- OrderTable.list(connection)
+            orders <- OrderTable.listByMerchantIds(connection, storeIds)
           yield
+            val ordersByMerchantId = orders.groupBy(_.merchantId)
             val storeProfiles = stores.map { merchant =>
-              val merchantOrders = orders.filter(_.merchantId == merchant.id)
+              val merchantOrders = ordersByMerchantId.getOrElse(merchant.id, Nil)
               MerchantStoreProfile(
                 merchant = merchant,
                 products = products.filter(_.merchantId == merchant.id),
