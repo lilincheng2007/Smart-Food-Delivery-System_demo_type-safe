@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Separator } from '@/components/ui/separator'
 import type { Order } from '@/objects/order/Order'
 import { OrderStatuses } from '@/objects/shared/ids'
-import type { OrderStatus } from '@/objects/shared/ids'
 
 type OrderDetailDialogProps = {
   selectedOrder: Order | null
@@ -13,15 +12,8 @@ type OrderDetailDialogProps = {
   onCompleteOrder: (order: Order) => void
 }
 
-const nonCancelableStatuses: OrderStatus[] = [
-  OrderStatuses.canceled,
-  OrderStatuses.delivered,
-  OrderStatuses.completed,
-  OrderStatuses.delivering,
-]
-
 function canCancel(order: Order): boolean {
-  return !nonCancelableStatuses.includes(order.status) && !order.riderId
+  return order.status === OrderStatuses.waitingForMerchantAcceptance
 }
 
 function canComplete(order: Order): boolean {
@@ -29,11 +21,23 @@ function canComplete(order: Order): boolean {
 }
 
 function orderStatusDescription(order: Order): string | null {
-  if (order.status === OrderStatuses.waitingForPickup) {
+  if (order.status === OrderStatuses.waitingForMerchantAcceptance) {
+    return '订单已提交，正在等待商家确认；此阶段可取消订单。'
+  }
+  if (order.status === OrderStatuses.cooking) {
+    return '商家已接单，后厨正在制作餐品。'
+  }
+  if (order.status === OrderStatuses.waitingForRiderAcceptance) {
     return '商家已出餐，正在等待骑手接单取餐。'
+  }
+  if (order.status === OrderStatuses.delivering) {
+    return '骑手已接单，餐品正在配送途中。'
   }
   if (order.status === OrderStatuses.delivered) {
     return '餐品已送达，可确认完成。'
+  }
+  if (order.status === OrderStatuses.canceled) {
+    return '订单已取消，款项已按规则退回钱包。'
   }
   return null
 }

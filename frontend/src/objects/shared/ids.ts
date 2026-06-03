@@ -35,8 +35,9 @@ export const ServiceChannels = {
 export type ServiceChannel = (typeof ServiceChannels)[keyof typeof ServiceChannels]
 
 export const OrderStatuses = {
-  waitingForPickup: '待接单',
+  waitingForMerchantAcceptance: '待商家接单',
   cooking: '制作中',
+  waitingForRiderAcceptance: '待骑手接单',
   delivering: '配送中',
   delivered: '已送达',
   completed: '已完成',

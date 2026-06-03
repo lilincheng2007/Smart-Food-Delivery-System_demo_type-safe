@@ -23,8 +23,7 @@ final case class OrderCancelAPIMessage(orderId: OrderId) extends APIWithRoleMess
       _ <-
         if order.customerId != account.profile.id then IO.raiseError(HttpApiError.BadRequest("无权操作该订单"))
         else if order.status == OrderStatus.已取消 then IO.raiseError(HttpApiError.BadRequest("订单已取消"))
-        else if order.status == OrderStatus.已送达 || order.status == OrderStatus.已完成 then IO.raiseError(HttpApiError.BadRequest("已完成订单不可取消"))
-        else if order.riderId.nonEmpty || order.status == OrderStatus.配送中 then IO.raiseError(HttpApiError.BadRequest("配送中订单不可取消"))
+        else if order.status != OrderStatus.待商家接单 then IO.raiseError(HttpApiError.BadRequest("商家接单后订单不可取消"))
         else IO.unit
       refundAmount = if order.payableAmount > 0 then order.payableAmount else order.totalAmount
       canceledOrder = order.copy(status = OrderStatus.已取消)

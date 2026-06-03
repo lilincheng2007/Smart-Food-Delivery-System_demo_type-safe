@@ -14,7 +14,7 @@ export interface MockResultOption<
 }
 
 export interface MockDialogRequest<
-  TOption extends MockResultOption<any, any> = MockResultOption,
+  TOption extends MockResultOption<string, unknown> = MockResultOption,
 > {
   pageName: string
   route: string
@@ -48,7 +48,7 @@ export interface MockPageDefinition {
 }
 
 export interface PageEventDefinition<
-  TOption extends MockResultOption<any, any> = MockResultOption,
+  TOption extends MockResultOption<string, unknown> = MockResultOption,
 > {
   id: string
   label: string

@@ -37,7 +37,10 @@ object ApiJsonCodecs:
   given Codec[MerchantCategory] = enumCodec("商户分类", MerchantCategory.values)
   given Codec[RiderStatus] = enumCodec("骑手状态", RiderStatus.values)
   given Codec[ServiceChannel] = enumCodec("服务渠道", ServiceChannel.values)
-  given Codec[OrderStatus] = enumCodec("订单状态", OrderStatus.values)
+  given Codec[OrderStatus] = Codec.from(
+    Decoder.decodeString.emap(raw => OrderStatus.fromString(raw).toRight(s"订单状态 不合法：$raw")),
+    Encoder.encodeString.contramap[OrderStatus](_.toString)
+  )
   given Codec[ListingStatus] = enumCodec("上下架状态", ListingStatus.values)
   given Codec[InventoryStatus] = enumCodec("库存状态", InventoryStatus.values)
 

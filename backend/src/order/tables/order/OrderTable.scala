@@ -117,7 +117,7 @@ object OrderTable:
        |""".stripMargin
 
   def listAvailableUnassigned(connection: Connection): IO[List[Order]] =
-    queryMany(connection, listAvailableUnassignedSql)(_.setString(1, OrderStatus.待接单.toString))
+    queryMany(connection, listAvailableUnassignedSql)(_.setString(1, OrderStatus.待骑手接单.toString))
 
   def countActiveByRider(connection: Connection, riderId: RiderId, excludingOrderId: Option[OrderId] = None): IO[Int] =
     IO.blocking {
@@ -233,7 +233,7 @@ object OrderTable:
       items = Nil,
       totalAmount = totalAmount,
       deliveryAddress = resultSet.getString("delivery_address"),
-      status = OrderStatus.fromString(resultSet.getString("status")).getOrElse(OrderStatus.待接单),
+      status = OrderStatus.fromString(resultSet.getString("status")).getOrElse(OrderStatus.待商家接单),
       placedAt = resultSet.getString("placed_at"),
       originalAmount = Option(resultSet.getBigDecimal("original_amount")).map(_.doubleValue()).getOrElse(totalAmount),
       discountAmount = Option(resultSet.getBigDecimal("discount_amount")).map(_.doubleValue()).getOrElse(0),

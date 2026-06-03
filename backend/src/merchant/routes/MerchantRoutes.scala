@@ -54,6 +54,8 @@ object MerchantRoutes:
     apiWithRole[MerchantCreateProductAPIMessage, Product]("merchant"),
     apiWithRole[MerchantProductAPIMessage, Product]("merchant"),
     apiWithRole[MerchantProductDescriptionsAPIMessage, OkResponse]("merchant"),
+    apiWithRole[MerchantOrderAcceptAPIMessage, OkResponse]("merchant"),
+    apiWithRole[MerchantOrderRejectAPIMessage, OkResponse]("merchant"),
     apiWithRole[MerchantOrderReadyAPIMessage, OkResponse]("merchant")
   )
 

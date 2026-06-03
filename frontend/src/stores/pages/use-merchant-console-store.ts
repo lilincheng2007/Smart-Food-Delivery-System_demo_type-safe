@@ -2,6 +2,8 @@ import { create } from 'zustand'
 
 import { aiMerchantProductDescriptionsIO } from '@/apis/ai/AIMerchantProductDescriptionsAPI'
 import { aiMerchantStoreDescriptionIO } from '@/apis/ai/AIMerchantStoreDescriptionAPI'
+import { acceptMerchantOrderIO } from '@/apis/merchant/MerchantOrderAcceptAPI'
+import { rejectMerchantOrderIO } from '@/apis/merchant/MerchantOrderRejectAPI'
 import { finishMerchantOrderCookingIO } from '@/apis/merchant/MerchantOrderReadyAPI'
 import { createMerchantProductIO } from '@/apis/merchant/MerchantCreateProductAPI'
 import { updateMerchantProductDescriptionsIO } from '@/apis/merchant/MerchantProductDescriptionsAPI'
@@ -19,7 +21,7 @@ import type { MerchantAccountPublic } from '@/objects/merchant/MerchantAccountPu
 import type { MerchantStoreProfile } from '@/objects/merchant/MerchantStoreProfile'
 import type { ProductDescriptionPatch } from '@/objects/merchant/ProductDescriptionPatch'
 import type { UpdateProductRequest } from '@/objects/merchant/apiTypes/UpdateProductRequest'
-import type { MerchantId } from '@/objects/shared/ids'
+import type { MerchantId, OrderId } from '@/objects/shared/ids'
 
 export type MerchantTab = 'products' | 'orders' | 'profile'
 
@@ -42,7 +44,9 @@ type MerchantConsoleStore = {
   refreshMerchant: () => Promise<MerchantAccountPublic>
   bootstrap: () => Promise<void>
   createStore: () => Promise<string | null>
-  finishCooking: (orderId: string) => Promise<void>
+  acceptOrder: (orderId: OrderId) => Promise<void>
+  rejectOrder: (orderId: OrderId) => Promise<void>
+  finishCooking: (orderId: OrderId) => Promise<void>
   createProduct: (input: CreateProductRequest) => Promise<void>
   updateProduct: (productId: string, input: UpdateProductRequest) => Promise<void>
   generateStoreDescription: (merchantId: MerchantId, keywords: string) => Promise<AIMerchantStoreDescriptionResponse>
@@ -118,6 +122,14 @@ export const useMerchantConsoleStore = create<MerchantConsoleStore>()((set, get)
       activeTab: 'products',
     })
     return merchantId
+  },
+  acceptOrder: async (orderId) => {
+    await runTask(acceptMerchantOrderIO(orderId))
+    await get().refreshMerchant()
+  },
+  rejectOrder: async (orderId) => {
+    await runTask(rejectMerchantOrderIO(orderId))
+    await get().refreshMerchant()
   },
   finishCooking: async (orderId) => {
     await runTask(finishMerchantOrderCookingIO(orderId))

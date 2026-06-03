@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { Clock3, Crown, Loader2, Sparkles, TicketPercent, TrendingUp, UserCircle, UserRound, Wallet } from 'lucide-react'
 
 import { DeliveryLogoutBar } from '@/components/DeliveryLogoutBar'
@@ -67,21 +68,34 @@ export function ProfileTab({
     merchants.find((merchant) => merchant.id === merchantId)?.storeName ?? '未知商家'
 
   const getOrderStatusDescription = (order: Order) => {
-    if (order.status === OrderStatuses.waitingForPickup) {
+    if (order.status === OrderStatuses.waitingForMerchantAcceptance) {
+      return '订单已提交，正在等待商家确认接单'
+    }
+    if (order.status === OrderStatuses.cooking) {
+      return '商家已接单，后厨正在制作餐品'
+    }
+    if (order.status === OrderStatuses.waitingForRiderAcceptance) {
       return '商家已出餐，正在等待骑手接单取餐'
+    }
+    if (order.status === OrderStatuses.delivering) {
+      return '骑手已接单，餐品正在配送途中'
     }
     if (order.status === OrderStatuses.delivered) {
       return '餐品已送达，可确认完成'
     }
+    if (order.status === OrderStatuses.canceled) {
+      return '订单已取消，款项已按规则退回钱包'
+    }
     return null
   }
 
-  const buildOrderProgressNarratives = (orders: Order[]) => {
+  const [orderProgressCycleSeed] = useState(() => Math.floor(Date.now() / 15000))
+  const orderProgressNarratives = useMemo(() => {
     const usedMessages = new Set<string>()
-    const cycleSeed = Math.floor(Date.now() / 15000)
+    const orders = [...pendingOrders, ...historyOrders]
 
     return orders.reduce<Map<OrderId, string>>((narratives, order, index) => {
-      if (order.status === OrderStatuses.completed) {
+      if (order.status === OrderStatuses.completed || order.status === OrderStatuses.canceled) {
         return narratives
       }
 
@@ -91,7 +105,7 @@ export function ProfileTab({
       }
 
       const orderSeed = [...order.id].reduce((sum, char) => sum + char.charCodeAt(0), 0)
-      const offset = (orderSeed + cycleSeed + index) % messages.length
+      const offset = (orderSeed + orderProgressCycleSeed + index) % messages.length
       const message = messages
         .map((_, messageIndex) => messages[(offset + messageIndex) % messages.length])
         .find((candidate) => !usedMessages.has(candidate))
@@ -103,9 +117,7 @@ export function ProfileTab({
 
       return narratives
     }, new Map<OrderId, string>())
-  }
-
-  const orderProgressNarratives = buildOrderProgressNarratives([...pendingOrders, ...historyOrders])
+  }, [aiOrderProgressNarratives?.groups, historyOrders, orderProgressCycleSeed, pendingOrders])
   const safeFoodiePoints = Number.isFinite(foodiePoints) ? Math.max(0, Math.floor(foodiePoints)) : 0
   const safeFoodieLevel =
     Number.isFinite(foodieLevel) && foodieLevel > 0 ? Math.floor(foodieLevel) : Math.floor(safeFoodiePoints / 200) + 1
@@ -414,6 +426,9 @@ export function ProfileTab({
                 <p className="mt-1 text-sm text-muted-foreground">商家：{getMerchantName(order.merchantId)}</p>
                 <p className="mt-1 text-sm text-muted-foreground">收货地址：{order.deliveryAddress}</p>
                 <p className="mt-1 text-sm text-muted-foreground">实付：¥{order.payableAmount.toFixed(2)} · 预计积分：{Math.floor(order.payableAmount)}</p>
+                {getOrderStatusDescription(order) && (
+                  <p className="mt-2 text-xs font-medium text-primary">{getOrderStatusDescription(order)}</p>
+                )}
                 {orderProgressNarratives.get(order.id) && (
                   <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-sm text-primary shadow-sm">
                     <Sparkles className="size-4 shrink-0" aria-hidden />

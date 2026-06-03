@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -44,16 +44,20 @@ export function DeliveryContactAddDialog({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!open) {
-      return
-    }
+  const resetForm = () => {
     setName('')
     setPhone('')
     setAddress('')
     setAsDefault(false)
     setError(null)
-  }, [open])
+  }
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      resetForm()
+    }
+    onOpenChange(nextOpen)
+  }
 
   const handleConfirm = async () => {
     if (!name.trim() || !phone.trim() || !address.trim()) {
@@ -70,14 +74,14 @@ export function DeliveryContactAddDialog({
     })
     setBusy(false)
     if (result.ok) {
-      onOpenChange(false)
+      handleOpenChange(false)
       return
     }
     setError(result.message)
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
@@ -121,7 +125,7 @@ export function DeliveryContactAddDialog({
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" className="cursor-pointer" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" className="cursor-pointer" onClick={() => handleOpenChange(false)}>
             取消
           </Button>
           <Button type="button" className="cursor-pointer" disabled={busy} onClick={() => void handleConfirm()}>

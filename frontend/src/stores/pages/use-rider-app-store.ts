@@ -4,7 +4,7 @@ import { grabRiderOrderIO } from '@/apis/rider/RiderGrabOrderAPI'
 import { fetchRiderMeIO } from '@/apis/rider/RiderMeAPI'
 import { redeemRiderTimeoutCardIO } from '@/apis/rider/RiderRedeemTimeoutCardAPI'
 import { updateRiderOrderStatusIO } from '@/apis/rider/RiderUpdateOrderStatusAPI'
-import { useRiderTimeoutCardIO } from '@/apis/rider/RiderUseTimeoutCardAPI'
+import { riderUseTimeoutCardIO } from '@/apis/rider/RiderUseTimeoutCardAPI'
 import { runTask } from '@/apis/shared/client'
 import type { Order } from '@/objects/order/Order'
 import type { RiderAccountPublic } from '@/objects/rider/RiderAccountPublic'
@@ -75,7 +75,7 @@ export const useRiderAppStore = create<RiderAppStore>()((set, get) => ({
     return result
   },
   useTimeoutCard: async (orderId) => {
-    const result = await runTask(useRiderTimeoutCardIO(orderId))
+    const result = await runTask(riderUseTimeoutCardIO(orderId))
     await get().refreshRider()
     return result
   },

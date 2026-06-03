@@ -7,8 +7,9 @@ import type { AIOrderProgressNarrativesResponse } from '@/objects/ai/apiTypes/AI
 class AIOrderProgressNarrativesAPI extends APIMessage<AIOrderProgressNarrativesResponse> {
   readonly apiName = 'aiorderprogressnarrativesapi'
 
-  constructor(_request: AIOrderProgressNarrativesRequest) {
+  constructor(request: AIOrderProgressNarrativesRequest) {
     super()
+    Object.assign(this, request)
   }
 }
 

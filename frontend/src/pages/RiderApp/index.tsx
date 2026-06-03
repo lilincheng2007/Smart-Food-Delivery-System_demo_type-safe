@@ -25,7 +25,7 @@ export default function RiderApp() {
   const grabOrder = useRiderAppStore((state) => state.grabOrder)
   const updateOrderStatus = useRiderAppStore((state) => state.updateOrderStatus)
   const redeemTimeoutCard = useRiderAppStore((state) => state.redeemTimeoutCard)
-  const useTimeoutCard = useRiderAppStore((state) => state.useTimeoutCard)
+  const applyTimeoutCard = useRiderAppStore((state) => state.useTimeoutCard)
 
   useEffect(() => {
     resetPage()
@@ -118,7 +118,7 @@ export default function RiderApp() {
             .catch((error) => showNotice(error instanceof Error ? error.message : '更新状态失败', 'error'))
         }}
         onUseTimeoutCard={(orderId) => {
-          void useTimeoutCard(orderId)
+          void applyTimeoutCard(orderId)
             .then(() => showNotice('免责卡已使用，本单超时已免责。', 'success'))
             .catch((error) => showNotice(error instanceof Error ? error.message : '使用免责卡失败', 'error'))
         }}

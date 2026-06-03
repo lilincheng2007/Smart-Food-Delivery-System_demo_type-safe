@@ -15,15 +15,17 @@ import java.time.format.DateTimeFormatter
 final case class AIOrderProgressNarrativesAPIMessage() extends APIWithRoleMessage[AIOrderProgressNarrativesResponse]:
 
   private val progressStatuses = List(
-    OrderStatus.待接单,
+    OrderStatus.待商家接单,
     OrderStatus.制作中,
+    OrderStatus.待骑手接单,
     OrderStatus.配送中,
     OrderStatus.已送达,
     OrderStatus.已取消
   )
   private val progressStatusDescriptions: Map[OrderStatus, String] = Map(
-    OrderStatus.待接单 -> "商家已完成出餐，餐点已打包，正在等待骑手接单/取餐；不要写成等待商家接单、厨房接单或刚下单",
+    OrderStatus.待商家接单 -> "顾客已付款并提交订单，正在等待商家确认接单；不能写成等待骑手或已经出餐",
     OrderStatus.制作中 -> "商家已接单，后厨正在制作餐品",
+    OrderStatus.待骑手接单 -> "商家已完成出餐，餐点已打包，正在等待骑手接单/取餐；不能写成等待商家确认或厨房刚接单",
     OrderStatus.配送中 -> "骑手已接单并取餐，正在配送途中",
     OrderStatus.已送达 -> "餐品已送达顾客手中，等待顾客确认完成",
     OrderStatus.已取消 -> "订单已取消，流程结束"
@@ -69,8 +71,9 @@ $statusDescriptions
 3. 不要为“已完成”生成文案
 4. 每条文案 10-24 个中文字符左右，适合显示在订单卡片中
 5. 语气有趣但不夸张，不承诺准确时间
-6. “待接单”必须表达已出餐、已打包、等待骑手接单/取餐，不能写等待商家确认或厨房准备
-7. “制作中”可以包含厨师颠勺、备餐、热锅等画面；“配送中”可以包含骑手、路线、风声等画面"""
+6. “待商家接单”必须表达等待商家确认，不能写等待骑手、已出餐或正在配送
+7. “待骑手接单”必须表达已出餐、已打包、等待骑手接单/取餐，不能写等待商家确认或厨房准备
+8. “制作中”可以包含厨师颠勺、备餐、热锅等画面；“配送中”可以包含骑手、路线、风声等画面"""
 
   private def parseProgressResponse(
       json: Json,
@@ -102,18 +105,18 @@ $statusDescriptions
     AIOrderProgressNarrativesResponse(
       List(
         AIOrderProgressNarrativeGroup(
-          OrderStatus.待接单,
+          OrderStatus.待商家接单,
           List(
-            "餐点已出炉等待骑手接棒",
-            "美味已打包静候骑手",
-            "商家已备好热乎这一单",
-            "取餐台上美味正在待命",
-            "骑手接单铃声即将响起",
-            "餐盒已就位等待出发",
-            "出餐完成美味准备启程",
-            "厨房已交棒等待骑手",
-            "热乎餐点正在等骑手",
-            "美味已整装等待配送"
+            "订单已到店等待确认",
+            "商家正在查看你的点单",
+            "美味申请等待店家接收",
+            "小票已送达商家前台",
+            "店家确认按钮即将亮起",
+            "订单正在排队等店家回应",
+            "你的点单正在等待接待",
+            "商家确认中请稍候片刻",
+            "美食邀约正在等待回复",
+            "订单已提交静候商家接单"
           )
         ),
         AIOrderProgressNarrativeGroup(
@@ -129,6 +132,21 @@ $statusDescriptions
             "香味正在从厨房偷偷出发",
             "厨师小队正在精准备餐",
             "这份美味正在接受热锅淬炼"
+          )
+        ),
+        AIOrderProgressNarrativeGroup(
+          OrderStatus.待骑手接单,
+          List(
+            "餐点已出炉等待骑手接棒",
+            "美味已打包静候骑手",
+            "商家已备好热乎这一单",
+            "取餐台上美味正在待命",
+            "骑手接单铃声即将响起",
+            "餐盒已就位等待出发",
+            "出餐完成美味准备启程",
+            "厨房已交棒等待骑手",
+            "热乎餐点正在等骑手",
+            "美味已整装等待配送"
           )
         ),
         AIOrderProgressNarrativeGroup(

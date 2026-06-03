@@ -140,7 +140,7 @@ export default function CustomerCheckoutPage() {
         ? await checkout({ merchantId: merchantIdParam, delivery, voucherId })
         : await checkout({ delivery, voucherId })
       if (result.ok) {
-        showNotice(`结算成功，已创建 ${result.createdCount} 笔待收货订单。`, 'success')
+        showNotice(`结算成功，已提交 ${result.createdCount} 笔订单，等待商家接单。`, 'success')
         setActiveTab('profile')
         navigate('/delivery/customer')
         return

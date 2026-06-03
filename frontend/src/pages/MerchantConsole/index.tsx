@@ -34,6 +34,8 @@ export default function MerchantConsole() {
   const refreshMerchant = useMerchantConsoleStore((state) => state.refreshMerchant)
   const createStore = useMerchantConsoleStore((state) => state.createStore)
   const createProduct = useMerchantConsoleStore((state) => state.createProduct)
+  const acceptOrder = useMerchantConsoleStore((state) => state.acceptOrder)
+  const rejectOrder = useMerchantConsoleStore((state) => state.rejectOrder)
   const finishCooking = useMerchantConsoleStore((state) => state.finishCooking)
   const updateProduct = useMerchantConsoleStore((state) => state.updateProduct)
 
@@ -115,7 +117,7 @@ export default function MerchantConsole() {
                 菜品
               </TabsTrigger>
               <TabsTrigger value="orders" className="rounded-lg">
-                出餐处理
+                订单处理
               </TabsTrigger>
               <TabsTrigger value="profile" className="rounded-lg">
                 我的
@@ -149,9 +151,19 @@ export default function MerchantConsole() {
         <TabsContent value="orders">
           <OrdersTab
             selectedStore={selectedStore}
+            onAcceptOrder={(orderId) => {
+              void acceptOrder(orderId)
+                .then(() => showNotice('已接单，订单进入制作中。', 'success'))
+                .catch((error) => showNotice(error instanceof Error ? error.message : '接单失败', 'error'))
+            }}
+            onRejectOrder={(orderId) => {
+              void rejectOrder(orderId)
+                .then(() => showNotice('已拒收订单，款项将退回顾客钱包。', 'success'))
+                .catch((error) => showNotice(error instanceof Error ? error.message : '拒收失败', 'error'))
+            }}
             onFinishCooking={(orderId) => {
               void finishCooking(orderId)
-                .then(() => showNotice('订单已进入待骑手抢单状态。', 'success'))
+                .then(() => showNotice('订单已进入待骑手接单状态。', 'success'))
                 .catch((error) => showNotice(error instanceof Error ? error.message : '出餐完成失败', 'error'))
             }}
           />

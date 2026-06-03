@@ -11,7 +11,7 @@ object RiderAPIMessageSupport:
     OrderStatus.history.contains(status)
 
   def isAvailableOrder(orderStatus: OrderStatus): Boolean =
-    orderStatus == OrderStatus.待接单
+    orderStatus == OrderStatus.待骑手接单
 
   def statusView(record: RiderAssignmentRecord, canUseTimeoutCard: Boolean): RiderDeliveryStatus =
     RiderDeliveryStatus(

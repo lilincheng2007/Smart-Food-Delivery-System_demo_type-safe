@@ -18,7 +18,7 @@ export function DispatchCard({ availableOrders, onGrabOrder }: DispatchCardProps
           <Bike className="size-5 text-orange-500" />
           抢单
         </CardTitle>
-        <CardDescription>这里展示商家已出餐、正在等待骑手接单取餐的订单</CardDescription>
+        <CardDescription>这里仅展示状态为待骑手接单的订单，均已由商家确认并出餐。</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {availableOrders.length === 0 ? (

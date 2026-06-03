@@ -26,7 +26,7 @@ final case class RiderGrabOrderAPIMessage(orderId: OrderId) extends APIWithRoleM
         case None        => IO.raiseError(HttpApiError.BadRequest("未找到订单"))
       }
       _ <-
-        if !RiderAPIMessageSupport.isAvailableOrder(order.status) || order.riderId.nonEmpty then IO.raiseError(HttpApiError.BadRequest("订单已被其他骑手抢走"))
+        if !RiderAPIMessageSupport.isAvailableOrder(order.status) || order.riderId.nonEmpty then IO.raiseError(HttpApiError.BadRequest("该订单暂不可抢或已被其他骑手抢走"))
         else IO.unit
       updatedOrder = order.copy(riderId = Some(account.profile.rider.id), status = OrderStatus.配送中)
       updatedRider = account.profile.rider.copy(status = RiderStatus.配送中, totalOrders = account.profile.rider.totalOrders + 1)

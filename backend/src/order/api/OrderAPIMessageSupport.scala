@@ -97,7 +97,7 @@ object OrderAPIMessageSupport:
                   items = items,
                   totalAmount = orderPayable,
                   deliveryAddress = customerProfile.defaultAddress,
-                  status = OrderStatus.制作中,
+                  status = OrderStatus.待商家接单,
                   placedAt = orderTimeText,
                   originalAmount = orderOriginalAmount,
                   discountAmount = orderDiscount,

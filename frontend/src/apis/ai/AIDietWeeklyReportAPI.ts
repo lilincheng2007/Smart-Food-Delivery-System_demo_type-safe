@@ -7,8 +7,9 @@ import type { AIDietWeeklyReportResponse } from '@/objects/ai/apiTypes/AIDietWee
 class AIDietWeeklyReportAPI extends APIMessage<AIDietWeeklyReportResponse> {
   readonly apiName = 'aidietweeklyreportapi'
 
-  constructor(_request: AIDietWeeklyReportRequest) {
+  constructor(request: AIDietWeeklyReportRequest) {
     super()
+    Object.assign(this, request)
   }
 }
 

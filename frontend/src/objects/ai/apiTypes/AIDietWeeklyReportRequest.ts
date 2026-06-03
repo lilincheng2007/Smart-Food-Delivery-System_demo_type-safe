@@ -1,1 +1,1 @@
-export interface AIDietWeeklyReportRequest {}
+export type AIDietWeeklyReportRequest = Record<string, never>

@@ -70,6 +70,17 @@ object CustomerProfileTable:
   def findByUsername(connection: Connection, username: String): IO[Option[CustomerAccountRecord]] =
     queryOne(connection.prepareStatement(findSql))(_.setString(1, username))
 
+  private val findByIdSql: String =
+    """
+      |SELECT id, username, role, name, phone, default_address, wallet_balance,
+      |       vouchers, pending_orders, history_orders, delivery_contacts, foodie_points, foodie_level
+      |FROM customer_profiles
+      |WHERE id = ?
+      |""".stripMargin
+
+  def findById(connection: Connection, id: String): IO[Option[CustomerAccountRecord]] =
+    queryOne(connection.prepareStatement(findByIdSql))(_.setString(1, id))
+
   private def queryOne(statement: PreparedStatement)(bind: PreparedStatement => Unit): IO[Option[CustomerAccountRecord]] =
     IO.blocking {
       try

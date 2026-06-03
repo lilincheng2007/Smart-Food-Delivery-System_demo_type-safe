@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
 import { ChartNoAxesCombined } from 'lucide-react'
 
 import { DeliveryLogoutBar } from '@/components/DeliveryLogoutBar'
@@ -22,21 +22,23 @@ export function ProfileTab({ selectedStore, onOpenStoreDialog }: ProfileTabProps
   const updateStoreImage = useMerchantConsoleStore((state) => state.updateStoreImage)
   const uploadStoreImageFile = useMerchantConsoleStore((state) => state.uploadStoreImageFile)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [storeImageUrl, setStoreImageUrl] = useState('')
-
-  useEffect(() => {
-    setStoreImageUrl(selectedStore?.merchant.imageUrl?.trim() ?? '')
-  }, [selectedStore?.merchant.id, selectedStore?.merchant.imageUrl])
-
-  /** 预览与输入框一致：本地上传后接口写入 merchant，输入框也可能暂存链接；避免仅 merchant 未同步时预览空白 */
-  const coverUrl =
-    (selectedStore?.merchant.imageUrl ?? '').trim() || storeImageUrl.trim()
+  const [storeImageDraft, setStoreImageDraft] = useState<{ merchantId: string | null; imageUrl: string }>({
+    merchantId: null,
+    imageUrl: '',
+  })
+  const selectedMerchantId = selectedStore?.merchant.id ?? null
+  const storeImageUrl =
+    storeImageDraft.merchantId === selectedMerchantId
+      ? storeImageDraft.imageUrl
+      : (selectedStore?.merchant.imageUrl?.trim() ?? '')
+  const coverUrl = storeImageUrl.trim()
 
   const merchantPendingOrders = selectedStore?.pendingOrders ?? []
   const merchantHistoryOrders = selectedStore?.historyOrders ?? []
-  const activeCookingOrders = merchantPendingOrders.filter((order) => order.status === OrderStatuses.cooking)
-  const historyOrders = [...merchantPendingOrders.filter((order) => order.status !== OrderStatuses.cooking), ...merchantHistoryOrders]
-  const totalTurnover = historyOrders.reduce((sum, item) => sum + item.payableAmount, 0)
+  const activeProcessingOrders = merchantPendingOrders.filter(
+    (order) => order.status === OrderStatuses.waitingForMerchantAcceptance || order.status === OrderStatuses.cooking,
+  )
+  const totalTurnover = merchantHistoryOrders.reduce((sum, item) => sum + item.payableAmount, 0)
 
   const handleSaveStoreImage = async () => {
     if (!selectedStore) {
@@ -46,6 +48,7 @@ export function ProfileTab({ selectedStore, onOpenStoreDialog }: ProfileTabProps
 
     try {
       await updateStoreImage(selectedStore.merchant.id, storeImageUrl)
+      setStoreImageDraft({ merchantId: null, imageUrl: '' })
       showNotice('店铺图片已保存，顾客端首页将展示该链接图片。', 'success')
     } catch (error) {
       showNotice(error instanceof Error ? error.message : '保存失败', 'error')
@@ -71,6 +74,7 @@ export function ProfileTab({ selectedStore, onOpenStoreDialog }: ProfileTabProps
 
     try {
       await uploadStoreImageFile(selectedStore.merchant.id, file)
+      setStoreImageDraft({ merchantId: null, imageUrl: '' })
       showNotice('本地上传成功，顾客端首页将显示该图片。', 'success')
     } catch (error) {
       showNotice(error instanceof Error ? error.message : '上传失败', 'error')
@@ -113,7 +117,7 @@ export function ProfileTab({ selectedStore, onOpenStoreDialog }: ProfileTabProps
               inputMode="url"
               placeholder="https://example.com/your-store-cover.jpg"
               value={storeImageUrl}
-              onChange={(event) => setStoreImageUrl(event.target.value)}
+              onChange={(event) => setStoreImageDraft({ merchantId: selectedMerchantId, imageUrl: event.target.value })}
               disabled={!selectedStore}
             />
           </div>
@@ -149,11 +153,11 @@ export function ProfileTab({ selectedStore, onOpenStoreDialog }: ProfileTabProps
               </div>
               <div className="flex items-center justify-between rounded-xl border border-orange-100 p-3">
                 <span>待处理订单</span>
-                <span>{activeCookingOrders.length}</span>
+                <span>{activeProcessingOrders.length}</span>
               </div>
               <div className="flex items-center justify-between rounded-xl border border-orange-100 p-3">
                 <span>历史订单</span>
-                <span>{historyOrders.length}</span>
+                <span>{merchantHistoryOrders.length}</span>
               </div>
               <div className="flex items-center justify-between rounded-xl border border-orange-100 p-3">
                 <span>总成交额</span>

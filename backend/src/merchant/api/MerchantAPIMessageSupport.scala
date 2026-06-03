@@ -13,8 +13,14 @@ object MerchantAPIMessageSupport:
   def isHistoryOrderStatus(status: OrderStatus): Boolean =
     OrderStatus.history.contains(status)
 
+  def canAcceptOrder(status: OrderStatus): Boolean =
+    status == OrderStatus.待商家接单
+
+  def canRejectOrder(status: OrderStatus): Boolean =
+    status == OrderStatus.待商家接单
+
   def canFinishCooking(status: OrderStatus): Boolean =
-    status == OrderStatus.制作中 || status == OrderStatus.待接单
+    status == OrderStatus.制作中
 
   def inventoryStatus(remainingStock: Int, listingStatus: ListingStatus): InventoryStatus =
     if listingStatus == ListingStatus.下架 || remainingStock <= 0 then InventoryStatus.售罄

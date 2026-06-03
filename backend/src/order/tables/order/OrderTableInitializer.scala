@@ -36,6 +36,9 @@ object OrderTableInitializer:
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS payable_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (payable_amount >= 0);
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS used_voucher JSONB;
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_awarded INTEGER NOT NULL DEFAULT 0 CHECK (points_awarded >= 0);
+      |ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
+      |UPDATE orders SET status = '待骑手接单' WHERE status = '待接单';
+      |ALTER TABLE orders ADD CONSTRAINT orders_status_check CHECK (status IN ($orderStatusSql));
       |UPDATE orders SET original_amount = total_amount WHERE original_amount = 0;
       |UPDATE orders SET payable_amount = total_amount WHERE payable_amount = 0;
       |

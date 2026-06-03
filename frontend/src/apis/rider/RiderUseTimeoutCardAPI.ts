@@ -14,6 +14,6 @@ class RiderUseTimeoutCardAPI extends APIMessage<RiderUseTimeoutCardResponse> {
   }
 }
 
-export function useRiderTimeoutCardIO(orderId: OrderId): TaskIO<RiderUseTimeoutCardResponse> {
+export function riderUseTimeoutCardIO(orderId: OrderId): TaskIO<RiderUseTimeoutCardResponse> {
   return sendAPI(new RiderUseTimeoutCardAPI(orderId))
 }
