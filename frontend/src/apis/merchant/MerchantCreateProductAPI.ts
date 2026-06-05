@@ -10,6 +10,8 @@ class MerchantCreateProductAPI extends APIMessage<Product> {
   readonly merchantId: MerchantId
   readonly name: string
   readonly description: string
+  readonly imageUrl: string
+  readonly categoryName: string
   readonly price: number
   readonly remainingStock: number
   readonly listingStatus: ListingStatus
@@ -18,6 +20,8 @@ class MerchantCreateProductAPI extends APIMessage<Product> {
     merchantId: MerchantId,
     name: string,
     description: string,
+    imageUrl: string,
+    categoryName: string,
     price: number,
     remainingStock: number,
     listingStatus: ListingStatus,
@@ -26,6 +30,8 @@ class MerchantCreateProductAPI extends APIMessage<Product> {
     this.merchantId = merchantId
     this.name = name
     this.description = description
+    this.imageUrl = imageUrl
+    this.categoryName = categoryName
     this.price = price
     this.remainingStock = remainingStock
     this.listingStatus = listingStatus
@@ -38,6 +44,8 @@ export function createMerchantProductIO(input: CreateProductRequest): TaskIO<Pro
       input.merchantId,
       input.name,
       input.description,
+      input.imageUrl,
+      input.categoryName,
       input.price,
       input.remainingStock,
       input.listingStatus,

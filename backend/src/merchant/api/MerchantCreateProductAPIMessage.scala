@@ -13,6 +13,8 @@ final case class MerchantCreateProductAPIMessage(
     merchantId: MerchantId,
     name: String,
     description: String,
+    imageUrl: Option[String],
+    categoryName: Option[String],
     price: Double,
     remainingStock: Int,
     listingStatus: ListingStatus
@@ -23,6 +25,8 @@ final case class MerchantCreateProductAPIMessage(
     else
       for
         merchant <- MerchantAPIMessageSupport.requireOwnedStore(connection, username, merchantId)
+        productImageUrl <- MerchantAPIMessageSupport.validateProductImageUrl(imageUrl.getOrElse(""))
+        productCategoryName = MerchantAPIMessageSupport.normalizeProductCategoryName(categoryName)
         nowMillis <- IO.realTime.map(_.toMillis)
         product = Product(
           id = s"p-local-$nowMillis",
@@ -30,7 +34,8 @@ final case class MerchantCreateProductAPIMessage(
           name = name.trim,
           price = price,
           description = description.trim,
-          imageUrl = s"https://picsum.photos/200/120?product-$nowMillis",
+          imageUrl = productImageUrl,
+          categoryName = productCategoryName,
           monthlySales = 0,
           remainingStock = remainingStock,
           listingStatus = listingStatus,

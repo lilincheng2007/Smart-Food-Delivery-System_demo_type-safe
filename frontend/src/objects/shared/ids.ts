@@ -48,7 +48,10 @@ export const OrderStatuses = {
 export type OrderStatus = (typeof OrderStatuses)[keyof typeof OrderStatuses]
 
 export const RefundStatuses = {
-  pending: '待审核',
+  pending: '待商家审核',
+  legacyPending: '待审核',
+  merchantRejected: '商家已驳回',
+  adminPending: '待管理员仲裁',
   accepted: '已通过',
   rejected: '已驳回',
 } as const

@@ -35,7 +35,7 @@ object MerchantReviewTable:
     }
 
   private val findByOrderSql: String =
-    "SELECT id, order_id, merchant_id, customer_id, customer_name, rating, description, image_url, created_at FROM merchant_reviews WHERE order_id = ?"
+    "SELECT id, order_id, merchant_id, customer_id, customer_name, rating, description, image_url, merchant_reply, merchant_reply_at, created_at FROM merchant_reviews WHERE order_id = ?"
 
   def findByOrder(connection: Connection, orderId: OrderId): IO[Option[MerchantReview]] =
     IO.blocking {
@@ -50,7 +50,8 @@ object MerchantReviewTable:
 
   private val listByMerchantSql: String =
     """
-      |SELECT r.id, r.order_id, r.merchant_id, r.customer_id, r.customer_name, r.rating, r.description, r.image_url, r.created_at,
+      |SELECT r.id, r.order_id, r.merchant_id, r.customer_id, r.customer_name, r.rating, r.description, r.image_url,
+      |       r.merchant_reply, r.merchant_reply_at, r.created_at,
       |       COALESCE(SUM(CASE WHEN v.vote = 'up' THEN 1 ELSE 0 END), 0) AS upvotes,
       |       COALESCE(SUM(CASE WHEN v.vote = 'down' THEN 1 ELSE 0 END), 0) AS downvotes
       |FROM merchant_reviews r
@@ -73,6 +74,24 @@ object MerchantReviewTable:
         finally rs.close()
       finally statement.close()
     }.flatMap(attachOrderItemNames(connection, _))
+
+  private val replySql: String =
+    """
+      |UPDATE merchant_reviews
+      |SET merchant_reply = ?, merchant_reply_at = now()
+      |WHERE id = ? AND merchant_id = ?
+      |""".stripMargin
+
+  def reply(connection: Connection, reviewId: String, merchantId: MerchantId, reply: String): IO[Boolean] =
+    IO.blocking {
+      val statement = connection.prepareStatement(replySql)
+      try
+        statement.setString(1, reply)
+        statement.setString(2, reviewId)
+        statement.setString(3, merchantId)
+        statement.executeUpdate() > 0
+      finally statement.close()
+    }
 
   private val summarySql: String =
     "SELECT COALESCE(AVG(rating), 0) AS average_rating, COUNT(*) AS review_count FROM merchant_reviews WHERE merchant_id = ?"
@@ -126,7 +145,9 @@ object MerchantReviewTable:
       imageUrl = Option(rs.getString("image_url")),
       upvotes = upvotes,
       downvotes = downvotes,
-      createdAt = rs.getTimestamp("created_at").toInstant.toString
+      createdAt = rs.getTimestamp("created_at").toInstant.toString,
+      merchantReply = Option(rs.getString("merchant_reply")),
+      merchantReplyAt = Option(rs.getTimestamp("merchant_reply_at")).map(_.toInstant.toString)
     )
 
   private def attachOrderItemNames(connection: Connection, reviews: List[MerchantReview]): IO[List[MerchantReview]] =

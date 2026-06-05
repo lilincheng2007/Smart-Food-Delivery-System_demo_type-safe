@@ -7,9 +7,11 @@ import { rejectMerchantOrderIO } from '@/apis/merchant/MerchantOrderRejectAPI'
 import { finishMerchantOrderCookingIO } from '@/apis/merchant/MerchantOrderReadyAPI'
 import { createMerchantProductIO } from '@/apis/merchant/MerchantCreateProductAPI'
 import { updateMerchantProductDescriptionsIO } from '@/apis/merchant/MerchantProductDescriptionsAPI'
+import { uploadMerchantProductImageFileIO } from '@/apis/merchant/MerchantProductImageFileAPI'
 import { updateMerchantProductIO } from '@/apis/merchant/MerchantProductAPI'
 import { fetchMerchantMeIO } from '@/apis/merchant/MerchantMeAPI'
 import { uploadMerchantStoreImageFileIO } from '@/apis/merchant/MerchantStoreImageFileAPI'
+import { updateMerchantStoreAnnouncementIO } from '@/apis/merchant/MerchantStoreAnnouncementAPI'
 import { updateMerchantStoreDescriptionIO } from '@/apis/merchant/MerchantStoreDescriptionAPI'
 import { updateMerchantStoreImageIO } from '@/apis/merchant/MerchantStoreImageAPI'
 import { createMerchantStoreIO } from '@/apis/merchant/MerchantStoreAPI'
@@ -19,12 +21,13 @@ import type { AIMerchantStoreDescriptionResponse } from '@/objects/ai/apiTypes/A
 import type { CreateProductRequest } from '@/objects/merchant/apiTypes/CreateProductRequest'
 import type { MerchantAccountPublic } from '@/objects/merchant/MerchantAccountPublic'
 import type { MerchantStoreProfile } from '@/objects/merchant/MerchantStoreProfile'
+import type { Product } from '@/objects/merchant/Product'
 import type { ProductDescriptionPatch } from '@/objects/merchant/ProductDescriptionPatch'
 import type { UpdateProductRequest } from '@/objects/merchant/apiTypes/UpdateProductRequest'
-import type { MerchantId, OrderId } from '@/objects/shared/ids'
+import type { MerchantId, OrderId, ProductId } from '@/objects/shared/ids'
 import type { StoreOnboardingRequest } from '@/objects/admin/StoreOnboardingRequest'
 
-export type MerchantTab = 'products' | 'orders' | 'profile'
+export type MerchantTab = 'products' | 'orders' | 'business' | 'reviews' | 'profile'
 
 type MerchantConsoleStore = {
   bootstrapDone: boolean
@@ -53,8 +56,10 @@ type MerchantConsoleStore = {
   finishCooking: (orderId: OrderId) => Promise<void>
   createProduct: (input: CreateProductRequest) => Promise<void>
   updateProduct: (productId: string, input: UpdateProductRequest) => Promise<void>
+  uploadProductImageFile: (productId: ProductId, file: File) => Promise<Product>
   generateStoreDescription: (merchantId: MerchantId, keywords: string) => Promise<AIMerchantStoreDescriptionResponse>
   saveStoreDescription: (merchantId: MerchantId, description: string) => Promise<void>
+  saveStoreAnnouncement: (merchantId: MerchantId, announcement: string) => Promise<void>
   generateProductDescriptions: (merchantId: MerchantId, keywords: string) => Promise<AIMerchantProductDescriptionsResponse>
   saveProductDescriptions: (merchantId: MerchantId, descriptions: ProductDescriptionPatch[]) => Promise<void>
   updateStoreImage: (merchantId: string, imageUrl: string) => Promise<void>
@@ -153,13 +158,74 @@ export const useMerchantConsoleStore = create<MerchantConsoleStore>()((set, get)
     await get().refreshMerchant()
   },
   updateProduct: async (productId, input) => {
-    await runTask(updateMerchantProductIO(productId, input))
+    const updated = await runTask(updateMerchantProductIO(productId, input))
+    const normalizedCategoryName = input.categoryName.trim() || '默认分类'
+    const patchedProduct = { ...updated, categoryName: normalizedCategoryName }
+    const patchStore = (st: MerchantStoreProfile): MerchantStoreProfile =>
+      st.merchant.id === patchedProduct.merchantId
+        ? {
+            ...st,
+            products: st.products.map((product) => (product.id === patchedProduct.id ? patchedProduct : product)),
+          }
+        : st
+    set((state) => ({
+      stores: state.stores.map(patchStore),
+      merchantAccount: state.merchantAccount
+        ? {
+            ...state.merchantAccount,
+            profile: {
+              ...state.merchantAccount.profile,
+              stores: state.merchantAccount.profile.stores.map(patchStore),
+            },
+          }
+        : state.merchantAccount,
+    }))
     await get().refreshMerchant()
+    set((state) => ({
+      stores: state.stores.map(patchStore),
+      merchantAccount: state.merchantAccount
+        ? {
+            ...state.merchantAccount,
+            profile: {
+              ...state.merchantAccount.profile,
+              stores: state.merchantAccount.profile.stores.map(patchStore),
+            },
+          }
+        : state.merchantAccount,
+    }))
+  },
+  uploadProductImageFile: async (productId, file) => {
+    const updated = await runTask(uploadMerchantProductImageFileIO(productId, file))
+    const patchStore = (st: MerchantStoreProfile): MerchantStoreProfile =>
+      st.merchant.id === updated.merchantId
+        ? {
+            ...st,
+            products: st.products.map((product) => (product.id === updated.id ? updated : product)),
+          }
+        : st
+    set((state) => ({
+      stores: state.stores.map(patchStore),
+      merchantAccount: state.merchantAccount
+        ? {
+            ...state.merchantAccount,
+            profile: {
+              ...state.merchantAccount.profile,
+              stores: state.merchantAccount.profile.stores.map(patchStore),
+            },
+          }
+        : state.merchantAccount,
+    }))
+    await get().refreshMerchant()
+    return updated
   },
   generateStoreDescription: async (merchantId, keywords) =>
     runTask(aiMerchantStoreDescriptionIO({ merchantId, keywords })),
   saveStoreDescription: async (merchantId, description) => {
     await runTask(updateMerchantStoreDescriptionIO(merchantId, description))
+    await get().refreshMerchant()
+  },
+  saveStoreAnnouncement: async (merchantId, announcement) => {
+    await runTask(updateMerchantStoreAnnouncementIO(merchantId, announcement))
     await get().refreshMerchant()
   },
   generateProductDescriptions: async (merchantId, keywords) =>

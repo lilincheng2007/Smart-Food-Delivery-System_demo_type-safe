@@ -13,5 +13,6 @@ final case class Product(
     remainingStock: Int,
     listingStatus: ListingStatus,
     inventoryStatus: InventoryStatus,
-    discountText: Option[String] = None
+    discountText: Option[String] = None,
+    categoryName: String = "默认分类"
 )

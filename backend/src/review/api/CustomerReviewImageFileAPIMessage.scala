@@ -1,10 +1,9 @@
 package delivery.review.api
 
 import cats.effect.IO
-import delivery.review.utils.ReviewImageUploads
 import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
+import delivery.shared.tables.storedimage.{StoredImage, StoredImageMigration, StoredImageTable}
 
-import java.nio.file.Files
 import java.sql.Connection
 import java.util.{Base64, UUID}
 
@@ -17,5 +16,5 @@ final case class CustomerReviewImageFileAPIMessage(bytesBase64: String, contentT
       ext <- IO.fromEither(ReviewAPIMessageSupport.imageExtension(contentTypeLower, filenameHint).left.map(HttpApiError.BadRequest.apply))
       storedName = s"${UUID.randomUUID()}$ext"
       publicPath = s"/api/reviews/images/$storedName"
-      _ <- IO.blocking(Files.write(ReviewImageUploads.directory.resolve(storedName), bytes))
+      _ <- StoredImageTable.upsert(connection, StoredImage(storedName, "review", StoredImageMigration.contentTypeFor(storedName), bytes))
     yield publicPath

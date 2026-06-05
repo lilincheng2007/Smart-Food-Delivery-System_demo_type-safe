@@ -29,6 +29,7 @@ export default function CustomerPortal() {
   const products = useCustomerPortalStore((state) => state.products)
   const activeTab = useCustomerPortalStore((state) => state.activeTab)
   const cartLines = useCustomerPortalStore((state) => state.cartLines)
+  const favorites = useCustomerPortalStore((state) => state.favorites)
   const walletBalance = useCustomerPortalStore((state) => state.walletBalance)
   const pendingOrders = useCustomerPortalStore((state) => state.pendingOrders)
   const historyOrders = useCustomerPortalStore((state) => state.historyOrders)
@@ -39,6 +40,7 @@ export default function CustomerPortal() {
   const [refundTargetOrder, setRefundTargetOrder] = useState<typeof selectedOrder>(null)
   const bootstrap = useCustomerPortalStore((state) => state.bootstrap)
   const setActiveTab = useCustomerPortalStore((state) => state.setActiveTab)
+  const toggleFavorite = useCustomerPortalStore((state) => state.toggleFavorite)
   const changeQuantity = useCustomerPortalStore((state) => state.changeQuantity)
   const setIsRechargeOpen = useCustomerPortalStore((state) => state.setIsRechargeOpen)
   const setRechargeAmountInput = useCustomerPortalStore((state) => state.setRechargeAmountInput)
@@ -60,6 +62,7 @@ export default function CustomerPortal() {
   const uploadRefundImage = useCustomerPortalStore((state) => state.uploadRefundImage)
   const submitReview = useCustomerPortalStore((state) => state.submitReview)
   const requestRefund = useCustomerPortalStore((state) => state.requestRefund)
+  const appealRefund = useCustomerPortalStore((state) => state.appealRefund)
 
   useEffect(() => {
     void (async () => {
@@ -151,6 +154,13 @@ export default function CustomerPortal() {
     showNotice(result.message, 'error')
   }
 
+  const handleGenerateAIDietReport = async () => {
+    const result = await generateAIDietReport()
+    if (!result.ok) {
+      showNotice(result.message, 'error')
+    }
+  }
+
   const handleDiscardExpiredVoucher = async (voucherId: string) => {
     const result = await discardExpiredVoucher(voucherId)
     if (result.ok) {
@@ -161,11 +171,14 @@ export default function CustomerPortal() {
     showNotice(result.message, 'error')
   }
 
-  const handleGenerateAIDietReport = async () => {
-    const result = await generateAIDietReport()
-    if (!result.ok) {
-      showNotice(result.message, 'error')
+  const handleAppealRefund = async (orderId: string) => {
+    const result = await appealRefund(orderId)
+    if (result.ok) {
+      showNotice('已提交管理员仲裁，请等待处理结果。', 'success')
+      return
     }
+
+    showNotice(result.message, 'error')
   }
 
   if (!bootstrapDone) {
@@ -255,11 +268,14 @@ export default function CustomerPortal() {
             username={customerAccount.username}
             walletBalance={walletBalance}
             merchants={merchants}
+            products={products}
             pendingOrders={pendingOrders}
             historyOrders={historyOrders}
             vouchers={customerAccount.profile.vouchers}
             foodiePoints={customerAccount.profile.foodiePoints}
             foodieLevel={customerAccount.profile.foodieLevel}
+            favoriteMerchantIds={favorites.merchantIds}
+            favoriteProductIds={favorites.productIds}
             aiDietReport={aiDietReport}
             aiDietReportLoading={aiDietReportLoading}
             aiDietReportError={aiDietReportError}
@@ -267,8 +283,11 @@ export default function CustomerPortal() {
             onOpenRecharge={() => setIsRechargeOpen(true)}
             onSelectOrder={(orderId) => void handleOpenOrderDetail(orderId)}
             onCompleteOrder={(orderId) => void handleCompleteOrder(orderId)}
+            onAppealRefund={(orderId) => void handleAppealRefund(orderId)}
             onGenerateAIDietReport={() => void handleGenerateAIDietReport()}
             onDiscardExpiredVoucher={(voucherId) => void handleDiscardExpiredVoucher(voucherId)}
+            onToggleMerchantFavorite={(merchantId) => toggleFavorite('merchant', merchantId)}
+            onToggleProductFavorite={(productId) => toggleFavorite('product', productId)}
           />
         </TabsContent>
       </Tabs>
@@ -288,6 +307,7 @@ export default function CustomerPortal() {
         onCompleteOrder={(order) => void handleCompleteOrder(order.id)}
         onReviewOrder={(order) => setReviewTargetOrder(order)}
         onRefundOrder={(order) => setRefundTargetOrder(order)}
+        onAppealRefund={(order) => void handleAppealRefund(order.id)}
       />
       <OrderRefundDialog
         order={refundTargetOrder}

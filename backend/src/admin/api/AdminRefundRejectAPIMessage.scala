@@ -18,7 +18,7 @@ final case class AdminRefundRejectAPIMessage(orderId: OrderId, reason: String) e
         case None        => IO.raiseError(HttpApiError.BadRequest("未找到订单"))
       }
       _ <-
-        if !order.refundStatus.contains(RefundStatus.待审核) then IO.raiseError(HttpApiError.BadRequest("该订单没有待审核退款申请"))
+        if !order.refundStatus.contains(RefundStatus.待管理员仲裁) then IO.raiseError(HttpApiError.BadRequest("该订单没有待管理员仲裁的退款申请"))
         else if trimmedReason.isEmpty then IO.raiseError(HttpApiError.BadRequest("驳回原因不能为空"))
         else IO.unit
       updatedOrder = order.copy(refundStatus = Some(RefundStatus.已驳回), refundAdminReason = Some(trimmedReason))

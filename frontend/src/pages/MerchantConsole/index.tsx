@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAppChrome } from '@/hooks/useAppChrome'
 import { useMerchantConsoleStore } from '@/stores/pages/use-merchant-console-store'
 
+import { BusinessDataTab } from './components/BusinessDataTab'
+import { MerchantReviewsTab } from './components/MerchantReviewsTab'
 import { OrdersTab } from './components/OrdersTab'
 import { ProductsTab } from './components/ProductsTab'
 import { ProfileTab } from './components/ProfileTab'
@@ -41,6 +43,7 @@ export default function MerchantConsole() {
   const rejectOrder = useMerchantConsoleStore((state) => state.rejectOrder)
   const finishCooking = useMerchantConsoleStore((state) => state.finishCooking)
   const updateProduct = useMerchantConsoleStore((state) => state.updateProduct)
+  const uploadProductImageFile = useMerchantConsoleStore((state) => state.uploadProductImageFile)
 
   useEffect(() => {
     resetPage()
@@ -120,12 +123,18 @@ export default function MerchantConsole() {
       >
         <Card className="border-orange-100 bg-white/95 py-0">
           <CardContent className="px-4 py-4">
-            <TabsList className="grid h-11 w-full grid-cols-3 rounded-xl bg-orange-50 p-1">
+            <TabsList className="grid h-auto w-full grid-cols-2 rounded-xl bg-orange-50 p-1 sm:grid-cols-5">
               <TabsTrigger value="products" className="rounded-lg">
                 菜品
               </TabsTrigger>
               <TabsTrigger value="orders" className="rounded-lg">
                 订单处理
+              </TabsTrigger>
+              <TabsTrigger value="business" className="rounded-lg">
+                经营数据
+              </TabsTrigger>
+              <TabsTrigger value="reviews" className="rounded-lg">
+                用户反馈
               </TabsTrigger>
               <TabsTrigger value="profile" className="rounded-lg">
                 我的
@@ -153,6 +162,17 @@ export default function MerchantConsole() {
                   throw error
                 })
             }
+            onUploadProductImage={(productId, file) =>
+              uploadProductImageFile(productId, file)
+                .then((product) => {
+                  showNotice('菜品图片已上传，顾客端点餐页将显示该图片。', 'success')
+                  return product
+                })
+                .catch((error) => {
+                  showNotice(error instanceof Error ? error.message : '上传菜品图片失败', 'error')
+                  throw error
+                })
+            }
           />
         </TabsContent>
 
@@ -175,6 +195,14 @@ export default function MerchantConsole() {
                 .catch((error) => showNotice(error instanceof Error ? error.message : '出餐完成失败', 'error'))
             }}
           />
+        </TabsContent>
+
+        <TabsContent value="business">
+          <BusinessDataTab selectedStore={selectedStore} />
+        </TabsContent>
+
+        <TabsContent value="reviews">
+          <MerchantReviewsTab selectedStore={selectedStore} />
         </TabsContent>
 
         <TabsContent value="profile">

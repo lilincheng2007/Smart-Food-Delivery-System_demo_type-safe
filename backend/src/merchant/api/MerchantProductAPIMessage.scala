@@ -12,6 +12,8 @@ final case class MerchantProductAPIMessage(
     productId: ProductId,
     name: String,
     description: String,
+    imageUrl: Option[String],
+    categoryName: Option[String],
     price: Double,
     remainingStock: Int,
     listingStatus: ListingStatus
@@ -26,9 +28,13 @@ final case class MerchantProductAPIMessage(
           case None        => IO.raiseError(HttpApiError.BadRequest("未找到菜品"))
         }
         _ <- MerchantAPIMessageSupport.requireOwnedStore(connection, username, existing.merchantId)
+        productImageUrl <- MerchantAPIMessageSupport.validateProductImageUrl(imageUrl.getOrElse(existing.imageUrl))
+        productCategoryName = MerchantAPIMessageSupport.normalizeProductCategoryName(categoryName.orElse(Some(existing.categoryName)))
         updated = existing.copy(
           name = name.trim,
           description = description.trim,
+          imageUrl = productImageUrl,
+          categoryName = productCategoryName,
           price = price,
           remainingStock = remainingStock,
           listingStatus = listingStatus,

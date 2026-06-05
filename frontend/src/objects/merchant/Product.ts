@@ -7,6 +7,7 @@ export interface Product {
   price: number
   description: string
   imageUrl: string
+  categoryName?: string
   monthlySales: number
   remainingStock: number
   listingStatus: ListingStatus

@@ -14,5 +14,7 @@ final case class MerchantReview(
     upvotes: Int,
     downvotes: Int,
     createdAt: String,
+    merchantReply: Option[String] = None,
+    merchantReplyAt: Option[String] = None,
     orderItemNames: List[String] = Nil
 )

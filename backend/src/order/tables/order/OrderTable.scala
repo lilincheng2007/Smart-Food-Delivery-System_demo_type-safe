@@ -20,10 +20,11 @@ object OrderTable:
       |  id, customer_id, customer_name, customer_phone, merchant_id, rider_id,
       |  total_amount, delivery_address, status, placed_at,
       |  original_amount, discount_amount, payable_amount, used_voucher, points_awarded,
-      |  refund_status, refund_reason, refund_image_url, refund_admin_reason, refunded_at,
+      |  refund_status, refund_reason, refund_image_url, refund_requested_at,
+      |  refund_merchant_reason, refund_merchant_reviewed_at, refund_admin_reason, refunded_at,
       |  customer_note_text, customer_note_image_url, updated_at
       |)
-      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
+      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
       |ON CONFLICT (id) DO UPDATE SET
       |  customer_id = EXCLUDED.customer_id,
       |  customer_name = EXCLUDED.customer_name,
@@ -42,6 +43,9 @@ object OrderTable:
       |  refund_status = EXCLUDED.refund_status,
       |  refund_reason = EXCLUDED.refund_reason,
       |  refund_image_url = EXCLUDED.refund_image_url,
+      |  refund_requested_at = EXCLUDED.refund_requested_at,
+      |  refund_merchant_reason = EXCLUDED.refund_merchant_reason,
+      |  refund_merchant_reviewed_at = EXCLUDED.refund_merchant_reviewed_at,
       |  refund_admin_reason = EXCLUDED.refund_admin_reason,
       |  refunded_at = EXCLUDED.refunded_at,
       |  customer_note_text = EXCLUDED.customer_note_text,
@@ -64,7 +68,8 @@ object OrderTable:
       |SELECT id, customer_id, customer_name, customer_phone, merchant_id, rider_id,
       |       total_amount, delivery_address, status, placed_at,
       |       original_amount, discount_amount, payable_amount, used_voucher, points_awarded,
-      |       refund_status, refund_reason, refund_image_url, refund_admin_reason, refunded_at,
+      |       refund_status, refund_reason, refund_image_url, refund_requested_at,
+      |       refund_merchant_reason, refund_merchant_reviewed_at, refund_admin_reason, refunded_at,
       |       customer_note_text, customer_note_image_url
       |FROM orders
       |""".stripMargin
@@ -232,18 +237,27 @@ object OrderTable:
     order.refundImageUrl match
       case Some(value) => statement.setString(18, value)
       case None        => statement.setNull(18, java.sql.Types.VARCHAR)
-    order.refundAdminReason match
+    order.refundRequestedAt match
       case Some(value) => statement.setString(19, value)
       case None        => statement.setNull(19, java.sql.Types.VARCHAR)
-    order.refundedAt match
+    order.refundMerchantReason match
       case Some(value) => statement.setString(20, value)
       case None        => statement.setNull(20, java.sql.Types.VARCHAR)
-    order.customerNoteText match
+    order.refundMerchantReviewedAt match
       case Some(value) => statement.setString(21, value)
       case None        => statement.setNull(21, java.sql.Types.VARCHAR)
-    order.customerNoteImageUrl match
+    order.refundAdminReason match
       case Some(value) => statement.setString(22, value)
       case None        => statement.setNull(22, java.sql.Types.VARCHAR)
+    order.refundedAt match
+      case Some(value) => statement.setString(23, value)
+      case None        => statement.setNull(23, java.sql.Types.VARCHAR)
+    order.customerNoteText match
+      case Some(value) => statement.setString(24, value)
+      case None        => statement.setNull(24, java.sql.Types.VARCHAR)
+    order.customerNoteImageUrl match
+      case Some(value) => statement.setString(25, value)
+      case None        => statement.setNull(25, java.sql.Types.VARCHAR)
 
   private def bindStrings(statement: PreparedStatement, values: List[String]): Unit =
     values.zipWithIndex.foreach { case (value, index) => statement.setString(index + 1, value) }
@@ -295,6 +309,9 @@ object OrderTable:
       refundStatus = Option(resultSet.getString("refund_status")).flatMap(RefundStatus.fromString),
       refundReason = Option(resultSet.getString("refund_reason")),
       refundImageUrl = Option(resultSet.getString("refund_image_url")),
+      refundRequestedAt = Option(resultSet.getString("refund_requested_at")),
+      refundMerchantReason = Option(resultSet.getString("refund_merchant_reason")),
+      refundMerchantReviewedAt = Option(resultSet.getString("refund_merchant_reviewed_at")),
       refundAdminReason = Option(resultSet.getString("refund_admin_reason")),
       refundedAt = Option(resultSet.getString("refunded_at")),
       customerNoteText = Option(resultSet.getString("customer_note_text")),

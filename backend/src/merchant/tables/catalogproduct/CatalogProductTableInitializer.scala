@@ -24,12 +24,21 @@ object CatalogProductTableInitializer:
       |  listing_status VARCHAR(32) NOT NULL CHECK (listing_status IN ($listingStatusSql)),
       |  inventory_status VARCHAR(32) NOT NULL CHECK (inventory_status IN ($inventoryStatusSql)),
       |  discount_text TEXT,
+      |  category_name TEXT NOT NULL DEFAULT '默认分类',
       |  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       |  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       |);
       |
+      |ALTER TABLE catalog_products
+      |  ADD COLUMN IF NOT EXISTS category_name TEXT NOT NULL DEFAULT '默认分类';
+      |
+      |UPDATE catalog_products
+      |SET category_name = '默认分类'
+      |WHERE btrim(category_name) = '';
+      |
       |CREATE INDEX IF NOT EXISTS catalog_products_merchant_id_idx ON catalog_products(merchant_id);
       |CREATE INDEX IF NOT EXISTS catalog_products_listing_status_idx ON catalog_products(listing_status);
+      |CREATE INDEX IF NOT EXISTS catalog_products_category_name_idx ON catalog_products(category_name);
       |""".stripMargin
 
   def initialize(connection: Connection): IO[Unit] =

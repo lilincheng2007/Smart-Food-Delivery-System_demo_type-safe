@@ -16,8 +16,16 @@ object ReviewTableInitializer:
       |  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
       |  description TEXT NOT NULL,
       |  image_url TEXT,
+      |  merchant_reply TEXT,
+      |  merchant_reply_at TIMESTAMPTZ,
       |  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       |);
+      |
+      |ALTER TABLE merchant_reviews
+      |  ADD COLUMN IF NOT EXISTS merchant_reply TEXT;
+      |
+      |ALTER TABLE merchant_reviews
+      |  ADD COLUMN IF NOT EXISTS merchant_reply_at TIMESTAMPTZ;
       |
       |CREATE TABLE IF NOT EXISTS merchant_review_votes (
       |  review_id VARCHAR(80) NOT NULL REFERENCES merchant_reviews(id) ON DELETE CASCADE,

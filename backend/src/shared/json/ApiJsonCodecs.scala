@@ -107,6 +107,9 @@ object ApiJsonCodecs:
       refundStatus <- c.downField("refundStatus").as[Option[RefundStatus]]
       refundReason <- c.downField("refundReason").as[Option[String]]
       refundImageUrl <- c.downField("refundImageUrl").as[Option[String]]
+      refundRequestedAt <- c.downField("refundRequestedAt").as[Option[String]]
+      refundMerchantReason <- c.downField("refundMerchantReason").as[Option[String]]
+      refundMerchantReviewedAt <- c.downField("refundMerchantReviewedAt").as[Option[String]]
       refundAdminReason <- c.downField("refundAdminReason").as[Option[String]]
       refundedAt <- c.downField("refundedAt").as[Option[String]]
       customerNoteText <- c.downField("customerNoteText").as[Option[String]]
@@ -131,6 +134,9 @@ object ApiJsonCodecs:
       refundStatus,
       refundReason,
       refundImageUrl,
+      refundRequestedAt,
+      refundMerchantReason,
+      refundMerchantReviewedAt,
       refundAdminReason,
       refundedAt,
       customerNoteText,
@@ -159,6 +165,9 @@ object ApiJsonCodecs:
     o.refundStatus.foreach(status => fields += "refundStatus" -> status.asJson)
     o.refundReason.foreach(reason => fields += "refundReason" -> reason.asJson)
     o.refundImageUrl.foreach(imageUrl => fields += "refundImageUrl" -> imageUrl.asJson)
+    o.refundRequestedAt.foreach(value => fields += "refundRequestedAt" -> value.asJson)
+    o.refundMerchantReason.foreach(reason => fields += "refundMerchantReason" -> reason.asJson)
+    o.refundMerchantReviewedAt.foreach(value => fields += "refundMerchantReviewedAt" -> value.asJson)
     o.refundAdminReason.foreach(reason => fields += "refundAdminReason" -> reason.asJson)
     o.refundedAt.foreach(value => fields += "refundedAt" -> value.asJson)
     o.customerNoteText.foreach(value => fields += "customerNoteText" -> value.asJson)
@@ -273,7 +282,8 @@ object ApiJsonCodecs:
       featuredProductIds <- c.downField("featuredProductIds").as[List[String]]
       imageUrl <- c.downField("imageUrl").as[Option[String]]
       description <- c.downField("description").as[Option[String]]
-    yield Merchant(id, storeName, category, address, phone, rating, tags, featuredProductIds, imageUrl, description.getOrElse(""))
+      announcement <- c.downField("announcement").as[Option[String]]
+    yield Merchant(id, storeName, category, address, phone, rating, tags, featuredProductIds, imageUrl, description.getOrElse(""), announcement.getOrElse(""))
   }
 
   private val merchantEncoder0: Encoder[Merchant] = Encoder.instance { m =>
@@ -287,7 +297,8 @@ object ApiJsonCodecs:
       "tags" -> m.tags.asJson,
       "featuredProductIds" -> m.featuredProductIds.asJson,
       "imageUrl" -> m.imageUrl.asJson,
-      "description" -> m.description.asJson
+      "description" -> m.description.asJson,
+      "announcement" -> m.announcement.asJson
     )
   }
 
@@ -306,6 +317,7 @@ object ApiJsonCodecs:
   given Codec[CatalogResponse] = deriveCodec
   given Codec[MerchantAccountPublic] = deriveCodec
   given Codec[MerchantMeResponse] = deriveCodec
+  given Codec[MerchantRefundRequestsResponse] = deriveCodec
 
   given Codec[StoreOnboardingRequest] = deriveCodec
   given Codec[StoreOnboardingRequestsResponse] = deriveCodec
@@ -337,5 +349,6 @@ object ApiJsonCodecs:
   given Codec[AIMerchantProductDescriptionsRequest] = deriveCodec
   given Codec[AIGeneratedProductDescription] = deriveCodec
   given Codec[AIMerchantProductDescriptionsResponse] = deriveCodec
+  given Codec[AIReviewSummaryResponse] = deriveCodec
 
 end ApiJsonCodecs

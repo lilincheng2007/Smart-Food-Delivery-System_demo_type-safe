@@ -1,7 +1,7 @@
 package delivery.ai.routes
 
-import delivery.ai.api.{AIDietWeeklyReportAPIMessage, AIMerchantProductDescriptionsAPIMessage, AIMerchantStoreDescriptionAPIMessage, AIOrderProgressNarrativesAPIMessage, AISearchAPIMessage}
-import delivery.ai.objects.apiTypes.{AIDietWeeklyReportResponse, AIMerchantProductDescriptionsResponse, AIMerchantStoreDescriptionResponse, AIOrderProgressNarrativesResponse, AISearchResponse}
+import delivery.ai.api.{AIDietWeeklyReportAPIMessage, AIMerchantProductDescriptionsAPIMessage, AIMerchantStoreDescriptionAPIMessage, AIOrderProgressNarrativesAPIMessage, AIReviewSummaryAPIMessage, AISearchAPIMessage}
+import delivery.ai.objects.apiTypes.{AIDietWeeklyReportResponse, AIMerchantProductDescriptionsResponse, AIMerchantStoreDescriptionResponse, AIOrderProgressNarrativesResponse, AIReviewSummaryResponse, AISearchResponse}
 import delivery.shared.api.RegisteredAPIMessage
 import delivery.shared.api.RegisteredAPIMessage.apiWithRole
 import delivery.shared.json.ApiJsonCodecs.given
@@ -13,6 +13,7 @@ object AIRoutes:
     apiWithRole[AISearchAPIMessage, AISearchResponse]("customer"),
     apiWithRole[AIDietWeeklyReportAPIMessage, AIDietWeeklyReportResponse]("customer"),
     apiWithRole[AIOrderProgressNarrativesAPIMessage, AIOrderProgressNarrativesResponse]("customer"),
+    apiWithRole[AIReviewSummaryAPIMessage, AIReviewSummaryResponse]("customer"),
     apiWithRole[AIMerchantStoreDescriptionAPIMessage, AIMerchantStoreDescriptionResponse]("merchant"),
     apiWithRole[AIMerchantProductDescriptionsAPIMessage, AIMerchantProductDescriptionsResponse]("merchant")
   )

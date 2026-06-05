@@ -11,6 +11,7 @@ import { completeOrderIO } from '@/apis/order/OrderCompleteAPI'
 import { checkoutIO, type CheckoutDeliverySnapshot } from '@/apis/order/CheckoutAPI'
 import type { OrderMerchantNote } from '@/objects/order/apiTypes/CheckoutRequest'
 import { fetchOrderDetailIO } from '@/apis/order/OrderDetailAPI'
+import { appealOrderRefundIO } from '@/apis/order/OrderRefundAppealAPI'
 import { requestOrderRefundIO } from '@/apis/order/OrderRefundRequestAPI'
 import { uploadReviewImageFileIO } from '@/apis/review/CustomerReviewImageFileAPI'
 import { voteMerchantReviewIO } from '@/apis/review/CustomerReviewVoteAPI'
@@ -43,6 +44,13 @@ export interface CartLine {
   quantity: number
 }
 
+export type FavoriteKind = 'merchant' | 'product'
+
+export interface CustomerFavorites {
+  merchantIds: MerchantId[]
+  productIds: ProductId[]
+}
+
 type CustomerPortalStore = {
   bootstrapDone: boolean
   loadError: string | null
@@ -65,12 +73,15 @@ type CustomerPortalStore = {
   aiOrderProgressNarratives: AIOrderProgressNarrativesResponse | null
   aiOrderProgressNarrativesLoading: boolean
   aiOrderProgressNarrativesError: string | null
+  favorites: CustomerFavorites
   resetPage: () => void
   refreshPortal: () => Promise<void>
   ensureAIOrderProgressNarratives: () => Promise<void>
   bootstrap: () => Promise<void>
   setActiveTab: (tab: CustomerTab) => void
   setSelectedMerchantId: (merchantId: MerchantId) => void
+  toggleFavorite: (kind: FavoriteKind, id: MerchantId | ProductId) => void
+  reorderOrder: (orderId: OrderId) => { ok: true; addedCount: number } | { ok: false; message: string }
   addProductToCart: (merchantId: MerchantId, productId: ProductId) => void
   changeQuantity: (merchantId: MerchantId, productId: ProductId, nextQuantity: number) => void
   setIsRechargeOpen: (open: boolean) => void
@@ -87,6 +98,7 @@ type CustomerPortalStore = {
     reason: string
     imageUrl: string | null
   }) => Promise<{ ok: true } | { ok: false; message: string }>
+  appealRefund: (orderId: OrderId) => Promise<{ ok: true } | { ok: false; message: string }>
   uploadReviewImage: (file: File) => Promise<{ ok: true; imageUrl: string } | { ok: false; message: string }>
   submitReview: (input: {
     orderId: OrderId
@@ -119,6 +131,37 @@ const getLocalDateKey = () => {
   return `${year}-${month}-${day}`
 }
 
+const CustomerFavoritesStorageKey = 'delivery-customer-favorites'
+
+const readStoredFavorites = (): CustomerFavorites => {
+  if (typeof window === 'undefined') {
+    return { merchantIds: [], productIds: [] }
+  }
+
+  try {
+    const raw = window.localStorage.getItem(CustomerFavoritesStorageKey)
+    if (!raw) {
+      return { merchantIds: [], productIds: [] }
+    }
+
+    const parsed = JSON.parse(raw) as Partial<CustomerFavorites>
+    return {
+      merchantIds: Array.isArray(parsed.merchantIds) ? (parsed.merchantIds as MerchantId[]) : [],
+      productIds: Array.isArray(parsed.productIds) ? (parsed.productIds as ProductId[]) : [],
+    }
+  } catch {
+    return { merchantIds: [], productIds: [] }
+  }
+}
+
+const writeStoredFavorites = (favorites: CustomerFavorites) => {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(CustomerFavoritesStorageKey, JSON.stringify(favorites))
+}
+
 const initialState = {
   bootstrapDone: false,
   loadError: null as string | null,
@@ -141,6 +184,7 @@ const initialState = {
   aiOrderProgressNarratives: null as AIOrderProgressNarrativesResponse | null,
   aiOrderProgressNarrativesLoading: false,
   aiOrderProgressNarrativesError: null as string | null,
+  favorites: readStoredFavorites(),
 }
 
 let refreshPortalInFlight: Promise<void> | null = null
@@ -216,6 +260,69 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
   },
   setActiveTab: (activeTab) => set({ activeTab }),
   setSelectedMerchantId: (selectedMerchantId) => set({ selectedMerchantId }),
+  toggleFavorite: (kind, id) =>
+    set((state) => {
+      const nextFavorites =
+        kind === 'merchant'
+          ? {
+              ...state.favorites,
+              merchantIds: state.favorites.merchantIds.includes(id as MerchantId)
+                ? state.favorites.merchantIds.filter((merchantId) => merchantId !== id)
+                : [...state.favorites.merchantIds, id as MerchantId],
+            }
+          : {
+              ...state.favorites,
+              productIds: state.favorites.productIds.includes(id as ProductId)
+                ? state.favorites.productIds.filter((productId) => productId !== id)
+                : [...state.favorites.productIds, id as ProductId],
+            }
+
+      writeStoredFavorites(nextFavorites)
+      return { favorites: nextFavorites }
+    }),
+  reorderOrder: (orderId) => {
+    const { pendingOrders, historyOrders, products } = get()
+    const order = [...pendingOrders, ...historyOrders].find((item) => item.id === orderId)
+
+    if (!order) {
+      return { ok: false, message: '未找到这笔订单，无法再来一单。' }
+    }
+
+    const visibleProductIds = new Set(
+      products.filter((product) => product.merchantId === order.merchantId).map((product) => product.id),
+    )
+    const reorderItems = order.items.filter((item) => visibleProductIds.has(item.productId))
+
+    if (reorderItems.length === 0) {
+      return { ok: false, message: '这笔订单中的菜品暂不可购买。' }
+    }
+
+    set((state) => {
+      const nextCartLines = [...state.cartLines]
+      reorderItems.forEach((item) => {
+        const matchedIndex = nextCartLines.findIndex(
+          (line) => line.merchantId === order.merchantId && line.productId === item.productId,
+        )
+        if (matchedIndex >= 0) {
+          nextCartLines[matchedIndex] = {
+            ...nextCartLines[matchedIndex],
+            quantity: nextCartLines[matchedIndex].quantity + item.quantity,
+          }
+        } else {
+          nextCartLines.push({
+            merchantId: order.merchantId,
+            productId: item.productId,
+            quantity: item.quantity,
+          })
+        }
+      })
+
+      return { cartLines: nextCartLines, activeTab: 'cart' }
+    })
+
+    const addedCount = reorderItems.reduce((sum, item) => sum + item.quantity, 0)
+    return { ok: true, addedCount }
+  },
   addProductToCart: (merchantId, productId) =>
     set((state) => {
       const matched = state.cartLines.find((line) => line.merchantId === merchantId && line.productId === productId)
@@ -312,6 +419,18 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
       return { ok: true }
     } catch (error) {
       return { ok: false, message: error instanceof Error ? error.message : '退款申请提交失败' }
+    }
+  },
+  appealRefund: async (orderId) => {
+    try {
+      const data = await runTask(appealOrderRefundIO(orderId))
+      await get().refreshPortal()
+      set((state) => ({
+        selectedOrder: state.selectedOrder?.id === orderId ? data.order : state.selectedOrder,
+      }))
+      return { ok: true }
+    } catch (error) {
+      return { ok: false, message: error instanceof Error ? error.message : '提交管理员仲裁失败' }
     }
   },
   uploadReviewImage: async (file) => {

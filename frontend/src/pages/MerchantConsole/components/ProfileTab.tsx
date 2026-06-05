@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
-import { ChartNoAxesCombined } from 'lucide-react'
+import { ChartNoAxesCombined, Megaphone } from 'lucide-react'
 
 import { fetchMerchantReviewsIO } from '@/apis/review/MerchantReviewsAPI'
 import { runTask } from '@/apis/shared/client'
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { useAppChrome } from '@/hooks/useAppChrome'
 import { resolveApiMediaUrl } from '@/lib/api-media-url'
 import { getLocalImageFileError } from '@/lib/local-image-file'
@@ -25,18 +26,27 @@ export function ProfileTab({ selectedStore, onOpenStoreDialog }: ProfileTabProps
   const { showNotice } = useAppChrome()
   const updateStoreImage = useMerchantConsoleStore((state) => state.updateStoreImage)
   const uploadStoreImageFile = useMerchantConsoleStore((state) => state.uploadStoreImageFile)
+  const saveStoreAnnouncement = useMerchantConsoleStore((state) => state.saveStoreAnnouncement)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [storeImageDraft, setStoreImageDraft] = useState<{ merchantId: string | null; imageUrl: string }>({
     merchantId: null,
     imageUrl: '',
   })
   const [reviews, setReviews] = useState<MerchantReviewsResponse | null>(null)
+  const [announcementDraft, setAnnouncementDraft] = useState<{ merchantId: string | null; text: string }>({
+    merchantId: null,
+    text: '',
+  })
   const selectedMerchantId = selectedStore?.merchant.id ?? null
   const storeImageUrl =
     storeImageDraft.merchantId === selectedMerchantId
       ? storeImageDraft.imageUrl
       : (selectedStore?.merchant.imageUrl?.trim() ?? '')
   const coverUrl = storeImageUrl.trim()
+  const announcementText =
+    announcementDraft.merchantId === selectedMerchantId
+      ? announcementDraft.text
+      : (selectedStore?.merchant.announcement ?? '')
 
   const merchantPendingOrders = selectedStore?.pendingOrders ?? []
   const merchantHistoryOrders = selectedStore?.historyOrders ?? []
@@ -90,8 +100,57 @@ export function ProfileTab({ selectedStore, onOpenStoreDialog }: ProfileTabProps
     }
   }
 
+  const handleSaveAnnouncement = async () => {
+    if (!selectedStore) {
+      showNotice('请先选择店铺。', 'error')
+      return
+    }
+
+    try {
+      await saveStoreAnnouncement(selectedStore.merchant.id, announcementText)
+      setAnnouncementDraft({ merchantId: null, text: '' })
+      showNotice(announcementText.trim() ? '店铺公告已发布，顾客端进店页会展示。' : '店铺公告已清空。', 'success')
+    } catch (error) {
+      showNotice(error instanceof Error ? error.message : '保存公告失败', 'error')
+    }
+  }
+
   return (
     <div className="space-y-4">
+      <Card className="border-orange-100 bg-white/95">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Megaphone className="size-5 text-orange-500" />
+            店铺公告
+          </CardTitle>
+          <CardDescription>公告会展示在顾客端进店页的显眼位置。可填写促销、营业调整、出餐提醒等内容，留空保存可清除。</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-2">
+            <Label htmlFor="store-announcement">公告内容</Label>
+            <Textarea
+              id="store-announcement"
+              value={announcementText}
+              maxLength={180}
+              placeholder="例如：今日满 50 减 8；晚高峰出餐约 20 分钟，请合理安排下单时间。"
+              disabled={!selectedStore}
+              onChange={(event) => setAnnouncementDraft({ merchantId: selectedMerchantId, text: event.target.value })}
+            />
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs text-slate-500">{announcementText.trim().length}/180</span>
+              <Button type="button" disabled={!selectedStore} onClick={() => void handleSaveAnnouncement()}>
+                保存公告
+              </Button>
+            </div>
+          </div>
+          {announcementText.trim() ? (
+            <div className="rounded-xl border border-orange-100 bg-orange-50 px-3 py-2 text-sm leading-6 text-orange-800">
+              顾客端预览：{announcementText.trim()}
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
       <Card className="border-orange-100 bg-white/95">
         <CardHeader>
           <CardTitle>店铺图片</CardTitle>
@@ -179,37 +238,6 @@ export function ProfileTab({ selectedStore, onOpenStoreDialog }: ProfileTabProps
             </>
           ) : (
             <p>当前未选择店铺。</p>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="border-orange-100 bg-white/95">
-        <CardHeader>
-          <CardTitle>顾客评价</CardTitle>
-          <CardDescription>商家只能查看评价，不能赞同或反对。</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {!reviews || reviews.reviews.length === 0 ? (
-            <p className="text-sm text-slate-500">暂无评价。</p>
-          ) : (
-            reviews.reviews.map((review) => (
-              <article key={review.id} className="rounded-xl border border-orange-100 p-3 text-sm text-slate-700">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-medium text-slate-900">{review.customerName}</span>
-                  <span className="text-amber-500">{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>
-                </div>
-                <p className="mt-2 leading-6">{review.description}</p>
-                {review.orderItemNames && review.orderItemNames.length > 0 ? (
-                  <p className="mt-2 rounded-lg bg-orange-50 px-3 py-2 text-xs font-medium text-orange-700">
-                    对应菜品：{review.orderItemNames.join('、')}
-                  </p>
-                ) : null}
-                {review.imageUrl ? (
-                  <img src={resolveApiMediaUrl(review.imageUrl)} alt="评价图片" className="mt-2 aspect-video w-full max-w-xs rounded-lg object-cover" />
-                ) : null}
-                <p className="mt-2 text-xs text-slate-500">赞同 {review.upvotes} · 反对 {review.downvotes}</p>
-              </article>
-            ))
           )}
         </CardContent>
       </Card>

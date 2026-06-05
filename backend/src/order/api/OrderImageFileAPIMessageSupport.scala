@@ -1,15 +1,15 @@
 package delivery.order.api
 
 import cats.effect.IO
-import delivery.order.utils.RefundImageUploads
 import delivery.review.api.ReviewAPIMessageSupport
 import delivery.shared.api.HttpApiError
+import delivery.shared.tables.storedimage.{StoredImage, StoredImageMigration, StoredImageTable}
 
-import java.nio.file.Files
+import java.sql.Connection
 import java.util.{Base64, UUID}
 
 object OrderImageFileAPIMessageSupport:
-  def upload(bytesBase64: String, contentTypeLower: String, filenameHint: Option[String]): IO[String] =
+  def upload(connection: Connection, bytesBase64: String, contentTypeLower: String, filenameHint: Option[String]): IO[String] =
     for
       bytes <- IO.blocking(Base64.getDecoder.decode(bytesBase64)).handleErrorWith(_ => IO.raiseError(HttpApiError.BadRequest("图片内容格式错误")))
       _ <- if bytes.length > 2 * 1024 * 1024 then IO.raiseError(HttpApiError.BadRequest("图片不能超过 2MB")) else IO.unit
@@ -17,7 +17,7 @@ object OrderImageFileAPIMessageSupport:
       ext <- IO.fromEither(ReviewAPIMessageSupport.imageExtension(contentTypeLower, filenameHint).left.map(HttpApiError.BadRequest.apply))
       storedName = s"${UUID.randomUUID()}$ext"
       publicPath = s"/api/orders/refund-images/$storedName"
-      _ <- IO.blocking(Files.write(RefundImageUploads.directory.resolve(storedName), bytes))
+      _ <- StoredImageTable.upsert(connection, StoredImage(storedName, "order", StoredImageMigration.contentTypeFor(storedName), bytes))
     yield publicPath
 
 end OrderImageFileAPIMessageSupport

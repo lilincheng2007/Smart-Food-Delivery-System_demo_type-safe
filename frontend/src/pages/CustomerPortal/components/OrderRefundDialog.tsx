@@ -68,7 +68,7 @@ export function OrderRefundDialog({ order, onOpenChange, onUploadImage, onSubmit
         imageUrl: imageUrl.trim() || null,
       })
       if (result.ok) {
-        onNotice('退款申请已提交，等待管理员审核。', 'success')
+        onNotice('退款申请已提交，等待商家处理。', 'success')
         onOpenChange(false)
       } else {
         onNotice(result.message, 'error')
@@ -92,7 +92,7 @@ export function OrderRefundDialog({ order, onOpenChange, onUploadImage, onSubmit
               id="refund-reason"
               value={reason}
               className="min-h-32 resize-y"
-              placeholder="请说明退款原因，管理员审核时会看到这段文字"
+              placeholder="请说明退款原因，商家处理时会看到这段文字"
               onChange={(event) => setReason(event.target.value)}
             />
           </div>

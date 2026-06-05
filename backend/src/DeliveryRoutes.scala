@@ -9,6 +9,7 @@ import delivery.review.routes.ReviewRoutes
 import delivery.rider.routes.RiderRoutes
 import delivery.shared.api.APIMessageRouter
 import delivery.user.routes.UserRoutes
+import delivery.shared.routes.StoredImageRoutes
 import org.http4s.HttpRoutes
 import org.http4s.server.Router
 
@@ -22,9 +23,10 @@ object DeliveryRoutes:
         UserRoutes.apiMessages ++ MerchantRoutes.apiMessages ++ OrderRoutes.apiMessages ++ RiderRoutes.apiMessages ++ AIRoutes.apiMessages ++ AdminRoutes.apiMessages ++ ReviewRoutes.apiMessages,
         ds
       ),
-      "/api/merchant/store-images" -> MerchantRoutes.storeImagePublicRoutes,
-      "/api/orders/refund-images" -> OrderRoutes.refundImagePublicRoutes,
-      "/api/reviews/images" -> ReviewRoutes.imagePublicRoutes
+      "/api/merchant/store-images" -> StoredImageRoutes.routes(ds, "merchant-store"),
+      "/api/merchant/product-images" -> StoredImageRoutes.routes(ds, "merchant-product"),
+      "/api/orders/refund-images" -> StoredImageRoutes.routes(ds, "order"),
+      "/api/reviews/images" -> StoredImageRoutes.routes(ds, "review")
     )
 
 end DeliveryRoutes

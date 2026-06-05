@@ -12,5 +12,7 @@ export interface MerchantReview {
   upvotes: number
   downvotes: number
   createdAt: string
+  merchantReply?: string | null
+  merchantReplyAt?: string | null
   orderItemNames?: string[]
 }

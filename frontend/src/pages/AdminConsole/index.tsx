@@ -29,7 +29,10 @@ const statusLabels: Record<StoreOnboardingStatus, string> = {
 }
 
 const refundStatusLabels: Record<RefundStatus, string> = {
-  [RefundStatuses.pending]: '待审核',
+  [RefundStatuses.pending]: '待商家处理',
+  [RefundStatuses.legacyPending]: '待商家处理',
+  [RefundStatuses.merchantRejected]: '商家已驳回',
+  [RefundStatuses.adminPending]: '待管理员仲裁',
   [RefundStatuses.accepted]: '已通过',
   [RefundStatuses.rejected]: '已驳回',
 }
@@ -42,7 +45,7 @@ function statusBadgeVariant(status: StoreOnboardingStatus) {
 
 function refundStatusBadgeVariant(status: RefundStatus | null | undefined) {
   if (status === RefundStatuses.accepted) return 'default'
-  if (status === RefundStatuses.rejected) return 'destructive'
+  if (status === RefundStatuses.rejected || status === RefundStatuses.merchantRejected) return 'destructive'
   return 'outline'
 }
 
@@ -70,7 +73,7 @@ export default function AdminConsole() {
 
   const pendingCount = useMemo(() => requests.filter((request) => request.status === 'pending').length, [requests])
   const refundPendingCount = useMemo(
-    () => refundRequests.filter((order) => order.refundStatus === RefundStatuses.pending).length,
+    () => refundRequests.filter((order) => order.refundStatus === RefundStatuses.adminPending).length,
     [refundRequests],
   )
   const displayedRequests = showAllOnboardingRequests ? requests : requests.slice(0, CollapsedListLimit)
@@ -246,8 +249,8 @@ export default function AdminConsole() {
       <Card className="border-slate-200 bg-white/95">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle>退款申请审核</CardTitle>
-            <p className="mt-1 text-sm text-slate-500">待审核 {refundPendingCount} 个，共 {refundRequests.length} 个申请</p>
+            <CardTitle>退款仲裁审核</CardTitle>
+            <p className="mt-1 text-sm text-slate-500">待仲裁 {refundPendingCount} 个，共 {refundRequests.length} 个申请</p>
           </div>
           <Button type="button" variant="outline" onClick={() => void loadRequests()} disabled={isLoading}>
             <RefreshCw className="size-4" />
@@ -261,7 +264,7 @@ export default function AdminConsole() {
           ) : null}
           {displayedRefundRequests.map((order) => {
             const refundStatus = order.refundStatus ?? RefundStatuses.pending
-            const isPendingRefund = refundStatus === RefundStatuses.pending
+            const isPendingRefund = refundStatus === RefundStatuses.adminPending
             return (
               <article key={order.id} className="rounded-lg border border-slate-200 bg-white p-4">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -274,6 +277,9 @@ export default function AdminConsole() {
                     <p className="text-sm text-slate-600">退款金额：¥{order.payableAmount.toFixed(2)}</p>
                     <p className="text-sm text-slate-600">菜品：{order.items.map((item) => `${item.name}×${item.quantity}`).join('、')}</p>
                     {order.refundReason ? <p className="text-sm leading-6 text-slate-700">顾客理由：{order.refundReason}</p> : null}
+                    {order.refundMerchantReason ? (
+                      <p className="text-sm leading-6 text-orange-700">商家理由：{order.refundMerchantReason}</p>
+                    ) : null}
                     {order.refundAdminReason ? (
                       <p className={order.refundStatus === RefundStatuses.rejected ? 'text-sm leading-6 text-rose-600' : 'text-sm leading-6 text-slate-700'}>
                         管理员反馈：{order.refundAdminReason}

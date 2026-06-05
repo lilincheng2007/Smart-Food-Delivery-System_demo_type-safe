@@ -20,3 +20,19 @@ export function getLocalImageFileError(file: File): string | null {
 
   return null
 }
+
+export function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result
+      if (typeof result !== 'string') {
+        reject(new Error('图片内容读取失败'))
+        return
+      }
+      resolve(result.split(',')[1] ?? '')
+    }
+    reader.onerror = () => reject(new Error('图片内容读取失败'))
+    reader.readAsDataURL(file)
+  })
+}

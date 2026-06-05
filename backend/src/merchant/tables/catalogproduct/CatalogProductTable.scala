@@ -12,9 +12,9 @@ object CatalogProductTable:
     """
       |INSERT INTO catalog_products (
       |  id, merchant_id, name, price, description, image_url, monthly_sales,
-      |  remaining_stock, listing_status, inventory_status, discount_text, updated_at
+      |  remaining_stock, listing_status, inventory_status, discount_text, category_name, updated_at
       |)
-      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
+      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
       |ON CONFLICT (id) DO UPDATE SET
       |  merchant_id = EXCLUDED.merchant_id,
       |  name = EXCLUDED.name,
@@ -26,6 +26,7 @@ object CatalogProductTable:
       |  listing_status = EXCLUDED.listing_status,
       |  inventory_status = EXCLUDED.inventory_status,
       |  discount_text = EXCLUDED.discount_text,
+      |  category_name = EXCLUDED.category_name,
       |  updated_at = now()
       |""".stripMargin
 
@@ -42,9 +43,9 @@ object CatalogProductTable:
   private val listSql: String =
     """
       |SELECT id, merchant_id, name, price, description, image_url, monthly_sales,
-      |       remaining_stock, listing_status, inventory_status, discount_text
+      |       remaining_stock, listing_status, inventory_status, discount_text, category_name
       |FROM catalog_products
-      |ORDER BY updated_at DESC
+      |ORDER BY category_name ASC, updated_at DESC
       |""".stripMargin
 
   def list(connection: Connection): IO[List[Product]] =
@@ -63,7 +64,7 @@ object CatalogProductTable:
   private val findByIdSql: String =
     """
       |SELECT id, merchant_id, name, price, description, image_url, monthly_sales,
-      |       remaining_stock, listing_status, inventory_status, discount_text
+      |       remaining_stock, listing_status, inventory_status, discount_text, category_name
       |FROM catalog_products
       |WHERE id = ?
       |""".stripMargin
@@ -95,6 +96,7 @@ object CatalogProductTable:
     product.discountText match
       case Some(value) => statement.setString(11, value)
       case None        => statement.setNull(11, java.sql.Types.VARCHAR)
+    statement.setString(12, normalizedCategoryName(product.categoryName))
 
   private def readProduct(resultSet: ResultSet): Product =
     Product(
@@ -108,7 +110,12 @@ object CatalogProductTable:
       remainingStock = resultSet.getInt("remaining_stock"),
       listingStatus = ListingStatus.fromString(resultSet.getString("listing_status")).getOrElse(ListingStatus.下架),
       inventoryStatus = InventoryStatus.fromString(resultSet.getString("inventory_status")).getOrElse(InventoryStatus.售罄),
-      discountText = Option(resultSet.getString("discount_text"))
+      discountText = Option(resultSet.getString("discount_text")),
+      categoryName = normalizedCategoryName(Option(resultSet.getString("category_name")).getOrElse(""))
     )
+
+  private def normalizedCategoryName(raw: String): String =
+    val trimmed = raw.trim
+    if trimmed.isEmpty then "默认分类" else trimmed
 
 end CatalogProductTable

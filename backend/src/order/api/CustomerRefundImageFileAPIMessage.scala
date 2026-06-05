@@ -1,11 +1,10 @@
 package delivery.order.api
 
 import cats.effect.IO
-import delivery.order.utils.RefundImageUploads
 import delivery.review.api.ReviewAPIMessageSupport
 import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
+import delivery.shared.tables.storedimage.{StoredImage, StoredImageMigration, StoredImageTable}
 
-import java.nio.file.Files
 import java.sql.Connection
 import java.util.{Base64, UUID}
 
@@ -18,5 +17,5 @@ final case class CustomerRefundImageFileAPIMessage(bytesBase64: String, contentT
       ext <- IO.fromEither(ReviewAPIMessageSupport.imageExtension(contentTypeLower, filenameHint).left.map(HttpApiError.BadRequest.apply))
       storedName = s"${UUID.randomUUID()}$ext"
       publicPath = s"/api/orders/refund-images/$storedName"
-      _ <- IO.blocking(Files.write(RefundImageUploads.directory.resolve(storedName), bytes))
+      _ <- StoredImageTable.upsert(connection, StoredImage(storedName, "order", StoredImageMigration.contentTypeFor(storedName), bytes))
     yield publicPath

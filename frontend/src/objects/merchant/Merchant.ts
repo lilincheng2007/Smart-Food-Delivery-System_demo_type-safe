@@ -12,4 +12,5 @@ export interface Merchant {
   /** 店铺头图，http(s) 链接；未设置时后端可能省略或为 null */
   imageUrl?: string | null
   description: string
+  announcement: string
 }

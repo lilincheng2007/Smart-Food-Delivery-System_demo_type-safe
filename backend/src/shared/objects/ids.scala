@@ -53,11 +53,14 @@ object OrderStatus:
 end OrderStatus
 
 enum RefundStatus derives CanEqual:
-  case 待审核, 已通过, 已驳回
+  case 待审核, 待商家审核, 商家已驳回, 待管理员仲裁, 已通过, 已驳回
 end RefundStatus
 
 object RefundStatus:
-  def fromString(value: String): Option[RefundStatus] = values.find(_.toString == value)
+  def fromString(value: String): Option[RefundStatus] =
+    value match
+      case "待审核" => Some(待商家审核)
+      case _        => values.find(_.toString == value)
 end RefundStatus
 
 enum ListingStatus derives CanEqual:

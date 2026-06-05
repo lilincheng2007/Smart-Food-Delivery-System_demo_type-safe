@@ -23,6 +23,9 @@ export interface Order {
   refundStatus?: RefundStatus | null
   refundReason?: string | null
   refundImageUrl?: string | null
+  refundRequestedAt?: string | null
+  refundMerchantReason?: string | null
+  refundMerchantReviewedAt?: string | null
   refundAdminReason?: string | null
   refundedAt?: string | null
   customerNoteText?: string | null

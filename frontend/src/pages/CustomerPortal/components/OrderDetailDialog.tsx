@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
 import type { Order } from '@/objects/order/Order'
-import { OrderStatuses } from '@/objects/shared/ids'
+import { OrderStatuses, RefundStatuses } from '@/objects/shared/ids'
 
 type OrderDetailDialogProps = {
   selectedOrder: Order | null
@@ -12,6 +12,7 @@ type OrderDetailDialogProps = {
   onCompleteOrder: (order: Order) => void
   onReviewOrder: (order: Order) => void
   onRefundOrder: (order: Order) => void
+  onAppealRefund: (order: Order) => void
 }
 
 function canCancel(order: Order): boolean {
@@ -23,7 +24,16 @@ function canComplete(order: Order): boolean {
 }
 
 function canRequestRefund(order: Order): boolean {
-  return order.status === OrderStatuses.completed && order.refundStatus !== '待审核' && order.refundStatus !== '已通过'
+  if (order.status !== OrderStatuses.completed) return false
+  if (!order.refundStatus) return true
+  return ![
+    RefundStatuses.pending,
+    RefundStatuses.legacyPending,
+    RefundStatuses.merchantRejected,
+    RefundStatuses.adminPending,
+    RefundStatuses.accepted,
+    RefundStatuses.rejected,
+  ].includes(order.refundStatus)
 }
 
 function orderStatusDescription(order: Order): string | null {
@@ -59,6 +69,7 @@ export function OrderDetailDialog({
   onCompleteOrder,
   onReviewOrder,
   onRefundOrder,
+  onAppealRefund,
 }: OrderDetailDialogProps) {
   return (
     <Dialog open={selectedOrder !== null} onOpenChange={onOpenChange}>
@@ -99,7 +110,8 @@ export function OrderDetailDialog({
                   退款状态：<span className="font-semibold text-orange-600">{selectedOrder.refundStatus}</span>
                 </p>
                 {selectedOrder.refundReason ? <p className="mt-1 text-xs text-slate-500">申请理由：{selectedOrder.refundReason}</p> : null}
-                {selectedOrder.refundAdminReason ? <p className="mt-1 text-xs text-slate-500">审核理由：{selectedOrder.refundAdminReason}</p> : null}
+                {selectedOrder.refundMerchantReason ? <p className="mt-1 text-xs text-slate-500">商家反馈：{selectedOrder.refundMerchantReason}</p> : null}
+                {selectedOrder.refundAdminReason ? <p className="mt-1 text-xs text-slate-500">管理员仲裁：{selectedOrder.refundAdminReason}</p> : null}
               </div>
             ) : null}
             <div className="rounded-xl bg-orange-50 px-3 py-2 text-sm text-slate-700">
@@ -140,6 +152,11 @@ export function OrderDetailDialog({
           {selectedOrder && canRequestRefund(selectedOrder) ? (
             <Button variant="outline" onClick={() => onRefundOrder(selectedOrder)}>
               申请退款
+            </Button>
+          ) : null}
+          {selectedOrder && selectedOrder.refundStatus === RefundStatuses.merchantRejected ? (
+            <Button variant="outline" onClick={() => onAppealRefund(selectedOrder)}>
+              提交管理员仲裁
             </Button>
           ) : null}
           {selectedOrder && canCancel(selectedOrder) ? (

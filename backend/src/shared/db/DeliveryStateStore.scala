@@ -14,12 +14,14 @@ import delivery.rider.tables.RiderTableRegistry
 import delivery.rider.tables.rideraccount.RiderAccountTable
 import delivery.rider.tables.riderassignment.RiderAssignmentTable
 import delivery.shared.bootstrap.{SeedBootstrap, SeedData}
+import delivery.shared.tables.storedimage.{StoredImageMigration, StoredImageTableInitializer}
 import delivery.user.tables.UserTableRegistry
 import delivery.user.tables.authcredential.AuthCredentialTable
 import delivery.user.tables.customer.CustomerTable
 import delivery.user.tables.customerprofile.CustomerProfileTable
 import org.typelevel.log4cats.Logger
 
+import java.nio.file.Paths
 import java.sql.Connection
 import javax.sql.DataSource
 
@@ -29,6 +31,7 @@ object DeliveryStateStore:
     DatabaseSession.withTransactionConnection(ds) { connection =>
       for
         _ <- initializeTables(connection)
+        _ <- importStoredImages(connection)
         hasData <- normalizedHasData(connection)
         _ <- if hasData then IO.unit else seedNormalized(connection)
         _ <- SeedBootstrap.adminCredentials.traverse_(AuthCredentialTable.upsert(connection, _))
@@ -37,6 +40,7 @@ object DeliveryStateStore:
 
   private def initializeTables(connection: Connection): IO[Unit] =
     List(
+      StoredImageTableInitializer.initialize(connection),
       UserTableRegistry.initialize(connection),
       MerchantTableRegistry.initialize(connection),
       AdminTableRegistry.initialize(connection),
@@ -44,6 +48,16 @@ object DeliveryStateStore:
       RiderTableRegistry.initialize(connection),
       ReviewTableRegistry.initialize(connection)
     ).sequence_.void
+
+  private def importStoredImages(connection: Connection): IO[Unit] =
+    List(
+      StoredImageMigration.importDirectory(connection, "merchant-store", existingUploadDirectory("store-uploads")),
+      StoredImageMigration.importDirectory(connection, "order", existingUploadDirectory("refund-uploads")),
+      StoredImageMigration.importDirectory(connection, "review", existingUploadDirectory("review-uploads"))
+    ).sequence_.void
+
+  private def existingUploadDirectory(dirName: String) =
+    Paths.get(dirName).toAbsolutePath.normalize
 
   private def normalizedHasData(connection: Connection): IO[Boolean] =
     IO.blocking {

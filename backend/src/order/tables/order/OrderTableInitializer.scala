@@ -28,6 +28,9 @@ object OrderTableInitializer:
       |  refund_status VARCHAR(32) CHECK (refund_status IN ($refundStatusSql)),
       |  refund_reason TEXT,
       |  refund_image_url TEXT,
+      |  refund_requested_at VARCHAR(40),
+      |  refund_merchant_reason TEXT,
+      |  refund_merchant_reviewed_at VARCHAR(40),
       |  refund_admin_reason TEXT,
       |  refunded_at VARCHAR(40),
       |  customer_note_text TEXT,
@@ -47,11 +50,16 @@ object OrderTableInitializer:
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS refund_status VARCHAR(32);
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS refund_reason TEXT;
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS refund_image_url TEXT;
+      |ALTER TABLE orders ADD COLUMN IF NOT EXISTS refund_requested_at VARCHAR(40);
+      |ALTER TABLE orders ADD COLUMN IF NOT EXISTS refund_merchant_reason TEXT;
+      |ALTER TABLE orders ADD COLUMN IF NOT EXISTS refund_merchant_reviewed_at VARCHAR(40);
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS refund_admin_reason TEXT;
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS refunded_at VARCHAR(40);
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_note_text TEXT;
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_note_image_url TEXT;
       |ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_refund_status_check;
+      |UPDATE orders SET refund_status = '待商家审核' WHERE refund_status = '待审核';
+      |UPDATE orders SET refund_requested_at = updated_at::text WHERE refund_status IS NOT NULL AND refund_requested_at IS NULL;
       |ALTER TABLE orders ADD CONSTRAINT orders_refund_status_check CHECK (refund_status IS NULL OR refund_status IN ($refundStatusSql));
       |ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
       |UPDATE orders SET status = '待骑手接单' WHERE status = '待接单';

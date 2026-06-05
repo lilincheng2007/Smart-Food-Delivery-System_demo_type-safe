@@ -2,11 +2,10 @@ package delivery.merchant.api
 
 import cats.effect.IO
 import delivery.merchant.tables.merchantstore.MerchantStoreTable
-import delivery.merchant.utils.StoreImageUploads
 import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
 import delivery.shared.objects.MerchantId
+import delivery.shared.tables.storedimage.{StoredImage, StoredImageMigration, StoredImageTable}
 
-import java.nio.file.Files
 import java.sql.Connection
 import java.util.Base64
 import java.util.UUID
@@ -26,6 +25,6 @@ final case class MerchantStoreImageFileAPIMessage(
       merchant <- MerchantAPIMessageSupport.requireOwnedStore(connection, username, merchantId)
       storedName = s"${UUID.randomUUID()}$ext"
       publicPath = s"/api/merchant/store-images/$storedName"
-      _ <- IO.blocking(Files.write(StoreImageUploads.directory.resolve(storedName), bytes))
+      _ <- StoredImageTable.upsert(connection, StoredImage(storedName, "merchant-store", StoredImageMigration.contentTypeFor(storedName), bytes))
       _ <- MerchantStoreTable.upsert(connection, username, merchant.copy(imageUrl = Some(publicPath)))
     yield publicPath
