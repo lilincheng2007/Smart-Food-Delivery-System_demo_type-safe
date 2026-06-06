@@ -68,7 +68,7 @@ function OrderCard({ order, children, onOpen }: { order: Order; children?: React
       <p className="mt-2 line-clamp-2 text-sm text-slate-500">{orderItemSummary(order)}</p>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
         <span className="text-slate-500">下单时间 {order.placedAt}</span>
-        <span className="font-semibold text-orange-600">¥{order.payableAmount.toFixed(2)}</span>
+        <span className="font-semibold text-orange-600">应收 ¥{(order.merchantReceivableAmount ?? order.payableAmount).toFixed(2)}</span>
       </div>
       {children ? <div className="mt-3 flex flex-wrap gap-2">{children}</div> : null}
     </div>
@@ -328,8 +328,9 @@ export function OrdersTab({ selectedStore, onAcceptOrder, onRejectOrder, onFinis
                 <p className="mt-1 text-xs text-slate-500">{statusHint(selectedOrder)}</p>
               </div>
               <div className="rounded-xl bg-orange-50 px-3 py-2 text-sm text-slate-700">
-                实付金额：
-                <span className="ml-1 font-semibold text-orange-600">¥{selectedOrder.payableAmount.toFixed(2)}</span>
+                商家应收：
+                <span className="ml-1 font-semibold text-orange-600">¥{(selectedOrder.merchantReceivableAmount ?? selectedOrder.payableAmount).toFixed(2)}</span>
+                <span className="ml-2 text-xs text-slate-500">顾客实付 ¥{selectedOrder.payableAmount.toFixed(2)}</span>
                 {selectedOrder.discountAmount > 0 ? (
                   <span className="ml-2 text-xs text-green-600">已优惠 ¥{selectedOrder.discountAmount.toFixed(2)}</span>
                 ) : null}

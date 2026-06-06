@@ -1,6 +1,7 @@
 package delivery.merchant.api
 
 import cats.effect.IO
+import delivery.admin.tables.platformpromotion.PlatformPromotionTable
 import delivery.merchant.objects.apiTypes.CatalogResponse
 import delivery.merchant.tables.catalogproduct.CatalogProductTable
 import delivery.merchant.tables.merchantstore.MerchantStoreTable
@@ -15,6 +16,7 @@ final case class CatalogAPIMessage() extends APIMessage[CatalogResponse]:
     for
       products <- CatalogProductTable.list(connection)
       merchants <- MerchantStoreTable.listCatalog(connection)
+      platformPromotions <- PlatformPromotionTable.get(connection)
       reviewSummaries <- MerchantReviewTable.summariesByMerchant(connection, merchants.map(_.id))
       visibleProducts = products.filter(_.listingStatus == ListingStatus.上架)
       visibleProductIds = visibleProducts.map(_.id).toSet
@@ -25,4 +27,4 @@ final case class CatalogAPIMessage() extends APIMessage[CatalogResponse]:
           featuredProductIds = merchant.featuredProductIds.filter(visibleProductIds.contains)
         )
       }
-    yield CatalogResponse(visibleMerchants, visibleProducts)
+    yield CatalogResponse(visibleMerchants, visibleProducts, platformPromotions)

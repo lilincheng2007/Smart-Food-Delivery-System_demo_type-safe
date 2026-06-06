@@ -13,10 +13,16 @@ import { Textarea } from '@/components/ui/textarea'
 import { useAppChrome } from '@/hooks/useAppChrome'
 import { appendContact, normalizedDeliveryContacts } from '@/lib/deliveryContacts'
 import { resolveApiMediaUrl } from '@/lib/api-media-url'
+import { bundleLineUnitPrice, bundleSelectionSummary } from '@/lib/bundles'
+import { bestPromotion, promotionDisplayName, promotionSummary, roundMoney } from '@/lib/promotions'
+import type { CheckoutBundleSelection } from '@/objects/order/CheckoutLine'
 import type { MerchantId } from '@/objects/shared/ids'
 import { useCustomerPortalStore } from '@/stores/pages/use-customer-portal-store'
 
 import { DeliveryContactAddDialog } from './DeliveryContactAddDialog'
+
+const checkoutLineKey = (line: { merchantId: string; productId: string; bundleSelections?: CheckoutBundleSelection[] }) =>
+  `${line.merchantId}::${line.productId}::${JSON.stringify(line.bundleSelections ?? [])}`
 
 export default function CustomerCheckoutPage() {
   const [searchParams] = useSearchParams()
@@ -25,7 +31,7 @@ export default function CustomerCheckoutPage() {
   const [submitting, setSubmitting] = useState(false)
   const [addContactOpen, setAddContactOpen] = useState(false)
   const [selectedId, setSelectedId] = useState('')
-  const [selectedVoucherId, setSelectedVoucherId] = useState('none')
+  const [selectedVoucherId, setSelectedVoucherId] = useState('')
   const [merchantNoteTextById, setMerchantNoteTextById] = useState<Record<string, string>>({})
   const [merchantNoteImageById, setMerchantNoteImageById] = useState<Record<string, string>>({})
 
@@ -34,6 +40,7 @@ export default function CustomerCheckoutPage() {
   const customerAccount = useCustomerPortalStore((s) => s.customerAccount)
   const merchants = useCustomerPortalStore((s) => s.merchants)
   const products = useCustomerPortalStore((s) => s.products)
+  const platformPromotions = useCustomerPortalStore((s) => s.platformPromotions)
   const cartLines = useCustomerPortalStore((s) => s.cartLines)
   const walletBalance = useCustomerPortalStore((s) => s.walletBalance)
   const checkout = useCustomerPortalStore((s) => s.checkout)
@@ -60,9 +67,32 @@ export default function CustomerCheckoutPage() {
   const total = useMemo(() => {
     return lines.reduce((sum, line) => {
       const p = products.find((x) => x.id === line.productId)
-      return sum + (p ? p.price * line.quantity : 0)
+      return sum + (p ? bundleLineUnitPrice(p, line.bundleSelections, products) * line.quantity : 0)
     }, 0)
   }, [lines, products])
+  const itemCount = useMemo(() => lines.reduce((sum, line) => sum + line.quantity, 0), [lines])
+  const merchantDiscounts = useMemo(() => {
+    return [...new Set(lines.map((line) => line.merchantId))].map((merchantId) => {
+      const merchantLines = lines.filter((line) => line.merchantId === merchantId)
+      const merchantTotal = merchantLines.reduce((sum, line) => {
+        const product = products.find((item) => item.id === line.productId)
+        return sum + (product ? bundleLineUnitPrice(product, line.bundleSelections, products) * line.quantity : 0)
+      }, 0)
+      const merchantItemCount = merchantLines.reduce((sum, line) => sum + line.quantity, 0)
+      const merchant = merchants.find((item) => item.id === merchantId)
+      const promotionLines = merchantLines.flatMap((line) => {
+        const product = products.find((item) => item.id === line.productId)
+        return product ? [{ productId: line.productId, unitPrice: bundleLineUnitPrice(product, line.bundleSelections, products), quantity: line.quantity }] : []
+      })
+      return {
+        merchantId,
+        merchantName: merchant?.storeName ?? '未知商家',
+        applied: bestPromotion(merchant?.promotions, merchantTotal, merchantItemCount, promotionLines),
+      }
+    }).filter((item) => item.applied)
+  }, [lines, merchants, products])
+  const merchantDiscount = roundMoney(merchantDiscounts.reduce((sum, item) => sum + (item.applied?.discountAmount ?? 0), 0))
+  const afterMerchantDiscount = Math.max(0, roundMoney(total - merchantDiscount))
 
   const vouchers = customerAccount?.profile.vouchers ?? []
   const todayStart = useMemo(() => {
@@ -74,11 +104,19 @@ export default function CustomerCheckoutPage() {
     return Number.isNaN(time) || time < todayStart
   }
   const usableVouchers = vouchers.filter(
-    (voucher) => voucher.remainingCount > 0 && total >= voucher.minSpend && !isVoucherExpired(voucher.expiresAt),
+    (voucher) => voucher.remainingCount > 0 && afterMerchantDiscount >= voucher.minSpend && !isVoucherExpired(voucher.expiresAt),
   )
+  const checkoutVouchers = vouchers.filter((voucher) => !isVoucherExpired(voucher.expiresAt))
   const selectedVoucher = usableVouchers.find((voucher) => voucher.id === selectedVoucherId)
-  const discount = selectedVoucher ? Math.min(selectedVoucher.discountAmount, total) : 0
-  const payable = Math.max(0, total - discount)
+  const voucherDiscount = selectedVoucher ? Math.min(selectedVoucher.discountAmount, afterMerchantDiscount) : 0
+  const promotionLines = lines.flatMap((line) => {
+    const product = products.find((item) => item.id === line.productId)
+    return product ? [{ productId: line.productId, unitPrice: bundleLineUnitPrice(product, line.bundleSelections, products), quantity: line.quantity }] : []
+  })
+  const platformPromotion = bestPromotion(platformPromotions, Math.max(0, afterMerchantDiscount - voucherDiscount), itemCount, promotionLines)
+  const platformDiscount = platformPromotion?.discountAmount ?? 0
+  const discount = roundMoney(merchantDiscount + voucherDiscount + platformDiscount)
+  const payable = Math.max(0, roundMoney(total - discount))
   const estimatedPoints = Math.floor(payable)
   const insufficient = walletBalance < payable
   const merchantIdsInOrder = useMemo(() => [...new Set(lines.map((line) => line.merchantId))], [lines])
@@ -95,8 +133,8 @@ export default function CustomerCheckoutPage() {
   }, [bootstrapDone, customerAccount, lines.length, loadError, navigate])
 
   useEffect(() => {
-    if (selectedVoucherId !== 'none' && !usableVouchers.some((voucher) => voucher.id === selectedVoucherId)) {
-      setSelectedVoucherId('none')
+    if (selectedVoucherId && !usableVouchers.some((voucher) => voucher.id === selectedVoucherId)) {
+      setSelectedVoucherId('')
     }
   }, [selectedVoucherId, usableVouchers])
 
@@ -142,7 +180,7 @@ export default function CustomerCheckoutPage() {
     }
     setSubmitting(true)
     try {
-      const voucherId = selectedVoucherId === 'none' ? undefined : selectedVoucherId
+      const voucherId = selectedVoucherId || undefined
       const merchantNotes = merchantIdsInOrder
         .map((merchantId) => ({
           merchantId,
@@ -179,7 +217,7 @@ export default function CustomerCheckoutPage() {
   const voucherUnavailableReason = (voucher: (typeof vouchers)[number]) => {
     if (voucher.remainingCount <= 0) return '已使用完'
     if (isVoucherExpired(voucher.expiresAt)) return '已过期'
-    if (total < voucher.minSpend) return `还差 ¥${(voucher.minSpend - total).toFixed(2)} 可用`
+    if (afterMerchantDiscount < voucher.minSpend) return `还差 ¥${(voucher.minSpend - afterMerchantDiscount).toFixed(2)} 可用`
     return null
   }
 
@@ -297,23 +335,26 @@ export default function CustomerCheckoutPage() {
               const product = products.find((p) => p.id === line.productId)
               const merchant = merchants.find((m) => m.id === line.merchantId)
               if (!product || !merchant) return null
-              const subtotal = product.price * line.quantity
+              const unitPrice = bundleLineUnitPrice(product, line.bundleSelections, products)
+              const subtotal = unitPrice * line.quantity
+              const selectionSummary = bundleSelectionSummary(product, line.bundleSelections, products)
               return (
                 <div
-                  key={`${line.merchantId}-${line.productId}`}
+                  key={checkoutLineKey(line)}
                   className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0 space-y-1">
                       <p className="font-medium text-foreground">{product.name}</p>
                       <p className="text-xs text-muted-foreground">{merchant.storeName}</p>
+                      {selectionSummary ? <p className="line-clamp-2 text-xs text-amber-600">{selectionSummary}</p> : null}
                     </div>
                     <Badge variant="outline" className="shrink-0 text-xs">
                       ×{line.quantity}
                     </Badge>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
-                    <span>单价 ¥{product.price.toFixed(1)}</span>
+                    <span>单价 ¥{unitPrice.toFixed(1)}</span>
                     <span className="font-semibold tabular-nums text-primary">小计 ¥{subtotal.toFixed(1)}</span>
                   </div>
                 </div>
@@ -373,46 +414,76 @@ export default function CustomerCheckoutPage() {
             <CardDescription>每单最多使用 1 张优惠券，最终优惠以后端结算为准。</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <RadioGroup value={selectedVoucherId} onValueChange={setSelectedVoucherId} className="gap-3">
-              <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-white/75 px-4 py-3 shadow-sm backdrop-blur-sm">
-                <Label htmlFor="checkout-voucher-none" className="cursor-pointer text-sm font-medium text-foreground">
-                  暂不使用优惠券
-                </Label>
-                <RadioGroupItem id="checkout-voucher-none" value="none" />
+            {merchantDiscounts.length > 0 || platformPromotion ? (
+              <div className="space-y-2 rounded-2xl border border-orange-200 bg-white/75 px-4 py-3 text-sm">
+                {merchantDiscounts.map((item) => (
+                  <p key={item.merchantId} className="text-orange-700">
+                    {item.merchantName}：{item.applied ? `${promotionDisplayName(item.applied.promotion)} · ${promotionSummary(item.applied.promotion)}` : ''}，已减 ¥{item.applied?.discountAmount.toFixed(2)}
+                  </p>
+                ))}
+                {platformPromotion ? (
+                  <p className="text-green-700">
+                    平台优惠：{promotionDisplayName(platformPromotion.promotion)} · {promotionSummary(platformPromotion.promotion)}，已减 ¥{platformPromotion.discountAmount.toFixed(2)}
+                  </p>
+                ) : null}
               </div>
-              {vouchers.length === 0 ? (
+            ) : null}
+            <div className="space-y-3">
+              {checkoutVouchers.length === 0 ? (
                 <p className="rounded-xl border border-dashed border-orange-200 bg-white/60 px-4 py-3 text-sm text-muted-foreground">
-                  暂无优惠券。确认完成订单升级后可继续获得满30减10券。
+                  暂无未过期优惠券。确认完成订单升级后可继续获得平台满30减10优惠券。
                 </p>
               ) : null}
-              {vouchers.map((voucher) => {
+              {checkoutVouchers.map((voucher) => {
                 const reason = voucherUnavailableReason(voucher)
                 const disabled = reason !== null
+                const selected = selectedVoucherId === voucher.id && !disabled
                 return (
                   <div
                     key={voucher.id}
                     className={`relative overflow-hidden rounded-2xl border px-4 py-3 shadow-sm transition-[transform,border-color,box-shadow] duration-200 ${
-                      disabled
+                      selected
+                        ? 'border-orange-400 bg-orange-50 text-orange-950 shadow-[0_14px_30px_rgba(249,115,22,0.18)]'
+                        : disabled
                         ? 'border-border/50 bg-muted/35 text-muted-foreground opacity-70'
                         : 'cursor-pointer border-orange-200 bg-white/85 hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-[0_14px_30px_rgba(249,115,22,0.16)]'
                     }`}
                   >
                     <div className="pointer-events-none absolute -right-5 top-1/2 size-10 -translate-y-1/2 rounded-full bg-orange-50" />
-                    <div className="flex items-start justify-between gap-3">
-                      <Label htmlFor={`checkout-voucher-${voucher.id}`} className={`min-w-0 flex-1 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0 flex-1">
                         <span className="block text-base font-semibold text-foreground">{voucher.title}</span>
                         <span className="mt-1 block text-xs text-muted-foreground">
                           满 ¥{voucher.minSpend.toFixed(0)} 减 ¥{voucher.discountAmount.toFixed(0)} · 有效期至 {voucher.expiresAt}
                         </span>
                         <span className="mt-1 block text-xs text-muted-foreground">剩余 {voucher.remainingCount} 次</span>
-                        {reason ? <span className="mt-2 inline-flex rounded-full bg-muted px-2 py-0.5 text-xs">{reason}</span> : null}
-                      </Label>
-                      <RadioGroupItem id={`checkout-voucher-${voucher.id}`} value={voucher.id} disabled={disabled} className="mt-1" />
+                        <span
+                          className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                            selected
+                              ? 'bg-orange-600 text-white'
+                              : reason
+                              ? 'bg-muted text-muted-foreground'
+                              : 'bg-emerald-50 text-emerald-700'
+                          }`}
+                        >
+                          {selected ? '当前已使用' : reason ? `不可用：${reason}` : '当前未使用'}
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={disabled}
+                        className={selected ? 'bg-orange-600 text-white hover:bg-orange-600' : 'cursor-pointer'}
+                        variant={selected ? 'default' : 'outline'}
+                        onClick={() => setSelectedVoucherId(selected ? '' : voucher.id)}
+                      >
+                        {selected ? '取消使用' : disabled ? '无法使用' : '使用此券'}
+                      </Button>
                     </div>
                   </div>
                 )
               })}
-            </RadioGroup>
+            </div>
           </CardContent>
         </Card>
 
@@ -426,7 +497,15 @@ export default function CustomerCheckoutPage() {
               <span className="tabular-nums text-foreground">¥{total.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between text-muted-foreground">
-              <span>优惠抵扣</span>
+              <span>商家优惠</span>
+              <span className="tabular-nums text-green-600">-¥{merchantDiscount.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span>平台/优惠券抵扣</span>
+              <span className="tabular-nums text-green-600">-¥{(voucherDiscount + platformDiscount).toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span>优惠抵扣合计</span>
               <span className="tabular-nums text-green-600">-¥{discount.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between rounded-xl bg-orange-50 px-3 py-2">

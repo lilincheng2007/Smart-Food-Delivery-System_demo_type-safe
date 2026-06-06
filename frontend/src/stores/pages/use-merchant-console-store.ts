@@ -12,6 +12,7 @@ import { updateMerchantProductIO } from '@/apis/merchant/MerchantProductAPI'
 import { fetchMerchantMeIO } from '@/apis/merchant/MerchantMeAPI'
 import { uploadMerchantStoreImageFileIO } from '@/apis/merchant/MerchantStoreImageFileAPI'
 import { updateMerchantStoreAnnouncementIO } from '@/apis/merchant/MerchantStoreAnnouncementAPI'
+import { updateMerchantStorePromotionsIO } from '@/apis/merchant/MerchantStorePromotionsAPI'
 import { updateMerchantStoreDescriptionIO } from '@/apis/merchant/MerchantStoreDescriptionAPI'
 import { updateMerchantStoreImageIO } from '@/apis/merchant/MerchantStoreImageAPI'
 import { createMerchantStoreIO } from '@/apis/merchant/MerchantStoreAPI'
@@ -25,6 +26,7 @@ import type { Product } from '@/objects/merchant/Product'
 import type { ProductDescriptionPatch } from '@/objects/merchant/ProductDescriptionPatch'
 import type { UpdateProductRequest } from '@/objects/merchant/apiTypes/UpdateProductRequest'
 import type { MerchantId, OrderId, ProductId } from '@/objects/shared/ids'
+import type { Promotion } from '@/objects/shared/Promotion'
 import type { StoreOnboardingRequest } from '@/objects/admin/StoreOnboardingRequest'
 
 export type MerchantTab = 'products' | 'orders' | 'business' | 'reviews' | 'profile'
@@ -60,6 +62,7 @@ type MerchantConsoleStore = {
   generateStoreDescription: (merchantId: MerchantId, keywords: string) => Promise<AIMerchantStoreDescriptionResponse>
   saveStoreDescription: (merchantId: MerchantId, description: string) => Promise<void>
   saveStoreAnnouncement: (merchantId: MerchantId, announcement: string) => Promise<void>
+  saveStorePromotions: (merchantId: MerchantId, promotions: Promotion[]) => Promise<void>
   generateProductDescriptions: (merchantId: MerchantId, keywords: string) => Promise<AIMerchantProductDescriptionsResponse>
   saveProductDescriptions: (merchantId: MerchantId, descriptions: ProductDescriptionPatch[]) => Promise<void>
   updateStoreImage: (merchantId: string, imageUrl: string) => Promise<void>
@@ -226,6 +229,10 @@ export const useMerchantConsoleStore = create<MerchantConsoleStore>()((set, get)
   },
   saveStoreAnnouncement: async (merchantId, announcement) => {
     await runTask(updateMerchantStoreAnnouncementIO(merchantId, announcement))
+    await get().refreshMerchant()
+  },
+  saveStorePromotions: async (merchantId, promotions) => {
+    await runTask(updateMerchantStorePromotionsIO(merchantId, promotions))
     await get().refreshMerchant()
   },
   generateProductDescriptions: async (merchantId, keywords) =>

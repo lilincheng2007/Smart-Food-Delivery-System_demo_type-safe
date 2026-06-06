@@ -2,10 +2,15 @@ import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState 
 import { ArrowLeft, ImagePlus, Loader2, Send, X } from 'lucide-react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
+import { fetchCatalogIO } from '@/apis/merchant/CatalogAPI'
+import { fetchMerchantMeIO } from '@/apis/merchant/MerchantMeAPI'
+import { fetchCustomerOrdersIO } from '@/apis/order/CustomerOrdersAPI'
 import { fetchOrderChatMessagesIO, sendOrderChatMessageIO, uploadOrderChatImageIO } from '@/apis/order/OrderChatAPI'
+import { fetchRiderMeIO } from '@/apis/rider/RiderMeAPI'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuthSession } from '@/hooks/useAuthSession'
+import type { Order } from '@/objects/order/Order'
 import type { OrderChatMessage, OrderChatRole } from '@/objects/order/OrderChatMessage'
 import { UserRoles } from '@/objects/shared/ids'
 
@@ -31,6 +36,10 @@ function formatMessageTime(value: string): string {
   return date.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
 }
 
+function customerDisplay(order: Order | undefined) {
+  return order?.customerName || order?.customerId || '顾客'
+}
+
 export default function OrderChatPage() {
   const { orderId = '' } = useParams()
   const [searchParams] = useSearchParams()
@@ -42,6 +51,8 @@ export default function OrderChatPage() {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [peerTitle, setPeerTitle] = useState('')
+  const [contextLine, setContextLine] = useState('')
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const messageEndRef = useRef<HTMLDivElement | null>(null)
 
@@ -67,13 +78,55 @@ export default function OrderChatPage() {
     }
   }
 
+  const loadPeerContext = async () => {
+    if (!orderId || !peerRole || !currentRole) return
+    try {
+      if (currentRole === UserRoles.customer) {
+        const [ordersResponse, catalog] = await Promise.all([fetchCustomerOrdersIO()(), fetchCatalogIO()()])
+        const order = [...ordersResponse.pendingOrders, ...ordersResponse.historyOrders].find((item) => item.id === orderId)
+        const merchant = order ? catalog.merchants.find((item) => item.id === order.merchantId) : null
+        setPeerTitle(peerRole === UserRoles.merchant ? (merchant?.storeName ?? '商家') : (order?.riderId ? `骑手 ${order.riderId}` : '骑手'))
+        setContextLine(merchant ? `订单 ${orderId} · ${merchant.storeName}` : `订单 ${orderId}`)
+        return
+      }
+
+      if (currentRole === UserRoles.merchant) {
+        const me = await fetchMerchantMeIO()()
+        const stores = me.merchantAccount.profile.stores ?? []
+        const orders = stores.flatMap((store) => [...store.pendingOrders, ...store.historyOrders])
+        const order = orders.find((item) => item.id === orderId)
+        const store = stores.find((item) => item.merchant.id === order?.merchantId)
+        setPeerTitle(peerRole === UserRoles.customer ? customerDisplay(order) : (order?.riderId ? `骑手 ${order.riderId}` : '骑手'))
+        setContextLine(`订单 ${orderId}${store ? ` · ${store.merchant.storeName}` : ''}`)
+        return
+      }
+
+      if (currentRole === UserRoles.rider) {
+        const [me, catalog] = await Promise.all([fetchRiderMeIO()(), fetchCatalogIO()().catch(() => ({ merchants: [], products: [], platformPromotions: [] }))])
+        const orders = [
+          ...(me.riderAccount.profile.pendingOrders ?? []),
+          ...(me.riderAccount.profile.historyOrders ?? []),
+          ...(me.availableOrders ?? []),
+        ]
+        const order = orders.find((item) => item.id === orderId)
+        const merchant = order ? catalog.merchants.find((item) => item.id === order.merchantId) : null
+        setPeerTitle(peerRole === UserRoles.customer ? customerDisplay(order) : (merchant?.storeName ?? '商家'))
+        setContextLine(`订单 ${orderId}${merchant ? ` · ${merchant.storeName}` : ''}`)
+      }
+    } catch {
+      setPeerTitle(roleLabels[peerRole])
+      setContextLine(`订单 ${orderId}`)
+    }
+  }
+
   useEffect(() => {
     void loadMessages(true)
+    void loadPeerContext()
     const timer = window.setInterval(() => {
       void loadMessages(false)
     }, 5000)
     return () => window.clearInterval(timer)
-  }, [orderId, peerRole])
+  }, [currentRole, orderId, peerRole])
 
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ block: 'end' })
@@ -156,8 +209,8 @@ export default function OrderChatPage() {
           <ArrowLeft className="size-6" />
         </Button>
         <div className="min-w-0 flex-1 text-center">
-          <h1 className="truncate text-lg font-semibold text-slate-950">{roleLabels[peerRole]}</h1>
-          <p className="truncate text-xs text-slate-500">订单 {orderId}</p>
+          <h1 className="truncate text-lg font-semibold text-slate-950">{peerTitle || roleLabels[peerRole]}</h1>
+          <p className="truncate text-xs text-slate-500">{contextLine || `订单 ${orderId}`}</p>
         </div>
         <span className="size-10" />
       </header>
@@ -174,13 +227,14 @@ export default function OrderChatPage() {
           <div className="space-y-4 pb-2">
             {messages.map((message) => {
               const mine = message.senderRole === currentRole
+              const isImageMessage = message.messageType === 'image'
               return (
                 <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[78%] ${mine ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
                     <span className="px-1 text-xs text-slate-400">{formatMessageTime(message.createdAt)}</span>
-                    <div className={`rounded-2xl px-3 py-2 shadow-sm ${mine ? 'bg-emerald-500 text-white' : 'bg-white text-slate-950'}`}>
-                      {message.messageType === 'image' ? (
-                        <img src={message.content} alt="聊天图片" className="max-h-64 max-w-full rounded-xl object-contain" />
+                    <div className={isImageMessage ? '' : `rounded-2xl px-3 py-2 shadow-sm ${mine ? 'bg-emerald-500 text-white' : 'bg-white text-slate-950'}`}>
+                      {isImageMessage ? (
+                        <img src={message.content} alt="聊天图片" className="max-h-64 max-w-full rounded-xl object-contain shadow-sm" />
                       ) : (
                         <p className="whitespace-pre-wrap break-words text-sm leading-6">{message.content}</p>
                       )}

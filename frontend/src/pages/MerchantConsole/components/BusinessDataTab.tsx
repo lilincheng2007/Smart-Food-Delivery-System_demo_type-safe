@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, ChartNoAxesCombined, Clock3, DollarSign, PackageSearch, Percent, ReceiptText, Sparkles, Trophy } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AlertTriangle, ChartNoAxesCombined, Clock3, DollarSign, PackageSearch, Percent, ReceiptText, RefreshCw, Sparkles, Trophy } from 'lucide-react'
 
+import { aiMerchantBusinessSuggestionsIO } from '@/apis/ai/AIMerchantBusinessSuggestionsAPI'
 import { fetchMerchantReviewsIO } from '@/apis/review/MerchantReviewsAPI'
 import { runTask } from '@/apis/shared/client'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import type { AIMerchantBusinessSuggestionsResponse } from '@/objects/ai/apiTypes/AIMerchantBusinessSuggestionsResponse'
 import type { MerchantStoreProfile } from '@/objects/merchant/MerchantStoreProfile'
 import type { Order } from '@/objects/order/Order'
 import type { MerchantReviewsResponse } from '@/objects/review/apiTypes/MerchantReviewsResponse'
@@ -79,22 +82,46 @@ function complaintReasons(reviews: MerchantReviewsResponse['reviews']) {
 
 export function BusinessDataTab({ selectedStore }: BusinessDataTabProps) {
   const [reviews, setReviews] = useState<MerchantReviewsResponse | null>(null)
+  const [aiBusinessReport, setAiBusinessReport] = useState<AIMerchantBusinessSuggestionsResponse | null>(null)
+  const [aiBusinessLoading, setAiBusinessLoading] = useState(false)
+  const [aiBusinessError, setAiBusinessError] = useState<string | null>(null)
   const selectedMerchantId = selectedStore?.merchant.id ?? null
-  const merchantPendingOrders = selectedStore?.pendingOrders ?? []
-  const merchantHistoryOrders = selectedStore?.historyOrders ?? []
+  const merchantPendingOrders = useMemo(() => selectedStore?.pendingOrders ?? [], [selectedStore?.pendingOrders])
+  const merchantHistoryOrders = useMemo(() => selectedStore?.historyOrders ?? [], [selectedStore?.historyOrders])
   const merchantAllOrders = useMemo(
     () => [...merchantPendingOrders, ...merchantHistoryOrders],
     [merchantHistoryOrders, merchantPendingOrders],
   )
-  const allReviews = reviews?.reviews ?? []
+  const allReviews = useMemo(() => reviews?.reviews ?? [], [reviews?.reviews])
 
   useEffect(() => {
     if (!selectedMerchantId) {
       setReviews(null)
+      setAiBusinessReport(null)
+      setAiBusinessError(null)
       return
     }
     void runTask(fetchMerchantReviewsIO(selectedMerchantId)).then(setReviews).catch(() => setReviews(null))
   }, [selectedMerchantId])
+
+  const loadAiBusinessReport = useCallback(async () => {
+    if (!selectedMerchantId) return
+    setAiBusinessLoading(true)
+    setAiBusinessError(null)
+    try {
+      const response = await runTask(aiMerchantBusinessSuggestionsIO(selectedMerchantId))
+      setAiBusinessReport(response)
+    } catch (error) {
+      setAiBusinessError(error instanceof Error ? error.message : 'AI 经营建议生成失败')
+      setAiBusinessReport(null)
+    } finally {
+      setAiBusinessLoading(false)
+    }
+  }, [selectedMerchantId])
+
+  useEffect(() => {
+    void loadAiBusinessReport()
+  }, [loadAiBusinessReport])
 
   const dashboard = useMemo(() => {
     const todayOrders = merchantAllOrders.filter(isTodayOrder)
@@ -111,8 +138,8 @@ export function BusinessDataTab({ selectedStore }: BusinessDataTabProps) {
     const lastWeekOrders = merchantAllOrders.filter((order) => isInDateRange(order, lastWeekStart, lastWeekEnd))
     const thisWeekRevenueOrders = thisWeekOrders.filter(validRevenueOrder)
     const lastWeekRevenueOrders = lastWeekOrders.filter(validRevenueOrder)
-    const thisWeekRevenue = thisWeekRevenueOrders.reduce((sum, order) => sum + order.payableAmount, 0)
-    const lastWeekRevenue = lastWeekRevenueOrders.reduce((sum, order) => sum + order.payableAmount, 0)
+    const thisWeekRevenue = thisWeekRevenueOrders.reduce((sum, order) => sum + (order.merchantReceivableAmount ?? order.payableAmount), 0)
+    const lastWeekRevenue = lastWeekRevenueOrders.reduce((sum, order) => sum + (order.merchantReceivableAmount ?? order.payableAmount), 0)
     const thisWeekAverageOrderValue = thisWeekOrders.length > 0 ? thisWeekRevenue / thisWeekOrders.length : 0
     const thisWeekRefundCount = thisWeekOrders.filter(
       (order) => order.status === OrderStatuses.refunded || order.refundStatus === RefundStatuses.accepted,
@@ -120,7 +147,7 @@ export function BusinessDataTab({ selectedStore }: BusinessDataTabProps) {
     const revenueOrders = todayOrders.filter(
       (order) => order.status !== OrderStatuses.canceled && order.status !== OrderStatuses.refunded,
     )
-    const todayRevenue = revenueOrders.reduce((sum, order) => sum + order.payableAmount, 0)
+    const todayRevenue = revenueOrders.reduce((sum, order) => sum + (order.merchantReceivableAmount ?? order.payableAmount), 0)
     const todayOrderCount = todayOrders.length
     const averageOrderValue = todayOrderCount > 0 ? todayRevenue / todayOrderCount : 0
     const statusRows = [
@@ -157,13 +184,6 @@ export function BusinessDataTab({ selectedStore }: BusinessDataTabProps) {
       .sort((a, b) => a.remainingStock - b.remainingStock)
     const topProducts = [...salesByProduct.values()].sort((a, b) => b.quantity - a.quantity).slice(0, 5)
     const badReasons = complaintReasons(allReviews)
-    const aiSuggestions = [
-      peak ? `${peakHour} 订单最集中，建议提前备餐并安排接单人员。` : '本周高峰不明显，可先保持常规排班。',
-      lowStockProducts.length > 0 ? `${lowStockProducts.slice(0, 3).map((product) => product.name).join('、')} 库存偏低，建议优先补货。` : '库存整体稳定，继续关注热销菜品消耗。',
-      badReasons.includes('包装问题') ? '差评提到包装问题，建议复查饮品和汤汁类封口。' : '继续保持包装出餐检查，降低漏洒与错漏风险。',
-      thisWeekRefundCount > 0 ? '本周出现退款订单，建议复盘退款原因并同步到出餐检查清单。' : '本周退款风险较低，可继续维持当前履约标准。',
-    ].slice(0, 4)
-
     return {
       todayOrderCount,
       todayRevenue,
@@ -184,7 +204,6 @@ export function BusinessDataTab({ selectedStore }: BusinessDataTabProps) {
         refundCount: thisWeekRefundCount,
         badReasons,
         topProductName: topProducts[0]?.name ?? '暂无热销菜品',
-        suggestions: aiSuggestions,
       },
     }
   }, [allReviews, merchantAllOrders, selectedStore?.products])
@@ -246,9 +265,18 @@ export function BusinessDataTab({ selectedStore }: BusinessDataTabProps) {
                   <p className="mt-2 text-xs text-slate-500">热销关注：{dashboard.weeklyReport.topProductName}</p>
                 </div>
                 <div className="rounded-lg bg-white/80 px-3 py-3">
-                  <p className="text-sm font-medium text-slate-900">AI 建议</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-slate-900">AI 建议</p>
+                    <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs text-orange-700" onClick={() => void loadAiBusinessReport()} disabled={aiBusinessLoading}>
+                      <RefreshCw className="size-3.5" />
+                      重新生成
+                    </Button>
+                  </div>
+                  {aiBusinessReport?.summary ? <p className="mt-2 text-sm leading-6 text-slate-600">{aiBusinessReport.summary}</p> : null}
+                  {aiBusinessLoading ? <p className="mt-2 text-sm text-slate-500">AI 正在分析店铺经营数据…</p> : null}
+                  {aiBusinessError ? <p className="mt-2 text-sm text-rose-600">{aiBusinessError}</p> : null}
                   <ul className="mt-2 space-y-1 text-sm leading-6 text-slate-600">
-                    {dashboard.weeklyReport.suggestions.map((suggestion) => (
+                    {(aiBusinessReport?.suggestions ?? []).map((suggestion) => (
                       <li key={suggestion}>- {suggestion}</li>
                     ))}
                   </ul>

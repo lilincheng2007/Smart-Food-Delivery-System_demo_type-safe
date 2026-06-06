@@ -4,8 +4,10 @@ import { Minus, Plus, ShoppingCart } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { bundleLineUnitPrice, bundleSelectionSummary } from '@/lib/bundles'
 import type { Merchant } from '@/objects/merchant/Merchant'
 import type { Product } from '@/objects/merchant/Product'
+import type { CheckoutBundleSelection } from '@/objects/order/CheckoutLine'
 import type { MerchantId } from '@/objects/shared/ids'
 import type { ProductId } from '@/objects/shared/ids'
 import type { CartLine } from '@/stores/pages/use-customer-portal-store'
@@ -15,6 +17,7 @@ type CartTabProps = {
   products: Product[]
   cartLines: CartLine[]
   onChangeQuantity: (merchantId: MerchantId, productId: ProductId, nextQuantity: number) => void
+  onChangeCartLineQuantity: (lineKey: string, nextQuantity: number) => void
   onCheckout: () => void
 }
 
@@ -23,7 +26,10 @@ const cartDockBottomStyle: CSSProperties = {
   bottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
 }
 
-export function CartTab({ merchants, products, cartLines, onChangeQuantity, onCheckout }: CartTabProps) {
+const cartLineKey = (line: { merchantId: string; productId: string; bundleSelections?: CheckoutBundleSelection[] }) =>
+  `${line.merchantId}::${line.productId}::${JSON.stringify(line.bundleSelections ?? [])}`
+
+export function CartTab({ merchants, products, cartLines, onChangeQuantity, onChangeCartLineQuantity, onCheckout }: CartTabProps) {
   const cartGroupedByMerchant = cartLines.reduce<Record<string, CartLine[]>>((grouped, line) => {
     if (!grouped[line.merchantId]) {
       grouped[line.merchantId] = []
@@ -34,7 +40,7 @@ export function CartTab({ merchants, products, cartLines, onChangeQuantity, onCh
 
   const cartTotal = cartLines.reduce((sum, line) => {
     const product = products.find((item) => item.id === line.productId)
-    return sum + (product ? product.price * line.quantity : 0)
+    return sum + (product ? bundleLineUnitPrice(product, line.bundleSelections, products) * line.quantity : 0)
   }, 0)
 
   return (
@@ -96,22 +102,26 @@ export function CartTab({ merchants, products, cartLines, onChangeQuantity, onCh
                         if (!product) {
                           return null
                         }
+                        const lineKey = cartLineKey(line)
+                        const unitPrice = bundleLineUnitPrice(product, line.bundleSelections, products)
+                        const selectionSummary = bundleSelectionSummary(product, line.bundleSelections, products)
 
                         return (
                           <div
-                            key={line.productId}
+                            key={lineKey}
                             className="flex items-center justify-between gap-4 rounded-xl border border-border/50 bg-background/70 p-3 shadow-sm backdrop-blur-sm"
                           >
                             <div className="space-y-1">
                               <p className="font-medium text-foreground">{product.name}</p>
-                              <p className="text-sm text-muted-foreground">单价 ¥{product.price.toFixed(1)}</p>
+                              {selectionSummary ? <p className="line-clamp-2 text-xs text-amber-600">{selectionSummary}</p> : null}
+                              <p className="text-sm text-muted-foreground">单价 ¥{unitPrice.toFixed(1)}</p>
                             </div>
                             <div className="flex items-center gap-2">
                               <Button
                                 size="icon"
                                 variant="outline"
                                 className="size-8 cursor-pointer border-border/80 transition-colors hover:border-primary/40 hover:bg-primary/5"
-                                onClick={() => onChangeQuantity(line.merchantId, line.productId, line.quantity - 1)}
+                                onClick={() => line.bundleSelections?.length ? onChangeCartLineQuantity(lineKey, line.quantity - 1) : onChangeQuantity(line.merchantId, line.productId, line.quantity - 1)}
                               >
                                 <Minus className="size-4" />
                               </Button>
@@ -120,7 +130,7 @@ export function CartTab({ merchants, products, cartLines, onChangeQuantity, onCh
                                 size="icon"
                                 variant="outline"
                                 className="size-8 cursor-pointer border-border/80 transition-colors hover:border-primary/40 hover:bg-primary/5"
-                                onClick={() => onChangeQuantity(line.merchantId, line.productId, line.quantity + 1)}
+                                onClick={() => line.bundleSelections?.length ? onChangeCartLineQuantity(lineKey, line.quantity + 1) : onChangeQuantity(line.merchantId, line.productId, line.quantity + 1)}
                               >
                                 <Plus className="size-4" />
                               </Button>

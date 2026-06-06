@@ -24,6 +24,10 @@ object OrderTableInitializer:
       |  discount_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (discount_amount >= 0),
       |  payable_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (payable_amount >= 0),
       |  used_voucher JSONB,
+      |  merchant_discount_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (merchant_discount_amount >= 0),
+      |  platform_discount_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (platform_discount_amount >= 0),
+      |  merchant_receivable_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (merchant_receivable_amount >= 0),
+      |  applied_promotions JSONB NOT NULL DEFAULT '[]'::jsonb,
       |  points_awarded INTEGER NOT NULL DEFAULT 0 CHECK (points_awarded >= 0),
       |  refund_status VARCHAR(32) CHECK (refund_status IN ($refundStatusSql)),
       |  refund_reason TEXT,
@@ -46,6 +50,10 @@ object OrderTableInitializer:
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (discount_amount >= 0);
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS payable_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (payable_amount >= 0);
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS used_voucher JSONB;
+      |ALTER TABLE orders ADD COLUMN IF NOT EXISTS merchant_discount_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (merchant_discount_amount >= 0);
+      |ALTER TABLE orders ADD COLUMN IF NOT EXISTS platform_discount_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (platform_discount_amount >= 0);
+      |ALTER TABLE orders ADD COLUMN IF NOT EXISTS merchant_receivable_amount NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (merchant_receivable_amount >= 0);
+      |ALTER TABLE orders ADD COLUMN IF NOT EXISTS applied_promotions JSONB NOT NULL DEFAULT '[]'::jsonb;
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_awarded INTEGER NOT NULL DEFAULT 0 CHECK (points_awarded >= 0);
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS refund_status VARCHAR(32);
       |ALTER TABLE orders ADD COLUMN IF NOT EXISTS refund_reason TEXT;
@@ -66,6 +74,7 @@ object OrderTableInitializer:
       |ALTER TABLE orders ADD CONSTRAINT orders_status_check CHECK (status IN ($orderStatusSql));
       |UPDATE orders SET original_amount = total_amount WHERE original_amount = 0;
       |UPDATE orders SET payable_amount = total_amount WHERE payable_amount = 0;
+      |UPDATE orders SET merchant_receivable_amount = payable_amount WHERE merchant_receivable_amount = 0;
       |
       |CREATE INDEX IF NOT EXISTS orders_customer_id_idx ON orders(customer_id);
       |CREATE INDEX IF NOT EXISTS orders_merchant_id_idx ON orders(merchant_id);

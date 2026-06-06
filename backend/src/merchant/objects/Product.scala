@@ -2,6 +2,15 @@ package delivery.merchant.objects
 
 import delivery.shared.objects.{InventoryStatus, ListingStatus, MerchantId, ProductId}
 
+final case class ProductBundleOption(productId: ProductId, recommended: Boolean = false)
+
+final case class ProductBundleGroup(
+    id: String,
+    name: String,
+    quantity: Int,
+    options: List[ProductBundleOption] = Nil
+)
+
 final case class Product(
     id: ProductId,
     merchantId: MerchantId,
@@ -14,5 +23,6 @@ final case class Product(
     listingStatus: ListingStatus,
     inventoryStatus: InventoryStatus,
     discountText: Option[String] = None,
-    categoryName: String = "默认分类"
+    categoryName: String = "默认分类",
+    bundleGroups: List[ProductBundleGroup] = Nil
 )

@@ -6,6 +6,7 @@ import delivery.order.tables.order.OrderTable
 import delivery.rider.tables.riderassignment.RiderAssignmentTable
 import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
 import delivery.shared.objects.{OrderId, OrderStatus}
+import delivery.shared.utils.VoucherSupport
 import delivery.user.tables.customerprofile.CustomerProfileTable
 
 import java.sql.Connection
@@ -32,14 +33,14 @@ final case class OrderCompleteAPIMessage(orderId: OrderId) extends APIWithRoleMe
       nextPoints = currentPoints + earnedPoints
       nextLevel = OrderAPIMessageSupport.levelOf(nextPoints)
       rewardCount = math.max(0, nextLevel - currentLevel)
-      levelRewards = List.tabulate(rewardCount)(idx => OrderAPIMessageSupport.rewardVoucher(s"v-level-${account.profile.id}-${order.id}-${idx + 1}"))
+      nextVouchers = VoucherSupport.addStandardPlatformVouchers(account.profile.id, account.profile.vouchers, rewardCount)
       completedOrder = order.copy(status = OrderStatus.已完成, pointsAwarded = earnedPoints)
       nextAccount = account.copy(profile = account.profile.copy(
         pendingOrders = account.profile.pendingOrders.filterNot(_.id == orderId),
         historyOrders = completedOrder :: account.profile.historyOrders.filterNot(_.id == orderId),
         foodiePoints = nextPoints,
         foodieLevel = nextLevel,
-        vouchers = levelRewards ::: account.profile.vouchers
+        vouchers = nextVouchers
       ))
       _ <- OrderTable.upsert(connection, completedOrder)
       _ <- order.riderId match

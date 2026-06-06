@@ -1,8 +1,12 @@
 package delivery.merchant.tables.catalogproduct
 
 import cats.effect.IO
-import delivery.merchant.objects.Product
+import delivery.merchant.objects.{Product, ProductBundleGroup}
+import delivery.shared.json.ApiJsonCodecs.given
 import delivery.shared.objects.{InventoryStatus, ListingStatus, ProductId}
+import io.circe.parser.decode
+import io.circe.syntax.*
+import org.postgresql.util.PGobject
 
 import java.sql.{Connection, PreparedStatement, ResultSet}
 
@@ -12,9 +16,9 @@ object CatalogProductTable:
     """
       |INSERT INTO catalog_products (
       |  id, merchant_id, name, price, description, image_url, monthly_sales,
-      |  remaining_stock, listing_status, inventory_status, discount_text, category_name, updated_at
+      |  remaining_stock, listing_status, inventory_status, discount_text, category_name, bundle_config, updated_at
       |)
-      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
+      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
       |ON CONFLICT (id) DO UPDATE SET
       |  merchant_id = EXCLUDED.merchant_id,
       |  name = EXCLUDED.name,
@@ -27,6 +31,7 @@ object CatalogProductTable:
       |  inventory_status = EXCLUDED.inventory_status,
       |  discount_text = EXCLUDED.discount_text,
       |  category_name = EXCLUDED.category_name,
+      |  bundle_config = EXCLUDED.bundle_config,
       |  updated_at = now()
       |""".stripMargin
 
@@ -43,7 +48,7 @@ object CatalogProductTable:
   private val listSql: String =
     """
       |SELECT id, merchant_id, name, price, description, image_url, monthly_sales,
-      |       remaining_stock, listing_status, inventory_status, discount_text, category_name
+      |       remaining_stock, listing_status, inventory_status, discount_text, category_name, bundle_config
       |FROM catalog_products
       |ORDER BY category_name ASC, updated_at DESC
       |""".stripMargin
@@ -64,7 +69,7 @@ object CatalogProductTable:
   private val findByIdSql: String =
     """
       |SELECT id, merchant_id, name, price, description, image_url, monthly_sales,
-      |       remaining_stock, listing_status, inventory_status, discount_text, category_name
+      |       remaining_stock, listing_status, inventory_status, discount_text, category_name, bundle_config
       |FROM catalog_products
       |WHERE id = ?
       |""".stripMargin
@@ -97,6 +102,7 @@ object CatalogProductTable:
       case Some(value) => statement.setString(11, value)
       case None        => statement.setNull(11, java.sql.Types.VARCHAR)
     statement.setString(12, normalizedCategoryName(product.categoryName))
+    statement.setObject(13, jsonb(product.bundleGroups.asJson.noSpaces))
 
   private def readProduct(resultSet: ResultSet): Product =
     Product(
@@ -111,11 +117,18 @@ object CatalogProductTable:
       listingStatus = ListingStatus.fromString(resultSet.getString("listing_status")).getOrElse(ListingStatus.下架),
       inventoryStatus = InventoryStatus.fromString(resultSet.getString("inventory_status")).getOrElse(InventoryStatus.售罄),
       discountText = Option(resultSet.getString("discount_text")),
-      categoryName = normalizedCategoryName(Option(resultSet.getString("category_name")).getOrElse(""))
+      categoryName = normalizedCategoryName(Option(resultSet.getString("category_name")).getOrElse("")),
+      bundleGroups = Option(resultSet.getString("bundle_config")).flatMap(raw => decode[List[ProductBundleGroup]](raw).toOption).getOrElse(Nil)
     )
 
   private def normalizedCategoryName(raw: String): String =
     val trimmed = raw.trim
     if trimmed.isEmpty then "默认分类" else trimmed
+
+  private def jsonb(value: String): PGobject =
+    val pg = PGobject()
+    pg.setType("jsonb")
+    pg.setValue(value)
+    pg
 
 end CatalogProductTable

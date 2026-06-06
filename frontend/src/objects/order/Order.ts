@@ -1,4 +1,5 @@
 import type { MerchantId, OrderId, RiderId, UserId, OrderStatus, RefundStatus } from '@/objects/shared/ids'
+import type { Promotion } from '@/objects/shared/Promotion'
 import type { Voucher } from '@/objects/shared/Voucher'
 
 import type { OrderItem } from './OrderItem'
@@ -19,6 +20,10 @@ export interface Order {
   discountAmount: number
   payableAmount: number
   usedVoucher?: Voucher
+  merchantDiscountAmount?: number
+  platformDiscountAmount?: number
+  merchantReceivableAmount?: number
+  appliedPromotions?: Promotion[]
   pointsAwarded: number
   refundStatus?: RefundStatus | null
   refundReason?: string | null

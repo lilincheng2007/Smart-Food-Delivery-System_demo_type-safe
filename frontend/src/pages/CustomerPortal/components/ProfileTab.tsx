@@ -278,7 +278,7 @@ export function ProfileTab({
               </span>
             </div>
             <CardTitle className="text-3xl font-bold tracking-tight">Lv.{safeFoodieLevel} 美食探索家</CardTitle>
-            <p className="text-sm text-white/85">累计 {safeFoodiePoints} 积分 · 每 200 积分升 1 级，升级即得满30减10券</p>
+            <p className="text-sm text-white/85">累计 {safeFoodiePoints} 积分 · 每 200 积分升 1 级，升级即得平台满30减10优惠券</p>
           </CardHeader>
           <CardContent className="relative space-y-3 pb-5">
             <Progress value={progress} className="h-2 bg-white/25" />
@@ -429,7 +429,7 @@ export function ProfileTab({
           <CardContent className="space-y-2 pb-5">
             {displayedVouchers.length === 0 ? (
               <p className="rounded-xl border border-dashed border-orange-200 bg-white/70 px-3 py-3 text-sm text-muted-foreground">
-                暂无可用券，完成订单升级后会自动发放满30减10券。
+                暂无可用券，完成订单升级后会自动发放平台满30减10优惠券。
               </p>
             ) : (
               displayedVouchers.map((voucher) => {
@@ -849,7 +849,7 @@ export function ProfileTab({
               </span>
             </div>
             <CardTitle className="text-3xl font-bold tracking-tight">Lv.{safeFoodieLevel} 美食探索家</CardTitle>
-            <p className="text-sm text-white/85">累计 {safeFoodiePoints} 积分 · 每 200 积分升 1 级，升级即得满30减10券</p>
+            <p className="text-sm text-white/85">累计 {safeFoodiePoints} 积分 · 每 200 积分升 1 级，升级即得平台满30减10优惠券</p>
           </CardHeader>
           <CardContent className="relative space-y-3 pb-5">
             <Progress value={progress} className="h-2 bg-white/25" />
@@ -875,7 +875,7 @@ export function ProfileTab({
           <CardContent className="space-y-2 pb-5">
             {displayedVouchers.length === 0 ? (
               <p className="rounded-xl border border-dashed border-orange-200 bg-white/70 px-3 py-3 text-sm text-muted-foreground">
-                暂无可用券，完成订单升级后会自动发放满30减10券。
+                暂无可用券，完成订单升级后会自动发放平台满30减10优惠券。
               </p>
             ) : (
               displayedVouchers.map((voucher) => {

@@ -21,6 +21,7 @@ object MerchantStoreTableInitializer:
       |  image_url TEXT,
       |  description TEXT NOT NULL DEFAULT '',
       |  announcement TEXT NOT NULL DEFAULT '',
+      |  promotions JSONB NOT NULL DEFAULT '[]'::jsonb,
       |  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       |  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       |);
@@ -37,6 +38,7 @@ object MerchantStoreTableInitializer:
       |  image_url TEXT,
       |  description TEXT NOT NULL DEFAULT '',
       |  announcement TEXT NOT NULL DEFAULT '',
+      |  promotions JSONB NOT NULL DEFAULT '[]'::jsonb,
       |  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       |);
       |
@@ -44,6 +46,8 @@ object MerchantStoreTableInitializer:
       |ALTER TABLE catalog_merchants ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '';
       |ALTER TABLE merchant_stores ADD COLUMN IF NOT EXISTS announcement TEXT NOT NULL DEFAULT '';
       |ALTER TABLE catalog_merchants ADD COLUMN IF NOT EXISTS announcement TEXT NOT NULL DEFAULT '';
+      |ALTER TABLE merchant_stores ADD COLUMN IF NOT EXISTS promotions JSONB NOT NULL DEFAULT '[]'::jsonb;
+      |ALTER TABLE catalog_merchants ADD COLUMN IF NOT EXISTS promotions JSONB NOT NULL DEFAULT '[]'::jsonb;
       |
       |CREATE INDEX IF NOT EXISTS merchant_stores_owner_username_idx ON merchant_stores(owner_username);
       |""".stripMargin

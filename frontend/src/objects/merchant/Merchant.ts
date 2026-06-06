@@ -1,4 +1,5 @@
 import type { MerchantCategory, ProductId, MerchantId } from '@/objects/shared/ids'
+import type { Promotion } from '@/objects/shared/Promotion'
 
 export interface Merchant {
   id: MerchantId
@@ -13,4 +14,5 @@ export interface Merchant {
   imageUrl?: string | null
   description: string
   announcement: string
+  promotions?: Promotion[]
 }

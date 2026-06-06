@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 
 import { FeedbackModal } from '@/components/FeedbackModal'
+import { GlobalNotificationCenter } from '@/components/GlobalNotificationCenter'
 import { runTask } from '@/apis/shared/TaskIO'
 import { clearTimeoutIO, setTimeoutIO } from '@/apis/shared/browser'
 import { AppChromeContext } from '@/lib/app-chrome-context'
@@ -83,6 +84,7 @@ export function AppChromeProvider({ children }: { children: ReactNode }) {
   return (
     <AppChromeContext.Provider value={contextValue}>
       {children}
+      <GlobalNotificationCenter />
       {feedbackRequest ? (
         <FeedbackModal
           request={feedbackRequest}

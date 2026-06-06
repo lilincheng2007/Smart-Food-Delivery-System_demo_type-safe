@@ -1,5 +1,17 @@
 import type { InventoryStatus, ListingStatus, MerchantId, ProductId } from '@/objects/shared/ids'
 
+export interface ProductBundleOption {
+  productId: ProductId
+  recommended?: boolean
+}
+
+export interface ProductBundleGroup {
+  id: string
+  name: string
+  quantity: number
+  options: ProductBundleOption[]
+}
+
 export interface Product {
   id: ProductId
   merchantId: MerchantId
@@ -13,4 +25,5 @@ export interface Product {
   listingStatus: ListingStatus
   inventoryStatus: InventoryStatus
   discountText?: string
+  bundleGroups?: ProductBundleGroup[]
 }

@@ -10,6 +10,7 @@ import { uploadOrderImageFileIO } from '@/apis/order/CustomerOrderImageFileAPI'
 import { completeOrderIO } from '@/apis/order/OrderCompleteAPI'
 import { checkoutIO, type CheckoutDeliverySnapshot } from '@/apis/order/CheckoutAPI'
 import type { OrderMerchantNote } from '@/objects/order/apiTypes/CheckoutRequest'
+import type { CheckoutBundleSelection } from '@/objects/order/CheckoutLine'
 import { fetchOrderDetailIO } from '@/apis/order/OrderDetailAPI'
 import { appealOrderRefundIO } from '@/apis/order/OrderRefundAppealAPI'
 import { requestOrderRefundIO } from '@/apis/order/OrderRefundRequestAPI'
@@ -25,6 +26,7 @@ import { discardCustomerVoucherIO } from '@/apis/user/CustomerVoucherDiscardAPI'
 import type { Merchant } from '@/objects/merchant/Merchant'
 import type { Product } from '@/objects/merchant/Product'
 import type { Order } from '@/objects/order/Order'
+import type { Promotion } from '@/objects/shared/Promotion'
 import type { MerchantId } from '@/objects/shared/ids'
 import type { OrderId } from '@/objects/shared/ids'
 import type { ProductId } from '@/objects/shared/ids'
@@ -32,6 +34,8 @@ import type { VoucherId } from '@/objects/shared/ids'
 import type { AIDietWeeklyReportResponse } from '@/objects/ai/apiTypes/AIDietWeeklyReportResponse'
 import type { AIOrderProgressNarrativesResponse } from '@/objects/ai/apiTypes/AIOrderProgressNarrativesResponse'
 import { validateDeliveryContacts } from '@/lib/deliveryContacts'
+import { bundleLineUnitPrice } from '@/lib/bundles'
+import { bestPromotion, roundMoney } from '@/lib/promotions'
 import type { CustomerAccountPublic } from '@/objects/user/CustomerAccountPublic'
 import type { CustomerDeliveryContact } from '@/objects/user/CustomerDeliveryContact'
 import type { MerchantReviewsResponse } from '@/objects/review/apiTypes/MerchantReviewsResponse'
@@ -42,6 +46,7 @@ export interface CartLine {
   merchantId: MerchantId
   productId: ProductId
   quantity: number
+  bundleSelections?: CheckoutBundleSelection[]
 }
 
 export type FavoriteKind = 'merchant' | 'product'
@@ -57,6 +62,7 @@ type CustomerPortalStore = {
   customerAccount: CustomerAccountPublic | null
   merchants: Merchant[]
   products: Product[]
+  platformPromotions: Promotion[]
   activeTab: CustomerTab
   selectedMerchantId: MerchantId
   cartLines: CartLine[]
@@ -83,7 +89,9 @@ type CustomerPortalStore = {
   toggleFavorite: (kind: FavoriteKind, id: MerchantId | ProductId) => void
   reorderOrder: (orderId: OrderId) => { ok: true; addedCount: number } | { ok: false; message: string }
   addProductToCart: (merchantId: MerchantId, productId: ProductId) => void
+  addBundleToCart: (merchantId: MerchantId, productId: ProductId, bundleSelections: CheckoutBundleSelection[]) => void
   changeQuantity: (merchantId: MerchantId, productId: ProductId, nextQuantity: number) => void
+  changeCartLineQuantity: (lineKey: string, nextQuantity: number) => void
   setIsRechargeOpen: (open: boolean) => void
   setRechargeAmountInput: (value: string) => void
   setSelectedOrder: (order: Order | null) => void
@@ -162,12 +170,16 @@ const writeStoredFavorites = (favorites: CustomerFavorites) => {
   window.localStorage.setItem(CustomerFavoritesStorageKey, JSON.stringify(favorites))
 }
 
+const cartLineKey = (line: Pick<CartLine, 'merchantId' | 'productId' | 'bundleSelections'>) =>
+  `${line.merchantId}::${line.productId}::${JSON.stringify(line.bundleSelections ?? [])}`
+
 const initialState = {
   bootstrapDone: false,
   loadError: null as string | null,
   customerAccount: null as CustomerAccountPublic | null,
   merchants: [] as Merchant[],
   products: [] as Product[],
+  platformPromotions: [] as Promotion[],
   activeTab: 'home' as CustomerTab,
   selectedMerchantId: '' as MerchantId,
   cartLines: [] as CartLine[],
@@ -218,6 +230,7 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
         historyOrders: orders.historyOrders,
         merchants: catalog.merchants,
         products: catalog.products,
+        platformPromotions: catalog.platformPromotions ?? [],
         selectedMerchantId: nextSelectedMerchantId,
         cartLines: nextCartLines,
       })
@@ -301,7 +314,7 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
       const nextCartLines = [...state.cartLines]
       reorderItems.forEach((item) => {
         const matchedIndex = nextCartLines.findIndex(
-          (line) => line.merchantId === order.merchantId && line.productId === item.productId,
+          (line) => line.merchantId === order.merchantId && line.productId === item.productId && !(line.bundleSelections?.length),
         )
         if (matchedIndex >= 0) {
           nextCartLines[matchedIndex] = {
@@ -325,16 +338,31 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
   },
   addProductToCart: (merchantId, productId) =>
     set((state) => {
-      const matched = state.cartLines.find((line) => line.merchantId === merchantId && line.productId === productId)
+      const matched = state.cartLines.find((line) => line.merchantId === merchantId && line.productId === productId && !(line.bundleSelections?.length))
       if (!matched) {
         return { cartLines: [...state.cartLines, { merchantId, productId, quantity: 1 }] }
       }
 
       return {
         cartLines: state.cartLines.map((line) =>
-          line.merchantId === merchantId && line.productId === productId
+          line.merchantId === merchantId && line.productId === productId && !(line.bundleSelections?.length)
             ? { ...line, quantity: line.quantity + 1 }
             : line,
+        ),
+      }
+    }),
+  addBundleToCart: (merchantId, productId, bundleSelections) =>
+    set((state) => {
+      const normalizedLine = { merchantId, productId, quantity: 1, bundleSelections }
+      const key = cartLineKey(normalizedLine)
+      const matched = state.cartLines.find((line) => cartLineKey(line) === key)
+      if (!matched) {
+        return { cartLines: [...state.cartLines, normalizedLine] }
+      }
+
+      return {
+        cartLines: state.cartLines.map((line) =>
+          cartLineKey(line) === key ? { ...line, quantity: line.quantity + 1 } : line,
         ),
       }
     }),
@@ -343,17 +371,24 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
       if (nextQuantity <= 0) {
         return {
           cartLines: state.cartLines.filter(
-            (line) => !(line.merchantId === merchantId && line.productId === productId),
+            (line) => !(line.merchantId === merchantId && line.productId === productId && !(line.bundleSelections?.length)),
           ),
         }
       }
 
       return {
         cartLines: state.cartLines.map((line) =>
-          line.merchantId === merchantId && line.productId === productId ? { ...line, quantity: nextQuantity } : line,
+          line.merchantId === merchantId && line.productId === productId && !(line.bundleSelections?.length) ? { ...line, quantity: nextQuantity } : line,
         ),
       }
     }),
+  changeCartLineQuantity: (lineKey, nextQuantity) =>
+    set((state) => ({
+      cartLines:
+        nextQuantity <= 0
+          ? state.cartLines.filter((line) => cartLineKey(line) !== lineKey)
+          : state.cartLines.map((line) => cartLineKey(line) === lineKey ? { ...line, quantity: nextQuantity } : line),
+    })),
   setIsRechargeOpen: (isRechargeOpen) => set({ isRechargeOpen }),
   setRechargeAmountInput: (rechargeAmountInput) => set({ rechargeAmountInput }),
   setSelectedOrder: (selectedOrder) => set({ selectedOrder }),
@@ -462,7 +497,7 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
   },
   checkout: async (options?: { merchantId?: MerchantId; delivery?: CheckoutDeliverySnapshot; voucherId?: VoucherId; merchantNotes?: OrderMerchantNote[] }) => {
     const merchantId = options?.merchantId
-    const { cartLines, walletBalance, products, customerAccount } = get()
+    const { cartLines, walletBalance, products, customerAccount, merchants, platformPromotions } = get()
     const lines = merchantId ? cartLines.filter((line) => line.merchantId === merchantId) : cartLines
 
     if (lines.length === 0) {
@@ -474,13 +509,35 @@ export const useCustomerPortalStore = create<CustomerPortalStore>()((set, get) =
 
     const cartTotal = lines.reduce((sum, line) => {
       const product = products.find((item) => item.id === line.productId)
-      return sum + (product ? product.price * line.quantity : 0)
+      return sum + (product ? bundleLineUnitPrice(product, line.bundleSelections, products) * line.quantity : 0)
     }, 0)
+    const merchantDiscount = [...new Set(lines.map((line) => line.merchantId))].reduce((sum, lineMerchantId) => {
+      const merchantLines = lines.filter((line) => line.merchantId === lineMerchantId)
+      const merchantTotal = merchantLines.reduce((lineSum, line) => {
+        const product = products.find((item) => item.id === line.productId)
+        return lineSum + (product ? bundleLineUnitPrice(product, line.bundleSelections, products) * line.quantity : 0)
+      }, 0)
+      const merchantItemCount = merchantLines.reduce((lineSum, line) => lineSum + line.quantity, 0)
+      const merchant = merchants.find((item) => item.id === lineMerchantId)
+      const promotionLines = merchantLines.flatMap((line) => {
+        const product = products.find((item) => item.id === line.productId)
+        return product ? [{ productId: line.productId, unitPrice: bundleLineUnitPrice(product, line.bundleSelections, products), quantity: line.quantity }] : []
+      })
+      return sum + (bestPromotion(merchant?.promotions, merchantTotal, merchantItemCount, promotionLines)?.discountAmount ?? 0)
+    }, 0)
+    const afterMerchantDiscount = Math.max(0, roundMoney(cartTotal - merchantDiscount))
 
     const selectedVoucher = customerAccount?.profile.vouchers.find((voucher) => voucher.id === options?.voucherId)
-    const estimatedDiscount = selectedVoucher && cartTotal >= selectedVoucher.minSpend && selectedVoucher.remainingCount > 0
-      ? Math.min(selectedVoucher.discountAmount, cartTotal)
+    const estimatedVoucherDiscount = selectedVoucher && afterMerchantDiscount >= selectedVoucher.minSpend && selectedVoucher.remainingCount > 0
+      ? Math.min(selectedVoucher.discountAmount, afterMerchantDiscount)
       : 0
+    const itemCount = lines.reduce((sum, line) => sum + line.quantity, 0)
+    const promotionLines = lines.flatMap((line) => {
+      const product = products.find((item) => item.id === line.productId)
+      return product ? [{ productId: line.productId, unitPrice: bundleLineUnitPrice(product, line.bundleSelections, products), quantity: line.quantity }] : []
+    })
+    const estimatedPlatformDiscount = bestPromotion(platformPromotions, Math.max(0, afterMerchantDiscount - estimatedVoucherDiscount), itemCount, promotionLines)?.discountAmount ?? 0
+    const estimatedDiscount = roundMoney(merchantDiscount + estimatedVoucherDiscount + estimatedPlatformDiscount)
 
     if (walletBalance < cartTotal - estimatedDiscount) {
       return { ok: false, message: '余额不足，请先充值。' }

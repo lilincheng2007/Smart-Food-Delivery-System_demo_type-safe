@@ -25,12 +25,16 @@ object CatalogProductTableInitializer:
       |  inventory_status VARCHAR(32) NOT NULL CHECK (inventory_status IN ($inventoryStatusSql)),
       |  discount_text TEXT,
       |  category_name TEXT NOT NULL DEFAULT '默认分类',
+      |  bundle_config JSONB NOT NULL DEFAULT '[]'::jsonb,
       |  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       |  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       |);
       |
       |ALTER TABLE catalog_products
       |  ADD COLUMN IF NOT EXISTS category_name TEXT NOT NULL DEFAULT '默认分类';
+      |
+      |ALTER TABLE catalog_products
+      |  ADD COLUMN IF NOT EXISTS bundle_config JSONB NOT NULL DEFAULT '[]'::jsonb;
       |
       |UPDATE catalog_products
       |SET category_name = '默认分类'

@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import { DeliveryLogoutBar } from '@/components/DeliveryLogoutBar'
 import { DeliveryPageShell } from '@/components/DeliveryPageShell'
@@ -16,6 +17,7 @@ import { StoreSelectorDialog } from './components/StoreSelectorDialog'
 import { isMerchantTab } from './functions/helpers'
 
 export default function MerchantConsole() {
+  const [searchParams] = useSearchParams()
   const { showNotice } = useAppChrome()
   const bootstrapDone = useMerchantConsoleStore((state) => state.bootstrapDone)
   const loadError = useMerchantConsoleStore((state) => state.loadError)
@@ -49,6 +51,13 @@ export default function MerchantConsole() {
     resetPage()
     void bootstrap()
   }, [bootstrap, resetPage])
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && isMerchantTab(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams, setActiveTab])
 
   useEffect(() => {
     const timer = window.setInterval(() => {

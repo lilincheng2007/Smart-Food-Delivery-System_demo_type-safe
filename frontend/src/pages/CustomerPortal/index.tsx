@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { DeliveryLogoutBar } from '@/components/DeliveryLogoutBar'
 import { DeliveryPageShell } from '@/components/DeliveryPageShell'
@@ -21,6 +21,7 @@ const CustomerPortalRefreshIntervalMs = 15_000
 
 export default function CustomerPortal() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { showNotice } = useAppChrome()
   const bootstrapDone = useCustomerPortalStore((state) => state.bootstrapDone)
   const loadError = useCustomerPortalStore((state) => state.loadError)
@@ -41,7 +42,9 @@ export default function CustomerPortal() {
   const bootstrap = useCustomerPortalStore((state) => state.bootstrap)
   const setActiveTab = useCustomerPortalStore((state) => state.setActiveTab)
   const toggleFavorite = useCustomerPortalStore((state) => state.toggleFavorite)
+  const reorderOrder = useCustomerPortalStore((state) => state.reorderOrder)
   const changeQuantity = useCustomerPortalStore((state) => state.changeQuantity)
+  const changeCartLineQuantity = useCustomerPortalStore((state) => state.changeCartLineQuantity)
   const setIsRechargeOpen = useCustomerPortalStore((state) => state.setIsRechargeOpen)
   const setRechargeAmountInput = useCustomerPortalStore((state) => state.setRechargeAmountInput)
   const setSelectedOrder = useCustomerPortalStore((state) => state.setSelectedOrder)
@@ -75,6 +78,13 @@ export default function CustomerPortal() {
       }
     })()
   }, [bootstrap, ensureAIOrderProgressNarratives, refreshPortal])
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && isCustomerTab(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams, setActiveTab])
 
   useEffect(() => {
     let stopped = false
@@ -181,6 +191,16 @@ export default function CustomerPortal() {
     showNotice(result.message, 'error')
   }
 
+  const handleReorderOrder = (orderId: string) => {
+    const result = reorderOrder(orderId)
+    if (result.ok) {
+      showNotice(`已将 ${result.addedCount} 件菜品加入购物车。`, 'success')
+      return
+    }
+
+    showNotice(result.message, 'error')
+  }
+
   if (!bootstrapDone) {
     return (
       <DeliveryPageShell>
@@ -259,6 +279,7 @@ export default function CustomerPortal() {
             products={products}
             cartLines={cartLines}
             onChangeQuantity={changeQuantity}
+            onChangeCartLineQuantity={changeCartLineQuantity}
             onCheckout={() => navigate('/delivery/customer/checkout')}
           />
         </TabsContent>
@@ -284,6 +305,7 @@ export default function CustomerPortal() {
             onSelectOrder={(orderId) => void handleOpenOrderDetail(orderId)}
             onCompleteOrder={(orderId) => void handleCompleteOrder(orderId)}
             onAppealRefund={(orderId) => void handleAppealRefund(orderId)}
+            onReorderOrder={handleReorderOrder}
             onGenerateAIDietReport={() => void handleGenerateAIDietReport()}
             onDiscardExpiredVoucher={(voucherId) => void handleDiscardExpiredVoucher(voucherId)}
             onToggleMerchantFavorite={(merchantId) => toggleFavorite('merchant', merchantId)}

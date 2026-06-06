@@ -82,7 +82,12 @@ object OrderChatMessageTable:
       IO.blocking {
         val statement = connection.prepareStatement(
           s"""
-             |SELECT order_id, sender_role, COUNT(*) AS unread_count
+             |SELECT
+             |  order_id,
+             |  sender_role,
+             |  COUNT(*) AS unread_count,
+             |  (array_agg(message_type ORDER BY created_at DESC))[1] AS latest_message_type,
+             |  (array_agg(content ORDER BY created_at DESC))[1] AS latest_content
              |FROM order_chat_messages
              |WHERE peer_role = ? AND read_at IS NULL AND order_id IN ($placeholders)
              |GROUP BY order_id, sender_role
@@ -98,7 +103,9 @@ object OrderChatMessageTable:
               b += OrderChatUnreadCount(
                 orderId = rs.getString("order_id"),
                 peerRole = rs.getString("sender_role"),
-                unreadCount = rs.getInt("unread_count")
+                unreadCount = rs.getInt("unread_count"),
+                latestMessageType = Option(rs.getString("latest_message_type")),
+                latestContent = Option(rs.getString("latest_content"))
               )
             b.result()
           finally rs.close()

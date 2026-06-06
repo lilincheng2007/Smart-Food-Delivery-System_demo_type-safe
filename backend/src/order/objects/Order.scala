@@ -1,6 +1,6 @@
 package delivery.order.objects
 
-import delivery.shared.objects.{MerchantId, OrderId, OrderStatus, RefundStatus, RiderId, UserId, Voucher}
+import delivery.shared.objects.{MerchantId, OrderId, OrderStatus, Promotion, RefundStatus, RiderId, UserId, Voucher}
 
 final case class Order(
     id: OrderId,
@@ -18,6 +18,10 @@ final case class Order(
     discountAmount: Double = 0,
     payableAmount: Double = 0,
     usedVoucher: Option[Voucher] = None,
+    merchantDiscountAmount: Double = 0,
+    platformDiscountAmount: Double = 0,
+    merchantReceivableAmount: Double = 0,
+    appliedPromotions: List[Promotion] = Nil,
     pointsAwarded: Int = 0,
     refundStatus: Option[RefundStatus] = None,
     refundReason: Option[String] = None,

@@ -1,5 +1,6 @@
 package delivery.merchant.objects.apiTypes
 
+import delivery.merchant.objects.ProductBundleGroup
 import delivery.shared.objects.{ListingStatus, MerchantId}
 
 final case class CreateProductRequest(
@@ -10,5 +11,6 @@ final case class CreateProductRequest(
     categoryName: String,
     price: Double,
     remainingStock: Int,
-    listingStatus: ListingStatus
+    listingStatus: ListingStatus,
+    bundleGroups: Option[List[ProductBundleGroup]] = None
 )

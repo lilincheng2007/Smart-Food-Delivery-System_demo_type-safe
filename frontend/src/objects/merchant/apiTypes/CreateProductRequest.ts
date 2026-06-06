@@ -1,4 +1,5 @@
 import type { ListingStatus, MerchantId } from '@/objects/shared/ids'
+import type { ProductBundleGroup } from '@/objects/merchant/Product'
 
 export interface CreateProductRequest {
   merchantId: MerchantId
@@ -9,4 +10,5 @@ export interface CreateProductRequest {
   price: number
   remainingStock: number
   listingStatus: ListingStatus
+  bundleGroups?: ProductBundleGroup[]
 }

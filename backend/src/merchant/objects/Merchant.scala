@@ -1,6 +1,6 @@
 package delivery.merchant.objects
 
-import delivery.shared.objects.{MerchantCategory, MerchantId, ProductId}
+import delivery.shared.objects.{MerchantCategory, MerchantId, ProductId, Promotion}
 
 final case class Merchant(
     id: MerchantId,
@@ -13,5 +13,6 @@ final case class Merchant(
     featuredProductIds: List[ProductId],
     imageUrl: Option[String],
     description: String = "",
-    announcement: String = ""
+    announcement: String = "",
+    promotions: List[Promotion] = Nil
 )

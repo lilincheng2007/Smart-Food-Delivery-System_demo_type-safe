@@ -16,9 +16,9 @@ object MerchantStoreTable:
     """
       |INSERT INTO merchant_stores (
       |  id, owner_username, store_name, category, address, phone, rating,
-      |  tags, featured_product_ids, image_url, description, announcement, updated_at
+      |  tags, featured_product_ids, image_url, description, announcement, promotions, updated_at
       |)
-      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
+      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
       |ON CONFLICT (id) DO UPDATE SET
       |  owner_username = EXCLUDED.owner_username,
       |  store_name = EXCLUDED.store_name,
@@ -31,15 +31,16 @@ object MerchantStoreTable:
       |  image_url = EXCLUDED.image_url,
       |  description = EXCLUDED.description,
       |  announcement = EXCLUDED.announcement,
+      |  promotions = EXCLUDED.promotions,
       |  updated_at = now()
       |""".stripMargin
 
   private val upsertCatalogSql: String =
     """
       |INSERT INTO catalog_merchants (
-      |  id, store_name, category, address, phone, rating, tags, featured_product_ids, image_url, description, announcement, updated_at
+      |  id, store_name, category, address, phone, rating, tags, featured_product_ids, image_url, description, announcement, promotions, updated_at
       |)
-      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
+      |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
       |ON CONFLICT (id) DO UPDATE SET
       |  store_name = EXCLUDED.store_name,
       |  category = EXCLUDED.category,
@@ -51,6 +52,7 @@ object MerchantStoreTable:
       |  image_url = EXCLUDED.image_url,
       |  description = EXCLUDED.description,
       |  announcement = EXCLUDED.announcement,
+      |  promotions = EXCLUDED.promotions,
       |  updated_at = now()
       |""".stripMargin
 
@@ -70,14 +72,30 @@ object MerchantStoreTable:
       finally catalogStatement.close()
     }
 
+  def updatePromotions(connection: Connection, merchant: Merchant): IO[Unit] =
+    IO.blocking {
+      val sqls = List(
+        "UPDATE merchant_stores SET promotions = ?, updated_at = now() WHERE id = ?",
+        "UPDATE catalog_merchants SET promotions = ?, updated_at = now() WHERE id = ?"
+      )
+      sqls.foreach { sql =>
+        val statement = connection.prepareStatement(sql)
+        try
+          statement.setObject(1, jsonb(merchant.promotions.asJson.noSpaces))
+          statement.setString(2, merchant.id)
+          val _ = statement.executeUpdate()
+        finally statement.close()
+      }
+    }
+
   private val listCatalogSql: String =
     """
-      |SELECT id, store_name, category, address, phone, rating, tags, featured_product_ids, image_url, description, announcement
+      |SELECT id, store_name, category, address, phone, rating, tags, featured_product_ids, image_url, description, announcement, promotions
       |FROM catalog_merchants
       |ORDER BY updated_at DESC
       |""".stripMargin
 
-  private[merchant] def listCatalog(connection: Connection): IO[List[Merchant]] =
+  def listCatalog(connection: Connection): IO[List[Merchant]] =
     IO.blocking {
       val statement = connection.prepareStatement(listCatalogSql)
       try
@@ -92,7 +110,7 @@ object MerchantStoreTable:
 
   private val listByOwnerSql: String =
     """
-      |SELECT id, store_name, category, address, phone, rating, tags, featured_product_ids, image_url, description, announcement
+      |SELECT id, store_name, category, address, phone, rating, tags, featured_product_ids, image_url, description, announcement, promotions
       |FROM merchant_stores
       |WHERE owner_username = ?
       |ORDER BY updated_at DESC
@@ -129,6 +147,7 @@ object MerchantStoreTable:
           case None        => statement.setNull(10, java.sql.Types.VARCHAR)
         statement.setString(11, merchant.description)
         statement.setString(12, merchant.announcement)
+        statement.setObject(13, jsonb(merchant.promotions.asJson.noSpaces))
       case None =>
         statement.setString(2, merchant.storeName)
         statement.setString(3, merchant.category.toString)
@@ -142,6 +161,7 @@ object MerchantStoreTable:
           case None        => statement.setNull(9, java.sql.Types.VARCHAR)
         statement.setString(10, merchant.description)
         statement.setString(11, merchant.announcement)
+        statement.setObject(12, jsonb(merchant.promotions.asJson.noSpaces))
 
   private def readMerchant(resultSet: ResultSet): Merchant =
     Merchant(
@@ -155,7 +175,8 @@ object MerchantStoreTable:
       featuredProductIds = decode[List[String]](resultSet.getString("featured_product_ids")).getOrElse(Nil),
       imageUrl = Option(resultSet.getString("image_url")),
       description = Option(resultSet.getString("description")).getOrElse(""),
-      announcement = Option(resultSet.getString("announcement")).getOrElse("")
+      announcement = Option(resultSet.getString("announcement")).getOrElse(""),
+      promotions = Option(resultSet.getString("promotions")).flatMap(raw => decode[List[delivery.shared.objects.Promotion]](raw).toOption).getOrElse(Nil)
     )
 
   private def jsonb(value: String): PGobject =

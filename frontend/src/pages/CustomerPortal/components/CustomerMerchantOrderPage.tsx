@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, ChevronDown, Heart, Megaphone, MessageSquareReply, Minus, Plus, ShoppingCart, Sparkles, Store, ThumbsDown, ThumbsUp } from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { aiReviewSummaryIO } from '@/apis/ai/AIReviewSummaryAPI'
 import { runTask } from '@/apis/shared/client'
@@ -10,18 +10,28 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAppChrome } from '@/hooks/useAppChrome'
 import { resolveApiMediaUrl } from '@/lib/api-media-url'
+import { bundleBasePrice, bundleLineUnitPrice, bundleSelectionSummary } from '@/lib/bundles'
+import { isPromotionActive, promotionDisplayName, promotionSummary, roundMoney } from '@/lib/promotions'
 import { cn } from '@/lib/utils'
 import { filterReviews, reviewFilterCounts, reviewFilterOptions, type ReviewFilterKey } from '@/lib/review-filters'
 import { ListingStatuses } from '@/objects/shared/ids'
 import type { MerchantId } from '@/objects/shared/ids'
 import type { ProductId } from '@/objects/shared/ids'
 import type { AIReviewSummaryResponse } from '@/objects/ai/apiTypes/AIReviewSummaryResponse'
+import type { Product } from '@/objects/merchant/Product'
+import type { CheckoutBundleSelection } from '@/objects/order/CheckoutLine'
 import type { MerchantReviewsResponse } from '@/objects/review/apiTypes/MerchantReviewsResponse'
 import { useCustomerPortalStore } from '@/stores/pages/use-customer-portal-store'
+
+import { BundleSelectionDialog } from './BundleSelectionDialog'
 
 type MerchantPane = 'menu' | 'reviews'
 
 const productCategoryName = (product: { categoryName?: string | null }) => product.categoryName?.trim() || '默认分类'
+const isBundleProduct = (product: { bundleGroups?: unknown[] | null }) => (product.bundleGroups ?? []).length > 0
+
+const bundleLineKey = (line: { merchantId: string; productId: string; bundleSelections?: CheckoutBundleSelection[] }) =>
+  `${line.merchantId}::${line.productId}::${JSON.stringify(line.bundleSelections ?? [])}`
 
 function highlightedSummaryParts(summary: string, highlights: string[]) {
   const cleanHighlights = highlights.filter((item) => item.trim() && summary.includes(item)).slice(0, 4)
@@ -51,6 +61,7 @@ function highlightedSummaryParts(summary: string, highlights: string[]) {
 
 export default function CustomerMerchantOrderPage() {
   const { merchantId: merchantIdParam } = useParams<{ merchantId: string }>()
+  const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const { showNotice } = useAppChrome()
 
@@ -62,7 +73,9 @@ export default function CustomerMerchantOrderPage() {
   const cartLines = useCustomerPortalStore((s) => s.cartLines)
   const favorites = useCustomerPortalStore((s) => s.favorites)
   const addProductToCart = useCustomerPortalStore((s) => s.addProductToCart)
+  const addBundleToCart = useCustomerPortalStore((s) => s.addBundleToCart)
   const changeQuantity = useCustomerPortalStore((s) => s.changeQuantity)
+  const changeCartLineQuantity = useCustomerPortalStore((s) => s.changeCartLineQuantity)
   const toggleFavorite = useCustomerPortalStore((s) => s.toggleFavorite)
   const setActiveTab = useCustomerPortalStore((s) => s.setActiveTab)
   const fetchMerchantReviews = useCustomerPortalStore((s) => s.fetchMerchantReviews)
@@ -76,6 +89,8 @@ export default function CustomerMerchantOrderPage() {
   const [aiReviewSummaryError, setAIReviewSummaryError] = useState<string | null>(null)
   const [summaryExpanded, setSummaryExpanded] = useState(false)
   const [activeCategoryName, setActiveCategoryName] = useState('默认分类')
+  const [bundleProduct, setBundleProduct] = useState<Product | null>(null)
+  const bundleCloseIntentRef = useRef(false)
   const categorySectionRefs = useRef<Record<string, HTMLElement | null>>({})
 
   useEffect(() => {
@@ -186,10 +201,29 @@ export default function CustomerMerchantOrderPage() {
 
   const cartTotalForMerchant = linesForMerchant.reduce((sum, line) => {
     const product = products.find((item) => item.id === line.productId)
-    return sum + (product ? product.price * line.quantity : 0)
+    return sum + (product ? bundleLineUnitPrice(product, line.bundleSelections, products) * line.quantity : 0)
   }, 0)
   const lineCountForMerchant = linesForMerchant.reduce((sum, line) => sum + line.quantity, 0)
   const merchantFavorited = merchantId ? favorites.merchantIds.includes(merchantId) : false
+  const activeMerchantPromotions = (merchant?.promotions ?? []).filter((promotion) => isPromotionActive(promotion))
+  const activeMerchantStorePromotions = activeMerchantPromotions.filter((promotion) => promotion.discountType !== 'productAmount')
+  const productPromotionForDisplay = (productId: ProductId | string, price: number) => {
+    const candidates = activeMerchantPromotions
+      .filter((promotion) => promotion.discountType === 'productAmount' && (promotion.productIds ?? []).includes(productId))
+      .map((promotion) => {
+        const discountAmount = roundMoney(Math.min(promotion.discountValue, Math.max(0, price - 0.01)))
+        return {
+          promotion,
+          discountAmount,
+          currentPrice: roundMoney(price - discountAmount),
+        }
+      })
+      .filter((item) => item.discountAmount > 0 && item.currentPrice > 0)
+      .sort((a, b) => b.discountAmount - a.discountAmount)
+    return candidates[0] ?? null
+  }
+  const quantityForProduct = (productId: ProductId) => linesForMerchant.find((line) => line.productId === productId)?.quantity ?? 0
+  const totalQuantityForProduct = (productId: ProductId) => linesForMerchant.filter((line) => line.productId === productId).reduce((sum, line) => sum + line.quantity, 0)
   const allReviews = reviews?.reviews ?? []
   const reviewCounts = reviewFilterCounts(allReviews)
   const filteredReviews = filterReviews(allReviews, activeReviewFilter)
@@ -198,11 +232,6 @@ export default function CustomerMerchantOrderPage() {
   const visibleSummary =
     shouldCollapseSummary && !summaryExpanded ? `${summaryText.slice(0, 118)}...` : summaryText
   const summaryParts = highlightedSummaryParts(visibleSummary, aiReviewSummary?.highlights ?? [])
-
-  const handleAdd = (mId: MerchantId, productId: ProductId) => {
-    addProductToCart(mId, productId)
-    showNotice('已加入本店购物车。', 'success')
-  }
 
   const switchPane = (pane: MerchantPane) => {
     setActivePane(pane)
@@ -215,6 +244,43 @@ export default function CustomerMerchantOrderPage() {
     setActiveCategoryName(categoryName)
     categorySectionRefs.current[categoryName]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
+
+  const openBundleSelector = useCallback((product: Product) => {
+    if (!isBundleProduct(product)) {
+      showNotice('这个套餐还没有配置可选类别，请联系商家完善套餐内容。', 'error')
+      return
+    }
+    bundleCloseIntentRef.current = false
+    setBundleProduct(product)
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.set('bundleProductId', product.id)
+      return next
+    }, { replace: true })
+  }, [setSearchParams, showNotice])
+
+  const closeBundleSelector = () => {
+    bundleCloseIntentRef.current = true
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.delete('bundleProductId')
+      return next
+    }, { replace: true })
+    setBundleProduct(null)
+  }
+
+  useEffect(() => {
+    const bundleProductId = searchParams.get('bundleProductId')
+    if (!bundleProductId) {
+      bundleCloseIntentRef.current = false
+      return
+    }
+    if (bundleCloseIntentRef.current || bundleProduct?.id === bundleProductId) return
+    const product = merchantProducts.find((item) => item.id === bundleProductId && isBundleProduct(item))
+    if (product) {
+      openBundleSelector(product)
+    }
+  }, [bundleProduct?.id, merchantProducts, openBundleSelector, searchParams])
 
   if (!bootstrapDone) {
     return (
@@ -319,6 +385,36 @@ export default function CustomerMerchantOrderPage() {
           </div>
         ) : null}
 
+        {activeMerchantStorePromotions.length > 0 ? (
+          <div className="overflow-hidden rounded-2xl border-2 border-orange-300 bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-300 p-[1px] shadow-[0_18px_45px_rgba(234,88,12,0.22)]">
+            <div className="rounded-2xl bg-white/95 px-4 py-4">
+              <div className="flex items-start gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-orange-600 text-white shadow-sm">
+                  <Sparkles className="size-5" aria-hidden />
+                </span>
+                <div className="min-w-0 flex-1 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-base font-bold text-orange-700">全店优惠</p>
+                    <Badge className="bg-orange-600 text-white hover:bg-orange-600">
+                      {activeMerchantStorePromotions.length} 个可用
+                    </Badge>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {activeMerchantStorePromotions.map((promotion) => (
+                      <div key={promotion.id} className="rounded-xl border border-orange-200 bg-orange-50 px-3 py-2">
+                        <p className="text-sm font-semibold leading-6 text-orange-950">
+                          {promotionDisplayName(promotion)}：{promotion.title}
+                        </p>
+                        <p className="text-xs leading-5 text-orange-700">{promotionSummary(promotion)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <div className="sticky top-0 z-30 border-b border-border/60 bg-background/95 backdrop-blur-md">
           <div className="flex items-center gap-8 px-2 py-3">
             <button
@@ -396,13 +492,17 @@ export default function CustomerMerchantOrderPage() {
                           </div>
                           <div className="space-y-3">
                             {group.products.map((product) => (
-                              <div
-                                key={product.id}
-                                className="relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-card to-secondary/25 p-4 shadow-sm transition-[box-shadow,border-color] duration-200 hover:border-primary/35 hover:shadow-md"
-                              >
-                                {(() => {
-                                  const productFavorited = favorites.productIds.includes(product.id)
-                                  return (
+                              (() => {
+                                const productFavorited = favorites.productIds.includes(product.id)
+                                const bundleProductCard = isBundleProduct(product)
+                                const displayPrice = bundleProductCard ? bundleBasePrice(product) : product.price
+                                const productPromotion = productPromotionForDisplay(product.id, displayPrice)
+                                const quantity = bundleProductCard ? totalQuantityForProduct(product.id) : quantityForProduct(product.id)
+                                return (
+                                  <div
+                                    key={product.id}
+                                    className="relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-card to-secondary/25 p-4 shadow-sm transition-[box-shadow,border-color] duration-200 hover:border-primary/35 hover:shadow-md"
+                                  >
                                     <Button
                                       type="button"
                                       size="icon"
@@ -420,38 +520,98 @@ export default function CustomerMerchantOrderPage() {
                                     >
                                       <Heart className={cn('size-4', productFavorited && 'fill-current')} aria-hidden />
                                     </Button>
-                                  )
-                                })()}
-                                <div className="absolute inset-y-3 left-0 w-1 rounded-full bg-gradient-to-b from-primary to-[var(--delivery-brand-blue)]" />
-                                <div className="flex gap-3 pl-3 pr-8">
-                                  {product.imageUrl?.trim() ? (
-                                    <div className="aspect-square w-24 shrink-0 overflow-hidden rounded-xl border border-border/60 bg-muted">
-                                      <img
-                                        src={resolveApiMediaUrl(product.imageUrl)}
-                                        alt={product.name}
-                                        className="size-full object-cover"
-                                      />
-                                    </div>
-                                  ) : null}
-                                  <div className="min-w-0 flex-1 space-y-3">
-                                    <div className="space-y-1">
-                                      <p className="font-semibold text-foreground">{product.name}</p>
-                                      <p className="text-sm leading-relaxed text-muted-foreground">{product.description}</p>
-                                    </div>
-                                    <div className="flex flex-wrap items-center justify-between gap-3">
-                                      <span className="text-lg font-semibold tabular-nums text-primary">¥{product.price.toFixed(1)}</span>
-                                      <Button
-                                        size="sm"
-                                        className="cursor-pointer bg-[var(--delivery-brand-blue)] text-white shadow-md transition-[filter,box-shadow] duration-200 hover:brightness-110 hover:shadow-lg"
-                                        onClick={() => handleAdd(product.merchantId, product.id)}
-                                      >
-                                        <ShoppingCart className="size-4" />
-                                        加入购物车
-                                      </Button>
+                                    <div className="absolute inset-y-3 left-0 w-1 rounded-full bg-gradient-to-b from-primary to-[var(--delivery-brand-blue)]" />
+                                    <div className="flex gap-3 pl-3 pr-8">
+                                      {product.imageUrl?.trim() ? (
+                                        <div className="aspect-square w-24 shrink-0 overflow-hidden rounded-xl border border-border/60 bg-muted">
+                                          <img
+                                            src={resolveApiMediaUrl(product.imageUrl)}
+                                            alt={product.name}
+                                            className="size-full object-cover"
+                                          />
+                                        </div>
+                                      ) : null}
+                                      <div className="min-w-0 flex-1 space-y-3">
+                                        <div className="space-y-1">
+                                          <p className="font-semibold text-foreground">{product.name}</p>
+                                          <p className="text-sm leading-relaxed text-muted-foreground">{product.description}</p>
+                                          <p className="text-xs font-medium text-muted-foreground">月售 {product.monthlySales}</p>
+                                          {bundleProductCard ? (
+                                            <p className="text-xs font-medium text-amber-600">
+                                              套餐 · {(product.bundleGroups ?? []).map((group) => `${group.name}选${group.quantity}`).join(' · ')}
+                                            </p>
+                                          ) : null}
+                                        </div>
+                                        <div className="flex flex-wrap items-end justify-between gap-3">
+                                          <div className="min-w-0 space-y-1">
+                                            {productPromotion ? (
+                                              <>
+                                                <div className="flex flex-wrap items-baseline gap-2">
+                                                  <span className="text-xs text-muted-foreground line-through">原价 ¥{displayPrice.toFixed(2)}</span>
+                                                  <span className="text-lg font-semibold tabular-nums text-rose-600">现价 ¥{productPromotion.currentPrice.toFixed(2)}</span>
+                                                </div>
+                                                <Badge className="bg-rose-50 text-rose-600 hover:bg-rose-50">立省 ¥{productPromotion.discountAmount.toFixed(2)}</Badge>
+                                              </>
+                                            ) : (
+                                              <span className="text-lg font-semibold tabular-nums text-primary">¥{displayPrice.toFixed(1)}</span>
+                                            )}
+                                          </div>
+                                          {bundleProductCard ? (
+                                            <div className="flex items-center gap-2">
+                                              {quantity > 0 ? (
+                                                <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold tabular-nums text-slate-600">
+                                                  已选 {quantity}
+                                                </span>
+                                              ) : null}
+                                              <Button
+                                                type="button"
+                                                size="sm"
+                                                className="h-9 cursor-pointer rounded-full bg-yellow-400 px-4 font-semibold text-slate-950 shadow-sm hover:bg-yellow-300"
+                                                onClick={() => openBundleSelector(product)}
+                                              >
+                                                选套餐
+                                              </Button>
+                                            </div>
+                                          ) : quantity > 0 ? (
+                                            <div className="flex items-center gap-2">
+                                              <Button
+                                                type="button"
+                                                size="icon"
+                                                variant="outline"
+                                                className="size-8 cursor-pointer rounded-full border-primary/30 bg-background text-primary"
+                                                aria-label="减少数量"
+                                                onClick={() => changeQuantity(product.merchantId, product.id, quantity - 1)}
+                                              >
+                                                <Minus className="size-4" />
+                                              </Button>
+                                              <span className="min-w-6 text-center text-sm font-semibold tabular-nums text-foreground">{quantity}</span>
+                                              <Button
+                                                type="button"
+                                                size="icon"
+                                                className="size-8 cursor-pointer rounded-full bg-yellow-400 text-slate-950 shadow-sm hover:bg-yellow-300"
+                                                aria-label="增加数量"
+                                                onClick={() => addProductToCart(product.merchantId, product.id)}
+                                              >
+                                                <Plus className="size-5" />
+                                              </Button>
+                                            </div>
+                                          ) : (
+                                            <Button
+                                              type="button"
+                                              size="icon"
+                                              className="size-9 cursor-pointer rounded-full bg-yellow-400 text-slate-950 shadow-sm hover:bg-yellow-300"
+                                              aria-label="加入购物车"
+                                              onClick={() => addProductToCart(product.merchantId, product.id)}
+                                            >
+                                              <Plus className="size-5" />
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              </div>
+                                )
+                              })()
                             ))}
                           </div>
                         </section>
@@ -663,21 +823,25 @@ export default function CustomerMerchantOrderPage() {
                   {linesForMerchant.map((line) => {
                     const product = products.find((item) => item.id === line.productId)
                     if (!product) return null
+                    const lineKey = bundleLineKey(line)
+                    const selectionSummary = bundleSelectionSummary(product, line.bundleSelections, products)
+                    const unitPrice = bundleLineUnitPrice(product, line.bundleSelections, products)
                     return (
                       <div
-                        key={line.productId}
+                        key={lineKey}
                         className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-background/80 p-2.5"
                       >
                         <div className="min-w-0 space-y-0.5">
                           <p className="truncate font-medium text-foreground">{product.name}</p>
-                          <p className="text-xs text-muted-foreground">¥{product.price.toFixed(1)}</p>
+                          {selectionSummary ? <p className="line-clamp-2 text-xs text-amber-600">{selectionSummary}</p> : null}
+                          <p className="text-xs text-muted-foreground">¥{unitPrice.toFixed(1)}</p>
                         </div>
                         <div className="flex shrink-0 items-center gap-1.5">
                           <Button
                             size="icon"
                             variant="outline"
                             className="size-8 cursor-pointer"
-                            onClick={() => changeQuantity(line.merchantId, line.productId, line.quantity - 1)}
+                            onClick={() => changeCartLineQuantity(lineKey, line.quantity - 1)}
                           >
                             <Minus className="size-4" />
                           </Button>
@@ -686,7 +850,7 @@ export default function CustomerMerchantOrderPage() {
                             size="icon"
                             variant="outline"
                             className="size-8 cursor-pointer"
-                            onClick={() => changeQuantity(line.merchantId, line.productId, line.quantity + 1)}
+                            onClick={() => changeCartLineQuantity(lineKey, line.quantity + 1)}
                           >
                             <Plus className="size-4" />
                           </Button>
@@ -729,6 +893,22 @@ export default function CustomerMerchantOrderPage() {
           </div>
         </div>
       </div>
+
+      <BundleSelectionDialog
+        key={bundleProduct?.id ?? 'bundle-selection-closed'}
+        product={bundleProduct}
+        products={products}
+        open={Boolean(bundleProduct)}
+        onOpenChange={(open) => {
+          if (!open) closeBundleSelector()
+        }}
+        onAddToCart={(product, selections) => {
+          addBundleToCart(product.merchantId, product.id, selections)
+          closeBundleSelector()
+          showNotice('套餐已加入购物车。', 'success')
+        }}
+        productPromotionForDisplay={productPromotionForDisplay}
+      />
     </DeliveryPageShell>
   )
 }

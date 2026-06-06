@@ -53,7 +53,7 @@ export function ProfileTab({ selectedStore, onOpenStoreDialog }: ProfileTabProps
   const activeProcessingOrders = merchantPendingOrders.filter(
     (order) => order.status === OrderStatuses.waitingForMerchantAcceptance || order.status === OrderStatuses.cooking,
   )
-  const totalTurnover = merchantHistoryOrders.reduce((sum, item) => sum + item.payableAmount, 0)
+  const totalTurnover = merchantHistoryOrders.reduce((sum, item) => sum + (item.merchantReceivableAmount ?? item.payableAmount), 0)
 
   useEffect(() => {
     if (!selectedMerchantId) {

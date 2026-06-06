@@ -1,7 +1,7 @@
 import { APIMessage } from '@/apis/shared/APIMessage'
 import type { TaskIO } from '@/apis/shared/TaskIO'
 import { sendAPI } from '@/apis/shared/sendAPI'
-import type { Product } from '@/objects/merchant/Product'
+import type { Product, ProductBundleGroup } from '@/objects/merchant/Product'
 import type { UpdateProductRequest } from '@/objects/merchant/apiTypes/UpdateProductRequest'
 import type { ListingStatus, ProductId } from '@/objects/shared/ids'
 
@@ -15,6 +15,7 @@ class MerchantProductAPI extends APIMessage<Product> {
   readonly price: number
   readonly remainingStock: number
   readonly listingStatus: ListingStatus
+  readonly bundleGroups: ProductBundleGroup[]
 
   constructor(
     productId: ProductId,
@@ -25,6 +26,7 @@ class MerchantProductAPI extends APIMessage<Product> {
     price: number,
     remainingStock: number,
     listingStatus: ListingStatus,
+    bundleGroups: ProductBundleGroup[] = [],
   ) {
     super()
     this.productId = productId
@@ -35,6 +37,7 @@ class MerchantProductAPI extends APIMessage<Product> {
     this.price = price
     this.remainingStock = remainingStock
     this.listingStatus = listingStatus
+    this.bundleGroups = bundleGroups
   }
 }
 
@@ -49,6 +52,7 @@ export function updateMerchantProductIO(productId: ProductId, input: UpdateProdu
       input.price,
       input.remainingStock,
       input.listingStatus,
+      input.bundleGroups ?? [],
     ),
   )
 }

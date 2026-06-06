@@ -21,6 +21,7 @@ object MerchantRoutes:
     apiWithRole[MerchantStoreOnboardingRequestsAPIMessage, StoreOnboardingRequestsResponse]("merchant"),
     apiWithRole[MerchantStoreDescriptionAPIMessage, OkResponse]("merchant"),
     apiWithRole[MerchantStoreAnnouncementAPIMessage, OkResponse]("merchant"),
+    apiWithRole[MerchantStorePromotionsAPIMessage, OkResponse]("merchant"),
     apiWithRole[MerchantStoreImageAPIMessage, OkResponse]("merchant"),
     apiWithRole[MerchantStoreImageFileAPIMessage, String]("merchant"),
     apiWithRole[MerchantCreateProductAPIMessage, Product]("merchant"),

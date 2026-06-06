@@ -84,6 +84,9 @@ object ApiJsonCodecs:
   given Codec[CustomerWalletTopUp] = deriveCodec
   given Codec[CustomerWalletTopUpResponse] = deriveCodec
   given Codec[Voucher] = deriveCodec
+  given Codec[Promotion] = deriveCodec
+  given Codec[ProductBundleOption] = deriveCodec
+  given Codec[ProductBundleGroup] = deriveCodec
   given Codec[OrderItem] = deriveCodec
 
   private val orderDecoder0: Decoder[Order] = Decoder.instance { c =>
@@ -103,6 +106,10 @@ object ApiJsonCodecs:
       discountAmount <- c.downField("discountAmount").as[Option[Double]]
       payableAmount <- c.downField("payableAmount").as[Option[Double]]
       usedVoucher <- c.downField("usedVoucher").as[Option[Voucher]]
+      merchantDiscountAmount <- c.downField("merchantDiscountAmount").as[Option[Double]]
+      platformDiscountAmount <- c.downField("platformDiscountAmount").as[Option[Double]]
+      merchantReceivableAmount <- c.downField("merchantReceivableAmount").as[Option[Double]]
+      appliedPromotions <- c.downField("appliedPromotions").as[Option[List[Promotion]]]
       pointsAwarded <- c.downField("pointsAwarded").as[Option[Int]]
       refundStatus <- c.downField("refundStatus").as[Option[RefundStatus]]
       refundReason <- c.downField("refundReason").as[Option[String]]
@@ -130,6 +137,10 @@ object ApiJsonCodecs:
       discountAmount.getOrElse(0),
       payableAmount.getOrElse(totalAmount),
       usedVoucher,
+      merchantDiscountAmount.getOrElse(0),
+      platformDiscountAmount.getOrElse(0),
+      merchantReceivableAmount.getOrElse(payableAmount.getOrElse(totalAmount)),
+      appliedPromotions.getOrElse(Nil),
       pointsAwarded.getOrElse(0),
       refundStatus,
       refundReason,
@@ -161,6 +172,10 @@ object ApiJsonCodecs:
     fields += "discountAmount" -> o.discountAmount.asJson
     fields += "payableAmount" -> o.payableAmount.asJson
     o.usedVoucher.foreach(voucher => fields += "usedVoucher" -> voucher.asJson)
+    fields += "merchantDiscountAmount" -> o.merchantDiscountAmount.asJson
+    fields += "platformDiscountAmount" -> o.platformDiscountAmount.asJson
+    fields += "merchantReceivableAmount" -> o.merchantReceivableAmount.asJson
+    fields += "appliedPromotions" -> o.appliedPromotions.asJson
     fields += "pointsAwarded" -> o.pointsAwarded.asJson
     o.refundStatus.foreach(status => fields += "refundStatus" -> status.asJson)
     o.refundReason.foreach(reason => fields += "refundReason" -> reason.asJson)
@@ -233,7 +248,26 @@ object ApiJsonCodecs:
   given Codec[CustomerAccountPublic] = deriveCodec
   given Codec[CustomerMeResponse] = deriveCodec
 
-  given Codec[CheckoutLine] = deriveCodec
+  given Codec[CheckoutBundleSelection] = deriveCodec
+  private val checkoutLineDecoder: Decoder[CheckoutLine] = Decoder.instance { c =>
+    for
+      merchantId <- c.downField("merchantId").as[String]
+      productId <- c.downField("productId").as[String]
+      quantity <- c.downField("quantity").as[Int]
+      bundleSelections <- c.downField("bundleSelections").as[Option[List[CheckoutBundleSelection]]]
+    yield CheckoutLine(merchantId, productId, quantity, bundleSelections.getOrElse(Nil))
+  }
+  private val checkoutLineEncoder: Encoder[CheckoutLine] = Encoder.instance { line =>
+    Json
+      .obj(
+        "merchantId" -> line.merchantId.asJson,
+        "productId" -> line.productId.asJson,
+        "quantity" -> line.quantity.asJson,
+        "bundleSelections" -> line.bundleSelections.asJson
+      )
+      .dropNullValues
+  }
+  given Codec[CheckoutLine] = Codec.from(checkoutLineDecoder, checkoutLineEncoder)
   given Codec[OrderMerchantNote] = deriveCodec
 
   private val checkoutRequestDecoder: Decoder[CheckoutRequest] = Decoder.instance { c =>
@@ -283,7 +317,8 @@ object ApiJsonCodecs:
       imageUrl <- c.downField("imageUrl").as[Option[String]]
       description <- c.downField("description").as[Option[String]]
       announcement <- c.downField("announcement").as[Option[String]]
-    yield Merchant(id, storeName, category, address, phone, rating, tags, featuredProductIds, imageUrl, description.getOrElse(""), announcement.getOrElse(""))
+      promotions <- c.downField("promotions").as[Option[List[Promotion]]]
+    yield Merchant(id, storeName, category, address, phone, rating, tags, featuredProductIds, imageUrl, description.getOrElse(""), announcement.getOrElse(""), promotions.getOrElse(Nil))
   }
 
   private val merchantEncoder0: Encoder[Merchant] = Encoder.instance { m =>
@@ -298,7 +333,8 @@ object ApiJsonCodecs:
       "featuredProductIds" -> m.featuredProductIds.asJson,
       "imageUrl" -> m.imageUrl.asJson,
       "description" -> m.description.asJson,
-      "announcement" -> m.announcement.asJson
+      "announcement" -> m.announcement.asJson,
+      "promotions" -> m.promotions.asJson
     )
   }
 
@@ -322,6 +358,7 @@ object ApiJsonCodecs:
   given Codec[StoreOnboardingRequest] = deriveCodec
   given Codec[StoreOnboardingRequestsResponse] = deriveCodec
   given Codec[AdminRefundRequestsResponse] = deriveCodec
+  given Codec[PlatformPromotionsResponse] = deriveCodec
 
   given Codec[MerchantReview] = deriveCodec
   given Codec[RiderReview] = deriveCodec
@@ -346,6 +383,7 @@ object ApiJsonCodecs:
   given Codec[AISearchRequest] = deriveCodec
   given Codec[AIMerchantStoreDescriptionRequest] = deriveCodec
   given Codec[AIMerchantStoreDescriptionResponse] = deriveCodec
+  given Codec[AIMerchantBusinessSuggestionsResponse] = deriveCodec
   given Codec[AIMerchantProductDescriptionsRequest] = deriveCodec
   given Codec[AIGeneratedProductDescription] = deriveCodec
   given Codec[AIMerchantProductDescriptionsResponse] = deriveCodec
