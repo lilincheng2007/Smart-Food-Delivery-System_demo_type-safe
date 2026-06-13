@@ -5,6 +5,7 @@ import delivery.merchant.services.MerchantBusinessHoursService
 import delivery.merchant.objects.{Merchant, Product}
 import delivery.order.objects.{CheckoutLine, Order, OrderItem, OrderPriceBreakdown, OrderPriceBreakdownLine, OrderPriceSnapshot, OrderPriceSnapshotItem, OrderTimelineEvent}
 import delivery.order.objects.apiTypes.OrderMerchantNote
+import delivery.order.validators.CheckoutLineValidator
 import delivery.domain.{InventoryStatus, ListingStatus, MerchantId, OrderStatus, ProductId, Promotion, Voucher, VoucherId}
 import delivery.promotion.services.PromotionPricing
 import delivery.user.objects.CustomerProfile
@@ -120,9 +121,9 @@ object OrderCheckoutService:
       yield
         val grouped = lines.groupBy(_.merchantId).toList
         val productsById = products.map(product => product.id -> product).toMap
-        val lineValidationError = validateCheckoutLines(productsById, lines)
-        val inventoryValidationError = validateInventory(productsById, lines)
-        val bundleValidationError = lines.flatMap(line => productsById.get(line.productId).flatMap(product => validateBundleLine(product, line, productsById))).headOption
+        val lineValidationError = CheckoutLineValidator.validateLines(productsById, lines)
+        val inventoryValidationError = CheckoutLineValidator.validateInventory(productsById, lines)
+        val bundleValidationError = CheckoutLineValidator.validateBundleLines(productsById, lines)
         val notesByMerchant: Map[MerchantId, OrderMerchantNote] =
           merchantNotes
             .map(note => note.copy(text = note.text.map(_.trim).filter(_.nonEmpty), imageUrl = note.imageUrl.map(_.trim).filter(_.nonEmpty)))
@@ -244,7 +245,7 @@ object OrderCheckoutService:
 
   def inventoryDeductions(products: List[Product], lines: List[CheckoutLine]): List[Product] =
     val productsById = products.map(product => product.id -> product).toMap
-    val consumed = consumedQuantities(productsById, lines)
+    val consumed = CheckoutLineValidator.consumedQuantities(productsById, lines)
     products.flatMap { product =>
       val quantity = consumed.getOrElse(product.id, 0)
       if quantity <= 0 || normalizeInventoryMode(product.inventoryMode) != "finite" then None
@@ -252,46 +253,6 @@ object OrderCheckoutService:
         val nextStock = math.max(0, product.remainingStock - quantity)
         Some(product.copy(remainingStock = nextStock, inventoryStatus = inventoryStatus(nextStock, product.listingStatus, product.inventoryMode)))
     }
-
-  private def validateCheckoutLines(productsById: Map[ProductId, Product], lines: List[CheckoutLine]): Option[String] =
-    lines.flatMap { line =>
-      if line.quantity <= 0 then Some("商品数量必须大于 0")
-      else
-        productsById.get(line.productId) match
-          case None => Some("购物车包含不存在的商品")
-          case Some(product) if product.merchantId != line.merchantId => Some(s"${product.name}不属于当前商家")
-          case Some(product) if line.bundleSelections.exists(_.quantity <= 0) => Some(s"${product.name}的套餐选择数量无效")
-          case Some(_) => None
-    }.headOption
-
-  private def validateInventory(productsById: Map[ProductId, Product], lines: List[CheckoutLine]): Option[String] =
-    consumedQuantities(productsById, lines).toList.flatMap { case (productId, quantity) =>
-      productsById.get(productId).flatMap { product =>
-        val mode = normalizeInventoryMode(product.inventoryMode)
-        if product.listingStatus != ListingStatus.上架 then Some(s"${product.name}暂未上架")
-        else if mode == "soldOut" then Some(s"${product.name}已售罄")
-        else if product.maxPerOrder.exists(limit => quantity > limit) then Some(s"${product.name}每单限购${product.maxPerOrder.get}份")
-        else if mode == "finite" && product.remainingStock <= 0 then Some(s"${product.name}已售罄")
-        else if mode == "finite" && quantity > product.remainingStock then Some(s"${product.name}库存不足，当前仅剩${product.remainingStock}份")
-        else None
-      }
-    }.headOption
-
-  private def consumedQuantities(productsById: Map[ProductId, Product], lines: List[CheckoutLine]): Map[ProductId, Int] =
-    lines.foldLeft(Map.empty[ProductId, Int]) { (current, line) =>
-      productsById.get(line.productId) match
-        case None => current
-        case Some(product) =>
-          val withBase = addQuantity(current, product.id, line.quantity)
-          if product.bundleGroups.isEmpty then withBase
-          else
-            line.bundleSelections.foldLeft(withBase) { (next, selection) =>
-              addQuantity(next, selection.productId, selection.quantity * line.quantity)
-            }
-    }
-
-  private def addQuantity(values: Map[ProductId, Int], productId: ProductId, quantity: Int): Map[ProductId, Int] =
-    values.updated(productId, values.getOrElse(productId, 0) + math.max(0, quantity))
 
   private def normalizeInventoryMode(value: String): String =
     val trimmed = value.trim
@@ -304,23 +265,6 @@ object OrderCheckoutService:
     else if remainingStock <= 0 then InventoryStatus.售罄
     else if remainingStock <= 20 then InventoryStatus.紧张
     else InventoryStatus.充足
-
-  private def validateBundleLine(product: Product, line: CheckoutLine, productsById: Map[ProductId, Product]): Option[String] =
-    if product.bundleGroups.isEmpty then
-      val invalid = line.bundleSelections.exists(selection => productsById.get(selection.productId).forall(_.merchantId != product.merchantId))
-      if invalid then Some(s"${product.name}包含不可选菜品") else None
-    else
-      product.bundleGroups.flatMap { group =>
-        val selected = line.bundleSelections.filter(_.groupId == group.id)
-        val selectedCount = selected.map(selection => math.max(0, selection.quantity)).sum
-        val allowedIds = group.options.map(_.productId).toSet
-        val invalid = selected.exists(selection => !allowedIds.contains(selection.productId) || productsById.get(selection.productId).forall(_.merchantId != product.merchantId))
-        val duplicated = selected.exists(selection => selection.quantity > 1)
-        if selectedCount != group.quantity then Some(s"${product.name}的${group.name}需要选择${group.quantity}件")
-        else if invalid then Some(s"${product.name}的${group.name}包含不可选菜品")
-        else if group.selectionType == "nonRepeatable" && duplicated then Some(s"${product.name}的${group.name}不可重复选择同一菜品")
-        else None
-      }.headOption
 
   private def orderItemName(product: Product, line: CheckoutLine, productsById: Map[ProductId, Product]): String =
     if product.bundleGroups.isEmpty then

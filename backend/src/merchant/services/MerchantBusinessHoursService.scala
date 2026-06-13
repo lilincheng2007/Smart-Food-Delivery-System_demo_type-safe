@@ -1,18 +1,19 @@
 package delivery.merchant.services
 
 import delivery.merchant.objects.{Merchant, MerchantHolidayBusinessHour, MerchantWeeklyBusinessHour}
+import delivery.merchant.validators.MerchantBusinessHoursValidator
 
 import java.time.{LocalDate, LocalTime, ZonedDateTime}
 import scala.util.Try
 
 object MerchantBusinessHoursService:
-  val Open = "open"
-  val Resting = "resting"
-  val ClosedToday = "closedToday"
-  val Paused = "paused"
+  val Open = MerchantBusinessHoursValidator.Open
+  val Resting = MerchantBusinessHoursValidator.Resting
+  val ClosedToday = MerchantBusinessHoursValidator.ClosedToday
+  val Paused = MerchantBusinessHoursValidator.Paused
 
   def normalizeStatus(value: String): String =
-    if Set(Open, Resting, ClosedToday, Paused).contains(value.trim) then value.trim else Open
+    MerchantBusinessHoursValidator.normalizeStatus(value)
 
   def isAcceptingOrders(merchant: Merchant, now: ZonedDateTime = ZonedDateTime.now()): Boolean =
     availability(merchant, now).isOpen

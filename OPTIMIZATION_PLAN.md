@@ -254,6 +254,7 @@ cd frontend && npx eslint <changed-files>
 | 2026-06-13 | 已完成第二轮静态分析 | 识别出 `api/` 错位 service、泛化 `Support` 命名、中心化 JSON codec、字符串枚举、大页面 / 大 store、前端结算与通知推导等后续优化点。 |
 | 2026-06-13 | 已完成第一批迁移 | 将错放在 `api/` 层的订单状态流转、退款流程、时间线、聊天通知模板、商家营业时间和管理员订单监控支撑逻辑迁入 `services/` / `validators/`；同步更新引用和 `backend/README.md`。 |
 | 2026-06-13 | 已完成第二批清理 | 清理泛化 `Support` / `ApiSupport` 命名，将响应装配、归属校验、自有商品列表、标准平台券和 JWT 能力迁到语义明确的 service / validator。 |
+| 2026-06-13 | 已完成第三批 validators 补齐 | 将商家营业时间、结算行 / 库存 / 套餐选择、促销、评价输入等规则迁入对应 validators，并继续收敛订单状态流转 actor role 字符串。 |
 
 ## 6. 当前代码现状快照
 
@@ -271,11 +272,14 @@ cd frontend && npx eslint <changed-files>
 - Me 响应装配已收敛到 `CustomerMeResponseAssembler`、`MerchantMeResponseAssembler`、`RiderMeResponseAssembler`。
 - 商家店铺归属校验已落到 `MerchantStoreOwnershipValidator`，商家自有商品列表已落到 `MerchantOwnedProductService`。
 - 标准平台券生成已改为 `StandardPlatformVoucherService`，JWT 能力已改为 `JwtTokenService`。
+- `MerchantBusinessHoursValidator` 已负责营业状态、每周营业时间和节假日营业时间的校验与归一化。
+- `CheckoutLineValidator` 已负责购物车行、库存消耗、每单限购和套餐选择校验，`OrderCheckoutService` 开始瘦身。
+- `PromotionValidator` 已负责平台 / 商家优惠通用规则与商家菜品优惠目标校验，旧 `PromotionValidation` 已删除。
+- `ReviewImageValidator` 已覆盖评价提交中的商家评分、骑手评分、评价文字和评价图片 URL 校验。
 
 ### 仍需优化的结构
 
-- 多个 `validators/` 目录虽然已有入口，但真实规则仍有不少散落在 API 或大 service 中。
-- `OrderCheckoutService` 职责过宽，是后续结算维护的主要复杂点。
+- `OrderCheckoutService` 仍承担价格明细、优惠券、订单构造、积分等级、库存扣减等多类职责，是下一批重点。
 - `platform/json/ApiJsonCodecs.scala` 仍较中心化，模块 `json/` 当前更多是 re-export。
 - `domain/CompatibilityAliases.scala` 仍隐藏部分对象真实归属，应作为短期兼容层逐步收敛。
 - 后端还有核心业务状态使用裸 `String`，需要逐步 enum 化。
@@ -291,14 +295,15 @@ cd frontend && npx eslint <changed-files>
 |---|---|---|---|---|
 | 2026-06-13 | 第一批：迁移错位的后端 service / rules / support | 移动并重命名 `order/api` 下的状态流转、时间线、退款流程、聊天模板文件；移动并重命名 `merchant/api/MerchantBusinessHoursSupport.scala` 与 `admin/api/AdminOrderMonitorSupport.scala`；补齐跨包 import；同步 `backend/README.md`。 | `cd backend && sbt -batch compile` 通过；类型安全审计通过（45 pass / 0 fail）；可维护性审计通过（10 pass / 0 warn / 0 fail）；相关文件无 IDE lint 诊断。 | 第二批继续清理泛化 `Support` / `ApiSupport` 命名；本批未处理仍保留的 `JwtSupport`、`MerchantApiSupport`、`OrderApiSupport`、`RiderApiSupport`、`UserApiSupport`、`VoucherSupport`。 |
 | 2026-06-13 | 第二批：清理泛化 `Support` / `ApiSupport` 命名 | 删除 `MerchantApiSupport`、`OrderApiSupport`、`RiderApiSupport`、`UserApiSupport`；新增 `MerchantStoreOwnershipValidator`、`MerchantOwnedProductService`、三类 Me 响应装配器和账号 validator；将 `VoucherSupport` 重命名为 `StandardPlatformVoucherService`，将 `JwtSupport` 重命名为 `JwtTokenService`；同步 `backend/README.md`。 | `cd backend && sbt -batch compile` 通过；类型安全审计通过（45 pass / 0 fail）；可维护性审计通过（10 pass / 0 warn / 0 fail）；后端源码已无 `*Support.scala`。 | 第三批继续补齐 validators：本批只先建立少量 validator / assembler 落点，尚未系统迁出购物车、营业时间、促销、评价图片等复杂规则。 |
+| 2026-06-13 | 第三批：补齐 validators，并迁出独立规则 | 新增 `MerchantBusinessHoursValidator`、`CheckoutLineValidator`、`PromotionValidator`；扩展 `ReviewImageValidator` 和 `OrderStatusTransitionValidator`；更新 `MerchantBusinessHoursAPIMessage`、`OrderCheckoutService`、平台 / 商家优惠 API、评价提交 API 调用对应 validator。 | `cd backend && sbt -batch compile` 通过；类型安全审计通过（45 pass / 0 fail）；可维护性审计通过（10 pass / 0 warn / 0 fail）；相关目录无 IDE lint 诊断。 | 第四批继续拆分 `OrderCheckoutService`：本批只迁出校验和消耗数量计算，价格、库存扣减、订单构造、优惠券兑换仍在同一服务内。 |
 
-## 8. 下一批次建议：第三批补齐 validators，并把规则从 API / 大 service 中迁出
+## 8. 下一批次建议：第四批拆分 `OrderCheckoutService`
 
-建议按“先就近、再抽大服务”的顺序推进：
+建议继续小步拆分，不一次性重写结算链路：
 
-1. 先处理 `MerchantBusinessHoursAPIMessage`：将营业状态归一化、每周营业时间格式、节假日日期格式等输入规则迁到 `merchant/validators/MerchantBusinessHoursValidator.scala`，让 API 只调用 validator 和 service。
-2. 处理 `CheckoutAPIMessage` / `OrderCheckoutService` 的入口校验：新增 `order/validators/CheckoutLineValidator.scala`，先迁出购物车行数量、套餐选择、无效菜品、每单限购等校验中最独立的部分。
-3. 扩展现有 `OrderStatusTransitionValidator`：继续收敛 actor role 字符串、非法状态迁移错误消息，为第五批 enum 化做准备。
-4. 新增 `promotion/validators/PromotionValidator.scala`：迁出优惠类型、触发条件、金额边界、商品优惠目标校验，减少 `MerchantStorePromotionsAPIMessage` 和促销服务中的内联判断。
-5. 新增 `review/validators/ReviewImageValidator.scala`：集中评价图片数量、URL 前缀、格式与大小边界，避免后续图片规则散在 API 中。
-6. 第三批完成后建议补强可维护性审计脚本：检查 `validators/` 是否只有空目录、API 文件是否仍包含明显复杂校验块。
+1. 先新增 `order/services/CheckoutInventoryService.scala`：承接 `inventoryDeductions`、库存扣减计划和库存状态刷新；复用 `CheckoutLineValidator.consumedQuantities`，保持库存规则唯一。
+2. 再新增 `order/services/CheckoutPricingService.scala`：迁出 `priceBreakdown`、`allocateDiscount`、商家 / 平台优惠分摊和价格快照明细计算。
+3. 新增 `order/services/CheckoutOrderFactory.scala`：迁出 `Order`、`OrderItem`、`OrderPriceSnapshot`、初始 `OrderTimelineEvent` 构造，让 `OrderCheckoutService` 只编排流程。
+4. 新增 `promotion/services/VoucherRedemptionService.scala`：迁出 `validateVoucher`、`consumeVoucher`、优惠券过期 / 门槛 / 次数校验，为后续券锁定和兑换日志预留位置。
+5. 保留 `OrderCheckoutService.buildOrdersForCheckout` 作为兼容门面，内部逐步调用拆出的 inventory / pricing / factory / voucher 服务，避免一次影响 `CheckoutAPIMessage`。
+6. 第四批结束后重点验证结算相关路径：顾客下单、库存扣减、优惠券使用、平台 / 商家优惠分摊、钱包余额扣减和订单价格快照。
