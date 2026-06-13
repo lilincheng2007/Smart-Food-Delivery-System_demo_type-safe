@@ -8,7 +8,7 @@ ROOT="${1:-.}"
 BACKEND="$ROOT/backend/src"
 FRONTEND="$ROOT/frontend/src"
 MODULES=(ai user merchant order rider)
-OBJECT_MODULES=(ai user merchant order rider shared)
+OBJECT_MODULES=(ai user merchant order rider)
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -150,6 +150,31 @@ for module in "${OBJECT_MODULES[@]}"; do
     fail "$module: objects 目录存在 index barrel 文件"
   fi
 done
+
+# shared 前端契约对应后端拆分后的语义目录
+if [ -f "$FRONTEND/objects/shared/ids.ts" ] && [ -f "$BACKEND/domain/ids.scala" ]; then
+  pass "shared ids: 前端 shared/ids.ts 对应后端 domain/ids.scala"
+else
+  fail "shared ids: 缺少前端 shared/ids.ts 或后端 domain/ids.scala"
+fi
+if [ -f "$FRONTEND/objects/shared/Promotion.ts" ] && [ -f "$BACKEND/promotion/objects/Promotion.scala" ]; then
+  pass "Promotion: 前端 shared/Promotion.ts 对应后端 promotion/objects/Promotion.scala"
+else
+  fail "Promotion: 缺少前端 Promotion.ts 或后端 promotion Promotion.scala"
+fi
+if [ -f "$FRONTEND/objects/shared/Voucher.ts" ] && [ -f "$BACKEND/promotion/objects/Voucher.scala" ]; then
+  pass "Voucher: 前端 shared/Voucher.ts 对应后端 promotion/objects/Voucher.scala"
+else
+  fail "Voucher: 缺少前端 Voucher.ts 或后端 promotion Voucher.scala"
+fi
+if [ -f "$FRONTEND/objects/shared/apiTypes/OkResponse.ts" ] && [ -f "$BACKEND/domain/apiTypes/OkResponse.scala" ]; then
+  pass "OkResponse: 前端 shared/apiTypes 对应后端 domain/apiTypes"
+else
+  fail "OkResponse: 缺少前端 shared/apiTypes 或后端 domain/apiTypes"
+fi
+
+shared_backend_scala=$(find "$BACKEND/shared" -type f -name '*.scala' 2>/dev/null | sort || true)
+[ -z "$shared_backend_scala" ] && pass "后端 shared 目录无 Scala 实现残留" || { fail "后端 shared 目录仍有 Scala 实现"; echo "$shared_backend_scala"; }
 
 echo ""
 

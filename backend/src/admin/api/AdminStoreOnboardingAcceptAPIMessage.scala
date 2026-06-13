@@ -5,9 +5,9 @@ import delivery.admin.tables.storeonboarding.StoreOnboardingRequestTable
 import delivery.merchant.objects.Merchant
 import delivery.merchant.tables.merchantaccount.MerchantAccountTable
 import delivery.merchant.tables.merchantstore.MerchantStoreTable
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.MerchantCategory
-import delivery.shared.objects.apiTypes.OkResponse
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.MerchantCategory
+import delivery.domain.apiTypes.OkResponse
 
 import java.sql.Connection
 

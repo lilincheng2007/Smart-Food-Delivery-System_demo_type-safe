@@ -5,7 +5,7 @@ import { DeliveryPageShell } from '@/components/DeliveryPageShell'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAppChrome } from '@/hooks/useAppChrome'
 import { useOrderChatUnreadCounts } from '@/hooks/useOrderChatUnreadCounts'
-import { useRiderAppStore } from '@/stores/pages/use-rider-app-store'
+import { useRiderAppStore } from '@/pages/RiderApp/stores/use-rider-app-store'
 
 import { DispatchCard } from './components/DispatchCard'
 import { EnergyTimeoutCard } from './components/EnergyTimeoutCard'

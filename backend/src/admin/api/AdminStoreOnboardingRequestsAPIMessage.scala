@@ -3,7 +3,7 @@ package delivery.admin.api
 import cats.effect.IO
 import delivery.admin.objects.apiTypes.StoreOnboardingRequestsResponse
 import delivery.admin.tables.storeonboarding.StoreOnboardingRequestTable
-import delivery.shared.api.APIWithRoleMessage
+import delivery.platform.api.APIWithRoleMessage
 
 import java.sql.Connection
 

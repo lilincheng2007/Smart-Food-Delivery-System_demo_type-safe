@@ -1,6 +1,6 @@
 package delivery.rider.objects.apiTypes
 
-import delivery.shared.objects.OrderId
+import delivery.domain.OrderId
 
 final case class RiderUseTimeoutCardResponse(
     ok: Boolean,

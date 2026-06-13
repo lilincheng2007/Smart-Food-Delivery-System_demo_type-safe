@@ -2,7 +2,7 @@ package delivery.order.tables.checkoutrequest
 
 import cats.effect.IO
 import delivery.order.objects.apiTypes.CheckoutRequest
-import delivery.shared.json.ApiJsonCodecs.given
+import delivery.platform.json.ApiJsonCodecs.given
 import io.circe.syntax.*
 import org.postgresql.util.PGobject
 

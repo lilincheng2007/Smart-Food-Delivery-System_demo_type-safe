@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import type { RegisterRole } from '@/stores/pages/use-register-page-store'
+import type { RegisterRole } from '@/pages/Register/stores/use-register-page-store'
 
 import { isRegisterRole, registerRoleOptions } from '../objects/constants'
 

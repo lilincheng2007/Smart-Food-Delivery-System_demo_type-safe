@@ -1,6 +1,6 @@
 package delivery.order.objects
 
-import delivery.shared.objects.ProductId
+import delivery.domain.ProductId
 
 final case class OrderPriceSnapshotItem(
     productId: ProductId,

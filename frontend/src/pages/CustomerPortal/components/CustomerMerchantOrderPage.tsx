@@ -22,7 +22,7 @@ import type { ProductId } from '@/objects/shared/ids'
 import type { AIReviewSummaryResponse } from '@/objects/ai/apiTypes/AIReviewSummaryResponse'
 import type { Product } from '@/objects/merchant/Product'
 import type { MerchantReviewsResponse } from '@/objects/review/apiTypes/MerchantReviewsResponse'
-import { useCustomerPortalStore } from '@/stores/pages/use-customer-portal-store'
+import { useCustomerPortalStore } from '@/pages/CustomerPortal/stores/use-customer-portal-store'
 
 import { BundleSelectionDialog } from './BundleSelectionDialog'
 import { discountRateText } from '../functions/priceDisplay'

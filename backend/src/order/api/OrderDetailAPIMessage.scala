@@ -4,8 +4,8 @@ import cats.effect.IO
 import delivery.order.objects.Order
 import delivery.order.tables.order.OrderTable
 import delivery.order.utils.OrderApiSupport
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.OrderId
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.OrderId
 import delivery.user.tables.customerprofile.CustomerProfileTable
 
 import java.sql.Connection

@@ -1,7 +1,7 @@
 package delivery.order.api
 
 import delivery.order.objects.{Order, OrderTimelineEvent}
-import delivery.shared.objects.OrderStatus
+import delivery.domain.OrderStatus
 
 object OrderStatusTimelineSupport:
   def appendTransitionEvents(order: Order, previousStatus: OrderStatus, targetStatus: OrderStatus, actorRole: String, occurredAt: String): Order =

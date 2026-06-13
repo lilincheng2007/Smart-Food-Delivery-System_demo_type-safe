@@ -1,7 +1,7 @@
 package delivery.order.objects.apiTypes
 
 import delivery.order.objects.CheckoutLine
-import delivery.shared.objects.VoucherId
+import delivery.domain.VoucherId
 
 final case class CheckoutRequest(
     lines: List[CheckoutLine],

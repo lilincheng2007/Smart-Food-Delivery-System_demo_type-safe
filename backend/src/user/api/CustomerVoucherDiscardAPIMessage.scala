@@ -1,9 +1,10 @@
 package delivery.user.api
 
+import delivery.user.services.UserAccountService
 import cats.effect.IO
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.{VoucherId}
-import delivery.shared.objects.apiTypes.{OkResponse}
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.{VoucherId}
+import delivery.domain.apiTypes.{OkResponse}
 import delivery.user.tables.customerprofile.CustomerProfileTable
 import delivery.user.utils.UserApiSupport
 
@@ -16,7 +17,7 @@ final case class CustomerVoucherDiscardAPIMessage(voucherId: VoucherId) extends 
         case Some(value) => IO.pure(value)
         case None        => IO.raiseError(HttpApiError.NotFound(UserApiSupport.customerNotFound.error))
       }
-      nextAccount <- UserAPIMessageSupport.discardExpiredVoucher(account, voucherId) match
+      nextAccount <- UserAccountService.discardExpiredVoucher(account, voucherId) match
         case Left(msg) => IO.raiseError(HttpApiError.BadRequest(msg))
         case Right(value) => IO.pure(value)
       _ <- CustomerProfileTable.upsert(connection, nextAccount)

@@ -1,7 +1,7 @@
 package delivery.merchant.objects.apiTypes
 
 import delivery.merchant.objects.ProductBundleGroup
-import delivery.shared.objects.ListingStatus
+import delivery.domain.ListingStatus
 
 final case class UpdateProductRequest(
     name: String,

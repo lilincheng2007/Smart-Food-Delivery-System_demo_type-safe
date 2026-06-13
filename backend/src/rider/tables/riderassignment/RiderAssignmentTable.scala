@@ -2,7 +2,7 @@ package delivery.rider.tables.riderassignment
 
 import cats.effect.IO
 import delivery.rider.tables.RiderAssignmentRecord
-import delivery.shared.objects.{OrderId, OrderStatus, RiderId}
+import delivery.domain.{OrderId, OrderStatus, RiderId}
 
 import java.sql.{Connection, PreparedStatement, ResultSet, Timestamp}
 import java.time.Instant

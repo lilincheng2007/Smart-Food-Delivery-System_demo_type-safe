@@ -1,6 +1,6 @@
 package delivery.merchant.objects
 
-import delivery.shared.objects.{MerchantCategory, MerchantId, ProductId, Promotion}
+import delivery.domain.{MerchantCategory, MerchantId, ProductId, Promotion}
 
 final case class Merchant(
     id: MerchantId,

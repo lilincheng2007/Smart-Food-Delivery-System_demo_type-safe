@@ -1,6 +1,6 @@
 package delivery.order.objects
 
-import delivery.shared.objects.{MerchantId, ProductId}
+import delivery.domain.{MerchantId, ProductId}
 
 final case class CheckoutBundleSelection(groupId: String, productId: ProductId, quantity: Int)
 

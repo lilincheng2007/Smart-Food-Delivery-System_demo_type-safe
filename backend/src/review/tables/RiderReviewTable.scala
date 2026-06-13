@@ -2,7 +2,7 @@ package delivery.review.tables
 
 import cats.effect.IO
 import delivery.review.objects.{ReviewSummary, RiderReview}
-import delivery.shared.objects.{OrderId, RiderId}
+import delivery.domain.{OrderId, RiderId}
 
 import java.sql.{Connection, ResultSet}
 

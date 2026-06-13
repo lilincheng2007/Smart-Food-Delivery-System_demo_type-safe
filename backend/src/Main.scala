@@ -2,8 +2,8 @@ package delivery
 
 import cats.effect.{IO, IOApp, Resource}
 import com.comcast.ip4s.*
-import delivery.shared.db.{DatabasePool, DeliveryStateStore}
-import delivery.shared.json.ApiJsonCodecs.given
+import delivery.db.{DatabasePool, DeliveryStateStore}
+import delivery.platform.json.ApiJsonCodecs.given
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.middleware.CORS
 import org.typelevel.log4cats.Logger

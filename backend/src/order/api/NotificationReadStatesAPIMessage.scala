@@ -3,7 +3,7 @@ package delivery.order.api
 import cats.effect.IO
 import delivery.order.objects.apiTypes.NotificationReadStatesResponse
 import delivery.order.tables.notificationreadstate.NotificationReadStateTable
-import delivery.shared.api.APIWithRoleMessage
+import delivery.platform.api.APIWithRoleMessage
 
 import java.sql.Connection
 

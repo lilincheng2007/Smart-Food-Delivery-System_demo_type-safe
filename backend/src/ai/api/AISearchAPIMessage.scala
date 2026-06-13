@@ -5,7 +5,7 @@ import delivery.ai.objects.apiTypes.{AIRecommendedMerchant, AIRecommendedProduct
 import delivery.ai.utils.OpenAIClient
 import delivery.merchant.api.CatalogAPIMessage
 import delivery.merchant.objects.{Merchant, Product}
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
 import io.circe.Json
 
 import java.sql.Connection

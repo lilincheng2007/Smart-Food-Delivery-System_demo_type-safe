@@ -1,6 +1,6 @@
 package delivery.user.objects
 
-import delivery.shared.objects.{OrderId, UserId, Voucher}
+import delivery.domain.{OrderId, UserId, Voucher}
 
 final case class Customer(
     id: UserId,

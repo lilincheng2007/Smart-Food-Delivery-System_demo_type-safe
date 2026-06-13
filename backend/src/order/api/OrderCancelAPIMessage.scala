@@ -1,10 +1,11 @@
 package delivery.order.api
 
+import delivery.order.services.OrderCheckoutService
 import cats.effect.IO
 import delivery.order.objects.apiTypes.OrderCancelResponse
 import delivery.order.tables.order.OrderTable
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.{OrderId, OrderStatus}
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.{OrderId, OrderStatus}
 import delivery.user.tables.customerprofile.CustomerProfileTable
 
 import java.sql.Connection
@@ -25,6 +26,6 @@ final case class OrderCancelAPIMessage(orderId: OrderId) extends APIWithRoleMess
         else IO.unit
       refundAmount = if order.payableAmount > 0 then order.payableAmount else order.totalAmount
       canceledOrder <- OrderStatusTransitionService.transition(connection, order, OrderStatus.已取消, actorRole = "customer")
-      nextAccount = account.copy(profile = account.profile.copy(walletBalance = OrderAPIMessageSupport.roundMoney(account.profile.walletBalance + refundAmount)))
+      nextAccount = account.copy(profile = account.profile.copy(walletBalance = OrderCheckoutService.roundMoney(account.profile.walletBalance + refundAmount)))
       _ <- CustomerProfileTable.upsert(connection, nextAccount)
     yield OrderCancelResponse(canceledOrder, nextAccount.profile.walletBalance)

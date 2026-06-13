@@ -5,8 +5,8 @@ import delivery.ai.objects.apiTypes.AIMerchantStoreDescriptionResponse
 import delivery.ai.utils.OpenAIClient
 import delivery.merchant.objects.{Merchant, Product}
 import delivery.merchant.utils.MerchantApiSupport
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.MerchantId
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.MerchantId
 import io.circe.Json
 
 import java.sql.Connection

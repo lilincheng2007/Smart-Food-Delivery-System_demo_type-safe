@@ -2,7 +2,7 @@ package delivery.admin.api
 
 import delivery.admin.objects.apiTypes.AdminOrderMonitorItem
 import delivery.order.objects.Order
-import delivery.shared.objects.{OrderStatus, RefundStatus}
+import delivery.domain.{OrderStatus, RefundStatus}
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}

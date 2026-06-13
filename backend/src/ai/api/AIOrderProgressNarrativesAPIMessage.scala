@@ -4,8 +4,8 @@ import cats.effect.IO
 import delivery.ai.objects.*
 import delivery.ai.objects.apiTypes.*
 import delivery.ai.utils.OpenAIClient
-import delivery.shared.api.APIWithRoleMessage
-import delivery.shared.objects.OrderStatus
+import delivery.platform.api.APIWithRoleMessage
+import delivery.domain.OrderStatus
 import io.circe.Json
 
 import java.sql.Connection

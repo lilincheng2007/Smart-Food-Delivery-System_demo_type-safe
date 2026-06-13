@@ -1,13 +1,14 @@
 package delivery.review.api
 
+import delivery.review.validators.ReviewImageValidator
 import cats.effect.IO
 import delivery.order.tables.order.OrderTable
 import delivery.review.objects.{MerchantReview, RiderReview}
 import delivery.review.tables.{MerchantReviewTable, RiderReviewTable}
 import delivery.rider.tables.rideraccount.RiderAccountTable
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.{OrderId, OrderStatus}
-import delivery.shared.objects.apiTypes.OkResponse
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.{OrderId, OrderStatus}
+import delivery.domain.apiTypes.OkResponse
 import delivery.user.tables.customerprofile.CustomerProfileTable
 
 import java.sql.Connection
@@ -36,7 +37,7 @@ final case class CustomerSubmitOrderReviewAPIMessage(
         else if order.status != OrderStatus.已完成 then IO.raiseError(HttpApiError.BadRequest("订单完成后才能评价"))
         else if merchantRating < 1 || merchantRating > 5 then IO.raiseError(HttpApiError.BadRequest("商家评分必须为 1 到 5 星"))
         else if description.isEmpty then IO.raiseError(HttpApiError.BadRequest("商家评价文字不能为空"))
-        else if merchantImageUrl.exists(url => !ReviewAPIMessageSupport.isAllowedImageUrl(url)) then IO.raiseError(HttpApiError.BadRequest("评价图片链接必须为 http(s) 或平台上传图片"))
+        else if merchantImageUrl.exists(url => !ReviewImageValidator.isAllowedImageUrl(url)) then IO.raiseError(HttpApiError.BadRequest("评价图片链接必须为 http(s) 或平台上传图片"))
         else IO.unit
       _ <- MerchantReviewTable.findByOrder(connection, order.id).flatMap {
         case Some(_) => IO.raiseError(HttpApiError.Conflict("该订单已评价商家"))

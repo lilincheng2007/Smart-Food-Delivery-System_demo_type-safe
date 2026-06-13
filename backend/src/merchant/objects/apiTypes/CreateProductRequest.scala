@@ -1,7 +1,7 @@
 package delivery.merchant.objects.apiTypes
 
 import delivery.merchant.objects.ProductBundleGroup
-import delivery.shared.objects.{ListingStatus, MerchantId}
+import delivery.domain.{ListingStatus, MerchantId}
 
 final case class CreateProductRequest(
     merchantId: MerchantId,

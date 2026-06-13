@@ -1,6 +1,6 @@
 package delivery.order.objects
 
-import delivery.shared.objects.{MerchantId, OrderId, OrderStatus, Promotion, RefundStatus, RiderId, UserId, Voucher}
+import delivery.domain.{MerchantId, OrderId, OrderStatus, Promotion, RefundStatus, RiderId, UserId, Voucher}
 
 final case class Order(
     id: OrderId,

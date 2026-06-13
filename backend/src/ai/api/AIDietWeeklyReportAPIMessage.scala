@@ -6,8 +6,8 @@ import delivery.ai.objects.apiTypes.*
 import delivery.ai.utils.OpenAIClient
 import delivery.order.objects.Order
 import delivery.order.tables.order.OrderTable
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.OrderStatus
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.OrderStatus
 import delivery.user.tables.customerprofile.CustomerProfileTable
 import io.circe.Json
 

@@ -5,9 +5,9 @@ import delivery.order.api.OrderStatusTransitionService
 import delivery.order.tables.order.OrderTable
 import delivery.rider.tables.rideraccount.RiderAccountTable
 import delivery.rider.tables.riderassignment.RiderAssignmentTable
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.{OrderId, OrderStatus, RiderStatus}
-import delivery.shared.objects.apiTypes.{OkResponse}
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.{OrderId, OrderStatus, RiderStatus}
+import delivery.domain.apiTypes.{OkResponse}
 
 import java.sql.Connection
 

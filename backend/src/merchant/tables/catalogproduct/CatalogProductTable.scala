@@ -2,8 +2,8 @@ package delivery.merchant.tables.catalogproduct
 
 import cats.effect.IO
 import delivery.merchant.objects.{Product, ProductBundleGroup}
-import delivery.shared.json.ApiJsonCodecs.given
-import delivery.shared.objects.{InventoryStatus, ListingStatus, ProductId}
+import delivery.platform.json.ApiJsonCodecs.given
+import delivery.domain.{InventoryStatus, ListingStatus, ProductId}
 import io.circe.parser.decode
 import io.circe.syntax.*
 import org.postgresql.util.PGobject

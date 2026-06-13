@@ -3,9 +3,9 @@ package delivery.review.api
 import cats.effect.IO
 import delivery.merchant.utils.MerchantApiSupport
 import delivery.review.tables.MerchantReviewTable
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.MerchantId
-import delivery.shared.objects.apiTypes.OkResponse
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.MerchantId
+import delivery.domain.apiTypes.OkResponse
 
 import java.sql.Connection
 

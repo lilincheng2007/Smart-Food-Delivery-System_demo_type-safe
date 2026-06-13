@@ -1,11 +1,12 @@
 package delivery.merchant.api
 
+import delivery.merchant.services.MerchantBusinessService
 import cats.effect.IO
 import delivery.merchant.objects.{Product, ProductBundleGroup}
 import delivery.merchant.tables.catalogproduct.CatalogProductTable
 import delivery.merchant.tables.merchantstore.MerchantStoreTable
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.{ListingStatus, MerchantId}
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.{ListingStatus, MerchantId}
 
 import java.sql.Connection
 
@@ -27,14 +28,14 @@ final case class MerchantCreateProductAPIMessage(
     else if price < 0 || remainingStock < 0 then IO.raiseError(HttpApiError.BadRequest("价格和库存不能为负数"))
     else
       for
-        merchant <- MerchantAPIMessageSupport.requireOwnedStore(connection, username, merchantId)
+        merchant <- MerchantBusinessService.requireOwnedStore(connection, username, merchantId)
         existingProducts <- CatalogProductTable.list(connection)
-        productImageUrl <- MerchantAPIMessageSupport.validateProductImageUrl(imageUrl.getOrElse(""))
-        productCategoryName = MerchantAPIMessageSupport.normalizeProductCategoryName(categoryName)
-        normalizedInventoryMode = MerchantAPIMessageSupport.normalizeInventoryMode(inventoryMode)
-        normalizedMaxPerOrder = MerchantAPIMessageSupport.normalizeMaxPerOrder(maxPerOrder)
+        productImageUrl <- MerchantBusinessService.validateProductImageUrl(imageUrl.getOrElse(""))
+        productCategoryName = MerchantBusinessService.normalizeProductCategoryName(categoryName)
+        normalizedInventoryMode = MerchantBusinessService.normalizeInventoryMode(inventoryMode)
+        normalizedMaxPerOrder = MerchantBusinessService.normalizeMaxPerOrder(maxPerOrder)
         normalizedBundleGroups = bundleGroups.getOrElse(Nil)
-        _ <- MerchantAPIMessageSupport.validateBundleGroups(normalizedBundleGroups, existingProducts, merchantId, None) match
+        _ <- MerchantBusinessService.validateBundleGroups(normalizedBundleGroups, existingProducts, merchantId, None) match
           case Left(message) => IO.raiseError(HttpApiError.BadRequest(message))
           case Right(()) => IO.unit
         nowMillis <- IO.realTime.map(_.toMillis)
@@ -49,7 +50,7 @@ final case class MerchantCreateProductAPIMessage(
           monthlySales = 0,
           remainingStock = if normalizedInventoryMode == "unlimited" then 999999 else remainingStock,
           listingStatus = listingStatus,
-          inventoryStatus = MerchantAPIMessageSupport.inventoryStatus(remainingStock, listingStatus, normalizedInventoryMode),
+          inventoryStatus = MerchantBusinessService.inventoryStatus(remainingStock, listingStatus, normalizedInventoryMode),
           inventoryMode = normalizedInventoryMode,
           maxPerOrder = normalizedMaxPerOrder,
           discountText = None,

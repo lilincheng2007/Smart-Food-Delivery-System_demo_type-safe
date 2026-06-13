@@ -3,9 +3,9 @@ package delivery.order.routes
 import delivery.order.api.*
 import delivery.order.objects.Order
 import delivery.order.objects.apiTypes.{CheckoutResponse, CustomerOrdersResponse, NotificationReadStatesResponse, OrderCancelResponse, OrderChatMessagesResponse, OrderChatUnreadCountsResponse, OrderRefundRequestResponse}
-import delivery.shared.api.RegisteredAPIMessage
-import delivery.shared.api.RegisteredAPIMessage.{apiWithRole, apiWithRoles}
-import delivery.shared.json.ApiJsonCodecs.given
+import delivery.platform.api.RegisteredAPIMessage
+import delivery.platform.api.RegisteredAPIMessage.{apiWithRole, apiWithRoles}
+import delivery.platform.json.ApiJsonCodecs.given
 import io.circe.generic.auto.*
 
 object OrderRoutes:
@@ -31,8 +31,8 @@ object OrderRoutes:
     apiWithRole[RiderSendOrderChatMessageAPIMessage, OrderChatMessagesResponse]("rider"),
     apiWithRole[RiderOrderChatUnreadCountsAPIMessage, OrderChatUnreadCountsResponse]("rider"),
     apiWithRoles[NotificationReadStatesAPIMessage, NotificationReadStatesResponse](Set("customer", "merchant", "rider", "admin")),
-    apiWithRoles[NotificationMarkReadAPIMessage, delivery.shared.objects.apiTypes.OkResponse](Set("customer", "merchant", "rider", "admin")),
-    apiWithRoles[NotificationMarkAllReadAPIMessage, delivery.shared.objects.apiTypes.OkResponse](Set("customer", "merchant", "rider", "admin")),
+    apiWithRoles[NotificationMarkReadAPIMessage, delivery.domain.apiTypes.OkResponse](Set("customer", "merchant", "rider", "admin")),
+    apiWithRoles[NotificationMarkAllReadAPIMessage, delivery.domain.apiTypes.OkResponse](Set("customer", "merchant", "rider", "admin")),
     apiWithRole[CheckoutAPIMessage, CheckoutResponse]("customer")
     )
     val requiredNames = Set(

@@ -10,7 +10,7 @@ import type { Merchant } from '@/objects/merchant/Merchant'
 import type { Product } from '@/objects/merchant/Product'
 import type { MerchantId } from '@/objects/shared/ids'
 import type { ProductId } from '@/objects/shared/ids'
-import type { CartLine } from '@/stores/pages/use-customer-portal-store'
+import type { CartLine } from '@/pages/CustomerPortal/stores/use-customer-portal-store'
 
 type CartTabProps = {
   merchants: Merchant[]

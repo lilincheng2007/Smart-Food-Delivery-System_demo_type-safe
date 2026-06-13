@@ -1,9 +1,10 @@
 package delivery.user.api
 
+import delivery.user.services.UserAccountService
 import cats.effect.IO
-import delivery.shared.api.{APIMessage, HttpApiError}
-import delivery.shared.objects.{UserRole}
-import delivery.shared.objects.apiTypes.{OkResponse}
+import delivery.platform.api.{APIMessage, HttpApiError}
+import delivery.domain.{UserRole}
+import delivery.domain.apiTypes.{OkResponse}
 import delivery.user.tables.AuthCredentialRecord
 import delivery.user.tables.authcredential.AuthCredentialTable
 
@@ -19,8 +20,8 @@ final case class RegisterAPIMessage(role: UserRole, username: String, password: 
         case None    => IO.unit
       _ <- AuthCredentialTable.upsert(connection, AuthCredentialRecord(roleValue, username, password))
       _ <- role match
-        case UserRole.customer => UserAPIMessageSupport.registerCustomer(connection, username, password)
-        case UserRole.merchant => UserAPIMessageSupport.registerMerchant(connection, username, password)
-        case UserRole.rider    => UserAPIMessageSupport.registerRider(connection, username, password)
+        case UserRole.customer => UserAccountService.registerCustomer(connection, username, password)
+        case UserRole.merchant => UserAccountService.registerMerchant(connection, username, password)
+        case UserRole.rider    => UserAccountService.registerRider(connection, username, password)
         case UserRole.admin    => IO.unit
     yield OkResponse(ok = true)

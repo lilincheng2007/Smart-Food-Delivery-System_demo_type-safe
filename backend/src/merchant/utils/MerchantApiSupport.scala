@@ -6,8 +6,8 @@ import delivery.merchant.objects.apiTypes.{MerchantMeResponse}
 import delivery.merchant.tables.MerchantAccountRecord
 import delivery.merchant.tables.catalogproduct.CatalogProductTable
 import delivery.merchant.tables.merchantstore.MerchantStoreTable
-import delivery.shared.api.HttpApiError
-import delivery.shared.objects.{ErrorBody, MerchantId, UserRole}
+import delivery.platform.api.HttpApiError
+import delivery.domain.{ErrorBody, MerchantId, UserRole}
 
 import java.sql.Connection
 

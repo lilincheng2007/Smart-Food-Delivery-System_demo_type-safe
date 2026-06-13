@@ -3,7 +3,7 @@ package delivery.review.tables
 import cats.effect.IO
 import cats.syntax.all.*
 import delivery.review.objects.{MerchantReview, ReviewSummary}
-import delivery.shared.objects.{MerchantId, OrderId}
+import delivery.domain.{MerchantId, OrderId}
 import delivery.order.tables.orderitem.OrderItemTable
 
 import java.sql.{Connection, ResultSet}

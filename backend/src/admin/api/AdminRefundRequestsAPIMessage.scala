@@ -3,8 +3,8 @@ package delivery.admin.api
 import cats.effect.IO
 import delivery.admin.objects.apiTypes.AdminRefundRequestsResponse
 import delivery.order.tables.order.OrderTable
-import delivery.shared.api.APIWithRoleMessage
-import delivery.shared.objects.RefundStatus
+import delivery.platform.api.APIWithRoleMessage
+import delivery.domain.RefundStatus
 
 import java.sql.Connection
 

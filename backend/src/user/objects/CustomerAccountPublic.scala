@@ -1,5 +1,5 @@
 package delivery.user.objects
 
-import delivery.shared.objects.UserRole
+import delivery.domain.UserRole
 
 final case class CustomerAccountPublic(role: UserRole, username: String, profile: CustomerProfile)

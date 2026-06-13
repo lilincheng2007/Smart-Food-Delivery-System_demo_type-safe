@@ -1,6 +1,6 @@
 package delivery.ai.objects.apiTypes
 
-import delivery.shared.objects.OrderStatus
+import delivery.domain.OrderStatus
 
 final case class AIOrderProgressNarrativeGroup(
     status: OrderStatus,

@@ -4,7 +4,7 @@ import cats.effect.IO
 import delivery.admin.objects.StoreOnboardingRequest
 import delivery.admin.tables.storeonboarding.StoreOnboardingRequestTable
 import delivery.merchant.tables.merchantaccount.MerchantAccountTable
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
 
 import java.sql.Connection
 

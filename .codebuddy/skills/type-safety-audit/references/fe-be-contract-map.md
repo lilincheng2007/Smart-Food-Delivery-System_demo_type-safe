@@ -95,6 +95,6 @@
 
 ## 当前已知合理例外
 
-- `backend/src/shared/api/APIMessage.scala` 包含 API 注册基础设施，不作为业务 API 拆分对象。
+- `backend/src/platform/api/APIMessage.scala` 包含 API 注册基础设施，不作为业务 API 拆分对象。
 - `frontend/src/apis/shared/sendAPI.ts` 文件名含 `API`，但属于前端 API 基础设施，不参与业务 API 数量对齐。
 - 商户图片静态访问路由不是业务 APIMessage，是上传图片后的公共资源访问例外。

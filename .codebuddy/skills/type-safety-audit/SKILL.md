@@ -21,14 +21,14 @@ description: "审计 Type-safe_project 的前后端类型安全与 sample 风格
 | 维度 | 后端路径 | 前端路径 | 规则 |
 |------|---------|---------|------|
 | API 消息 | `backend/src/{module}/api/{XxxAPIMessage}.scala` | `frontend/src/apis/{module}/{XxxAPI}.ts` | 后端文件名去掉 `Message` 后必须等于前端文件名 |
-| API 基础设施 | `backend/src/shared/api/` | `frontend/src/apis/shared/` | 不计入业务 API 对齐 |
+| API 基础设施 | `backend/src/platform/api/` | `frontend/src/apis/shared/` | 不计入业务 API 对齐 |
 | 领域对象 | `backend/src/{module}/objects/{ObjectName}.scala` | `frontend/src/objects/{module}/{ObjectName}.ts` | 真正系统 object，一对象一文件 |
 | 请求/响应对象 | `backend/src/{module}/objects/apiTypes/{Name}.scala` | `frontend/src/objects/{module}/apiTypes/{Name}.ts` | `*Request` / `*Response` 只能放这里 |
-| 共享枚举/ID | `backend/src/shared/objects/ids.scala` | `frontend/src/objects/shared/ids.ts` | 枚举与 ID 类型必须真实使用 |
+| 共享枚举/ID | `backend/src/domain/ids.scala` | `frontend/src/objects/shared/ids.ts` | 枚举与 ID 类型必须真实使用 |
 | 页面结构 | - | `frontend/src/pages/{Page}/index.tsx` + `components/`、`hooks/`、`objects/`、`functions/` | `index.tsx` 只做页面装配 |
 | 路由注册 | `backend/src/{module}/routes/{Module}Routes.scala` | `frontend/src/router.tsx` | 业务 API 走统一 `POST /api/{apiName}` |
 
-模块列表：`ai`、`user`、`merchant`、`order`、`rider`、`shared`。
+模块列表：`ai`、`user`、`merchant`、`order`、`rider`；前端 `objects/shared` 对应后端拆分后的 `domain`、`promotion`、`platform`。
 
 ## 审计检查清单
 

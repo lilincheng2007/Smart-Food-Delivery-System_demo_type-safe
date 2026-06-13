@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAppChrome } from '@/hooks/useAppChrome'
 import { useAuthSession } from '@/hooks/useAuthSession'
-import { useMerchantConsoleStore } from '@/stores/pages/use-merchant-console-store'
+import { useMerchantConsoleStore } from '@/pages/MerchantConsole/stores/use-merchant-console-store'
 
 import { BusinessDataTab } from './components/BusinessDataTab'
 import { MerchantReviewsTab } from './components/MerchantReviewsTab'

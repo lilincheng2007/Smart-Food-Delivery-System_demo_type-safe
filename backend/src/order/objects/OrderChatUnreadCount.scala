@@ -1,6 +1,6 @@
 package delivery.order.objects
 
-import delivery.shared.objects.OrderId
+import delivery.domain.OrderId
 
 final case class OrderChatUnreadCount(
     orderId: OrderId,

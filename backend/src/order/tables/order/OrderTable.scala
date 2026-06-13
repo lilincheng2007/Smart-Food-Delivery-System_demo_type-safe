@@ -4,8 +4,8 @@ import cats.effect.IO
 import cats.syntax.all.*
 import delivery.order.objects.{Order, OrderPriceBreakdown, OrderPriceSnapshot, OrderTimelineEvent}
 import delivery.order.tables.orderitem.OrderItemTable
-import delivery.shared.json.ApiJsonCodecs.given
-import delivery.shared.objects.{MerchantId, OrderId, OrderStatus, Promotion, RefundStatus, RiderId, UserId, Voucher}
+import delivery.platform.json.ApiJsonCodecs.given
+import delivery.domain.{MerchantId, OrderId, OrderStatus, Promotion, RefundStatus, RiderId, UserId, Voucher}
 import io.circe.parser.decode
 import io.circe.syntax.*
 import org.postgresql.util.PGobject

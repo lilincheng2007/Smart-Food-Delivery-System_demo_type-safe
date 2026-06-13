@@ -3,10 +3,10 @@ package delivery.admin.routes
 import delivery.admin.api.*
 import delivery.admin.objects.*
 import delivery.admin.objects.apiTypes.*
-import delivery.shared.api.RegisteredAPIMessage
-import delivery.shared.api.RegisteredAPIMessage.apiWithRole
-import delivery.shared.json.ApiJsonCodecs.given
-import delivery.shared.objects.apiTypes.OkResponse
+import delivery.platform.api.RegisteredAPIMessage
+import delivery.platform.api.RegisteredAPIMessage.apiWithRole
+import delivery.platform.json.ApiJsonCodecs.given
+import delivery.domain.apiTypes.OkResponse
 import io.circe.generic.auto.*
 
 object AdminRoutes:

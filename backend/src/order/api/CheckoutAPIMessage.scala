@@ -1,5 +1,6 @@
 package delivery.order.api
 
+import delivery.order.services.OrderCheckoutService
 import cats.effect.IO
 import cats.syntax.all.*
 import delivery.admin.tables.platformpromotion.PlatformPromotionTable
@@ -10,9 +11,9 @@ import delivery.order.objects.apiTypes.{CheckoutRequest, CheckoutResponse, Order
 import delivery.order.tables.checkoutrequest.CheckoutRequestTable
 import delivery.order.tables.order.OrderTable
 import delivery.order.utils.OrderApiSupport
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.VoucherId
-import delivery.shared.utils.{PromotionUsage, VoucherSupport}
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.VoucherId
+import delivery.promotion.services.{PromotionUsage, VoucherSupport}
 import delivery.user.tables.customerprofile.CustomerProfileTable
 
 import java.sql.Connection
@@ -42,20 +43,20 @@ final case class CheckoutAPIMessage(
               if n.trim.nonEmpty && ph.trim.nonEmpty && ad.trim.nonEmpty =>
             normalizedAccount.profile.copy(name = n.trim, phone = ph.trim, defaultAddress = ad.trim)
           case _ => normalizedAccount.profile
-      built <- OrderAPIMessageSupport.buildOrdersForCheckout(products, merchants, platformPromotions, profileForOrders, body.lines.map(OrderApiSupport.normalizeLine), body.voucherId, body.merchantNotes)
+      built <- OrderCheckoutService.buildOrdersForCheckout(products, merchants, platformPromotions, profileForOrders, body.lines.map(OrderApiSupport.normalizeLine), body.voucherId, body.merchantNotes)
       result <- built match
         case Left(msg) => IO.raiseError(HttpApiError.BadRequest(msg))
         case Right(checkout) =>
-          val nextVouchers = checkout.usedVoucher.map(voucher => OrderAPIMessageSupport.consumeVoucher(normalizedAccount.profile, voucher)).getOrElse(normalizedAccount.profile.vouchers)
+          val nextVouchers = checkout.usedVoucher.map(voucher => OrderCheckoutService.consumeVoucher(normalizedAccount.profile, voucher)).getOrElse(normalizedAccount.profile.vouchers)
           val nextAccount = normalizedAccount.copy(profile =
             normalizedAccount.profile.copy(
-              walletBalance = OrderAPIMessageSupport.roundMoney(normalizedAccount.profile.walletBalance - checkout.payableAmount),
+              walletBalance = OrderCheckoutService.roundMoney(normalizedAccount.profile.walletBalance - checkout.payableAmount),
               pendingOrders = checkout.orders.reverse ::: normalizedAccount.profile.pendingOrders,
               vouchers = nextVouchers
             )
           )
           for
-            _ <- OrderAPIMessageSupport.inventoryDeductions(products, body.lines.map(OrderApiSupport.normalizeLine)).traverse_(CatalogProductTable.upsert(connection, _))
+            _ <- OrderCheckoutService.inventoryDeductions(products, body.lines.map(OrderApiSupport.normalizeLine)).traverse_(CatalogProductTable.upsert(connection, _))
             _ <- checkout.orders.traverse_(OrderTable.upsert(connection, _))
             _ <- persistPromotionUsage(connection, username, merchants, platformPromotions, checkout.orders)
             _ <- CheckoutRequestTable.insert(connection, username, body, checkout.orders.map(_.id))
@@ -75,7 +76,7 @@ final case class CheckoutAPIMessage(
       connection: Connection,
       username: String,
       merchants: List[delivery.merchant.objects.Merchant],
-      platformPromotions: List[delivery.shared.objects.Promotion],
+      platformPromotions: List[delivery.domain.Promotion],
       orders: List[delivery.order.objects.Order]
   ): IO[Unit] =
     val platformIds = platformPromotions.map(_.id).toSet

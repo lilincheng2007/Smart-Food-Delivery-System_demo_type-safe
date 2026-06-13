@@ -1,6 +1,6 @@
 package delivery.user.objects.apiTypes
 
-import delivery.shared.objects.UserRole
+import delivery.domain.UserRole
 import delivery.user.objects.CustomerAccountPublic
 
 final case class CustomerMeResponse(

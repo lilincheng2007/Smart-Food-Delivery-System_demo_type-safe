@@ -17,7 +17,7 @@ import { useAppChrome } from '@/hooks/useAppChrome'
 import type { AIMerchantProductDescriptionsResponse } from '@/objects/ai/apiTypes/AIMerchantProductDescriptionsResponse'
 import type { AIMerchantStoreDescriptionResponse } from '@/objects/ai/apiTypes/AIMerchantStoreDescriptionResponse'
 import type { MerchantStoreProfile } from '@/objects/merchant/MerchantStoreProfile'
-import { useMerchantConsoleStore } from '@/stores/pages/use-merchant-console-store'
+import { useMerchantConsoleStore } from '@/pages/MerchantConsole/stores/use-merchant-console-store'
 
 type MerchantAICopywritingCardProps = {
   selectedStore: MerchantStoreProfile | null

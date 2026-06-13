@@ -7,8 +7,8 @@ import delivery.rider.objects.RiderDeliverySettlement
 import delivery.rider.tables.rideraccount.RiderAccountTable
 import delivery.rider.tables.riderassignment.RiderAssignmentTable
 import delivery.rider.utils.RiderTimeoutPolicy
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.{OrderId, OrderStatus, RiderStatus}
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.{OrderId, OrderStatus, RiderStatus}
 
 import java.sql.Connection
 import java.time.Instant

@@ -6,7 +6,7 @@ import { DeliveryPageShell } from '@/components/DeliveryPageShell'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAppChrome } from '@/hooks/useAppChrome'
-import { useCustomerPortalStore } from '@/stores/pages/use-customer-portal-store'
+import { useCustomerPortalStore } from '@/pages/CustomerPortal/stores/use-customer-portal-store'
 
 import { CartTab } from './components/CartTab'
 import { HomeTab } from './components/HomeTab'

@@ -4,7 +4,7 @@ import cats.effect.IO
 import cats.syntax.all.*
 import delivery.rider.objects.RiderProfile
 import delivery.rider.tables.RiderAccountRecord
-import delivery.shared.objects.RiderStatus
+import delivery.domain.RiderStatus
 import delivery.rider.tables.riderprofile.RiderProfileTable
 
 import java.sql.{Connection, PreparedStatement, ResultSet}

@@ -8,8 +8,8 @@ import delivery.merchant.utils.MerchantApiSupport
 import delivery.order.objects.Order
 import delivery.order.tables.order.OrderTable
 import delivery.review.tables.MerchantReviewTable
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.{MerchantId, OrderStatus, RefundStatus}
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.{MerchantId, OrderStatus, RefundStatus}
 import io.circe.Json
 
 import java.sql.Connection

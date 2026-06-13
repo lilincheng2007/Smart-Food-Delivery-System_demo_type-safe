@@ -1,6 +1,6 @@
 package delivery.user.utils
 
-import delivery.shared.objects.{ErrorBody, UserRole}
+import delivery.domain.{ErrorBody, UserRole}
 import delivery.user.objects.{CustomerAccountPublic}
 import delivery.user.objects.apiTypes.{CustomerMeResponse}
 import delivery.user.tables.CustomerAccountRecord

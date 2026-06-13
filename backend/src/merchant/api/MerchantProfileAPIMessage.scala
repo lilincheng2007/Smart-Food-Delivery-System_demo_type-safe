@@ -6,8 +6,8 @@ import delivery.merchant.objects.MerchantProfile
 import delivery.merchant.tables.merchantaccount.MerchantAccountTable
 import delivery.merchant.tables.merchantstore.MerchantStoreTable
 import delivery.merchant.utils.MerchantApiSupport
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.apiTypes.OkResponse
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.apiTypes.OkResponse
 
 import java.sql.Connection
 

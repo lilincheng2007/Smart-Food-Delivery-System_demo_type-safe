@@ -1,9 +1,9 @@
 package delivery.user.api
 
 import cats.effect.IO
-import delivery.shared.api.{APIMessage, HttpApiError}
-import delivery.shared.auth.JwtSupport
-import delivery.shared.objects.UserRole
+import delivery.platform.api.{APIMessage, HttpApiError}
+import delivery.auth.JwtSupport
+import delivery.domain.UserRole
 import delivery.user.objects.apiTypes.LoginResponse
 import delivery.user.tables.authcredential.AuthCredentialTable
 

@@ -2,7 +2,7 @@ package delivery.admin.tables.storeonboarding
 
 import cats.effect.IO
 import delivery.admin.objects.StoreOnboardingRequest
-import delivery.shared.json.ApiJsonCodecs.given
+import delivery.platform.json.ApiJsonCodecs.given
 import io.circe.parser.decode
 import io.circe.syntax.*
 import org.postgresql.util.PGobject

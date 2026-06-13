@@ -75,7 +75,13 @@ backend/
     ├── order/                     # 下单、订单查询、聊天、退款、通知已读、状态机、价格快照
     ├── review/                    # 顾客评价、商家回复、投票、图片
     ├── rider/                     # 骑手资料、可抢单、抢单、配送、能量/免责卡
-    ├── shared/                    # API 网关、JWT、数据库、JSON codec、种子数据、静态图片
+    ├── platform/                  # API 网关、HTTP DTO、JSON codec 聚合
+    ├── auth/                      # JWT 与认证鉴权
+    ├── db/                        # 数据库连接、事务与初始化入口
+    ├── bootstrap/                 # 种子数据与启动导入
+    ├── domain/                    # 跨模块 ID、角色、稳定枚举
+    ├── media/                     # 静态图片存储、读取、校验和迁移
+    ├── promotion/                 # 促销、优惠券和结算辅助领域
     └── user/                      # 登录注册、顾客资料、钱包、优惠券、收货联系人
 ```
 
@@ -121,12 +127,12 @@ GET /api/reviews/images/{fileName}
 
 关键实现：
 
-- `src/shared/api/APIMessage.scala`
+- `src/platform/api/APIMessage.scala`
   - `APIMessage[Response]`
   - `APIWithRoleMessage[Response]`
   - `RegisteredAPIMessage`
   - `APIMessageRouter`
-- `src/shared/json/ApiJsonCodecs.scala`：Circe Codec 注册。
+- `src/platform/json/ApiJsonCodecs.scala`：Circe Codec 注册。
 - 各模块 `routes/*Routes.scala`：使用 `api`、`apiWithRole` 或 `apiWithRoles` 注册消息。
 
 `apiName` 由后端 `*APIMessage` 类名推导。例如：
@@ -255,7 +261,7 @@ CustomerVoucherDiscardAPIMessage -> POST /api/customervoucherdiscardapi
 
 ## 数据库结构
 
-表初始化入口：`src/shared/db/DeliveryStateStore.scala`。各模块通过 `*TableInitializer.scala` 创建表、索引和兼容性迁移。
+表初始化入口：`src/db/DeliveryStateStore.scala`。各模块通过 `*TableInitializer.scala` 创建表、索引和兼容性迁移。
 
 ### user 模块
 
@@ -505,13 +511,13 @@ AI 功能包括：
 
 相关文件：
 
-- `src/shared/db/DatabaseConfig.scala`
-- `src/shared/db/DatabasePool.scala`
-- `src/shared/db/DeliveryStateStore.scala`
+- `src/db/DatabaseConfig.scala`
+- `src/db/DatabasePool.scala`
+- `src/db/DeliveryStateStore.scala`
 
 ### JWT
 
-JWT 实现在 `src/shared/auth/JwtSupport.scala`。开发环境会使用默认密钥，生产或多人协作环境建议显式配置：
+JWT 实现在 `src/auth/JwtSupport.scala`。开发环境会使用默认密钥，生产或多人协作环境建议显式配置：
 
 ```bash
 export JWT_SECRET=replace-with-a-strong-secret
@@ -519,7 +525,7 @@ export JWT_SECRET=replace-with-a-strong-secret
 
 ### 内部服务令牌
 
-`src/shared/interop/InternalToken.scala` 使用 `SERVICE_INTERNAL_TOKEN` 校验内部请求头 `X-Internal-Token`，默认值为 `dev-internal-token`。如接入内部调用方，应在环境中显式覆盖该值。
+`src/platform/interop/InternalToken.scala` 使用 `SERVICE_INTERNAL_TOKEN` 校验内部请求头 `X-Internal-Token`，默认值为 `dev-internal-token`。如接入内部调用方，应在环境中显式覆盖该值。
 
 ### AI
 
@@ -536,7 +542,7 @@ export OPENAI_MODEL=gpt-4o-mini
 
 ## 演示数据
 
-种子数据位于 `src/shared/bootstrap/SeedData.scala` 和 `src/shared/bootstrap/SeedBootstrap.scala`，包含默认顾客、商家、菜品、骑手、管理员与初始订单。
+种子数据位于 `src/bootstrap/SeedData.scala` 和 `src/bootstrap/SeedBootstrap.scala`，包含默认顾客、商家、菜品、骑手、管理员与初始订单。
 
 演示账号：
 
@@ -553,7 +559,7 @@ export OPENAI_MODEL=gpt-4o-mini
 2. 在对应模块 `api/` 新增单个 `*APIMessage.scala`，文件名与 case class 一致。
 3. 如逻辑较复杂，将可复用逻辑拆到同模块 `Support`、`Rules` 或 helper 文件，保留 APIMessage 入口简洁。
 4. 在 `routes/` 中使用 `api`、`apiWithRole` 或 `apiWithRoles` 注册。
-5. 在 `src/shared/json/ApiJsonCodecs.scala` 注册 Codec。
+5. 在 `src/platform/json/ApiJsonCodecs.scala` 注册 Codec。
 6. 同步前端 `frontend/src/apis/*/XxxAPI.ts` 与 `frontend/src/objects/*` 的契约。
 7. 运行 `sbt -batch compile`、前端 `npm run typecheck --prefix frontend` 和类型安全审计脚本验证。
 

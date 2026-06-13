@@ -1,7 +1,7 @@
 package delivery.rider.tables.riderassignment
 
 import cats.effect.IO
-import delivery.shared.objects.OrderStatus
+import delivery.domain.OrderStatus
 
 import java.sql.Connection
 

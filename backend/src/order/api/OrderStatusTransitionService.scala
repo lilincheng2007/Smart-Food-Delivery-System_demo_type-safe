@@ -5,8 +5,8 @@ import cats.syntax.all.*
 import delivery.order.objects.{Order, OrderChatMessage}
 import delivery.order.tables.order.OrderTable
 import delivery.order.tables.orderchat.OrderChatMessageTable
-import delivery.shared.api.HttpApiError
-import delivery.shared.objects.OrderStatus
+import delivery.platform.api.HttpApiError
+import delivery.domain.OrderStatus
 
 import java.sql.Connection
 import java.time.Instant

@@ -1,5 +1,6 @@
 package delivery.rider.api
 
+import delivery.rider.services.RiderDeliveryService
 import cats.effect.IO
 import delivery.order.tables.order.OrderTable
 import delivery.review.tables.RiderReviewTable
@@ -7,7 +8,7 @@ import delivery.rider.objects.apiTypes.RiderMeResponse
 import delivery.rider.tables.rideraccount.RiderAccountTable
 import delivery.rider.tables.riderassignment.RiderAssignmentTable
 import delivery.rider.utils.RiderApiSupport
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
 
 import java.sql.Connection
 
@@ -31,11 +32,11 @@ final case class RiderMeAPIMessage() extends APIWithRoleMessage[RiderMeResponse]
             val nextAccount = value.copy(profile =
               value.profile.copy(
                 rider = reviewedRider,
-                pendingOrders = assignedOrders.filterNot(order => RiderAPIMessageSupport.isHistoryOrderStatus(order.status)),
-                historyOrders = assignedOrders.filter(order => RiderAPIMessageSupport.isHistoryOrderStatus(order.status))
+                pendingOrders = assignedOrders.filterNot(order => RiderDeliveryService.isHistoryOrderStatus(order.status)),
+                historyOrders = assignedOrders.filter(order => RiderDeliveryService.isHistoryOrderStatus(order.status))
               )
             )
-            val deliveryStatuses = records.map(record => RiderAPIMessageSupport.statusView(record, nextAccount.profile.rider.timeoutCardCount > 0))
+            val deliveryStatuses = records.map(record => RiderDeliveryService.statusView(record, nextAccount.profile.rider.timeoutCardCount > 0))
             Some(RiderApiSupport.riderMeResponse(username, nextAccount, availableOrders, deliveryStatuses).copy(reviewSummary = reviewSummary, reviews = reviews))
       output <- response match
         case None => IO.raiseError(HttpApiError.NotFound(RiderApiSupport.riderNotFound.error))

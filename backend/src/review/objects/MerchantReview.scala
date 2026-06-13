@@ -1,6 +1,6 @@
 package delivery.review.objects
 
-import delivery.shared.objects.{MerchantId, OrderId, UserId}
+import delivery.domain.{MerchantId, OrderId, UserId}
 
 final case class MerchantReview(
     id: String,

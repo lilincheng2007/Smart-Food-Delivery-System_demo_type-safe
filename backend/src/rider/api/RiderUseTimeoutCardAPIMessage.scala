@@ -4,8 +4,8 @@ import cats.effect.IO
 import delivery.rider.objects.apiTypes.RiderUseTimeoutCardResponse
 import delivery.rider.tables.rideraccount.RiderAccountTable
 import delivery.rider.tables.riderassignment.RiderAssignmentTable
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.OrderId
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.OrderId
 
 import java.sql.Connection
 

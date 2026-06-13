@@ -1,8 +1,8 @@
 package delivery.user.api
 
 import cats.effect.IO
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.utils.VoucherSupport
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.promotion.services.VoucherSupport
 import delivery.user.objects.apiTypes.CustomerMeResponse
 import delivery.user.tables.customerprofile.CustomerProfileTable
 import delivery.user.utils.UserApiSupport

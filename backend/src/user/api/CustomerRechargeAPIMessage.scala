@@ -1,7 +1,7 @@
 package delivery.user.api
 
 import cats.effect.IO
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
 import delivery.user.objects.apiTypes.CustomerWalletTopUpResponse
 import delivery.user.tables.customerprofile.CustomerProfileTable
 import delivery.user.utils.UserApiSupport

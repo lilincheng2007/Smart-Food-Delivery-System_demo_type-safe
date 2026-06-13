@@ -43,7 +43,7 @@ import type { Product, ProductInventoryMode } from '@/objects/merchant/Product'
 import type { ListingStatus, ProductId } from '@/objects/shared/ids'
 import type { Promotion } from '@/objects/shared/Promotion'
 import { cn } from '@/lib/utils'
-import { useMerchantConsoleStore } from '@/stores/pages/use-merchant-console-store'
+import { useMerchantConsoleStore } from '@/pages/MerchantConsole/stores/use-merchant-console-store'
 
 import { MerchantAICopywritingCard } from './MerchantAICopywritingCard'
 import { BundleGroupsEditor } from './products/BundleGroupsEditor'

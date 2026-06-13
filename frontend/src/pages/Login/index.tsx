@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { useLoginPageStore } from '@/stores/pages/use-login-page-store'
+import { useLoginPageStore } from '@/pages/Login/stores/use-login-page-store'
 
 import { AuthPageShell } from '@/components/auth/AuthPageShell'
 

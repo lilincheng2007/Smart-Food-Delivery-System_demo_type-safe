@@ -1,6 +1,6 @@
 package delivery.merchant.objects
 
-import delivery.shared.objects.{InventoryStatus, ListingStatus, MerchantId, ProductId}
+import delivery.domain.{InventoryStatus, ListingStatus, MerchantId, ProductId}
 
 final case class ProductBundleOption(productId: ProductId, recommended: Boolean = false, extraPrice: Double = 0, customExtraPrice: Boolean = false)
 

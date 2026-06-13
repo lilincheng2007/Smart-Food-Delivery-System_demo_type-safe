@@ -2,8 +2,8 @@ package delivery.review.api
 
 import cats.effect.IO
 import delivery.review.tables.MerchantReviewVoteTable
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.apiTypes.OkResponse
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.apiTypes.OkResponse
 import delivery.user.tables.customerprofile.CustomerProfileTable
 
 import java.sql.Connection

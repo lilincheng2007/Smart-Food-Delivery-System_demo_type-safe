@@ -4,7 +4,7 @@ import cats.effect.IO
 import delivery.rider.objects.apiTypes.RiderTimeoutCardRedeemResponse
 import delivery.rider.tables.rideraccount.RiderAccountTable
 import delivery.rider.utils.RiderTimeoutPolicy
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
 
 import java.sql.Connection
 

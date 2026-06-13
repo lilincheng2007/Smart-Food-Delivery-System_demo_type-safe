@@ -154,8 +154,8 @@ POST /api/{apiName}
 |---|---|---|
 | 领域对象 | `backend/src/{module}/objects/` | `frontend/src/objects/{module}/` |
 | 请求/响应对象 | `backend/src/{module}/objects/apiTypes/` | `frontend/src/objects/{module}/apiTypes/` |
-| API 基础设施 | `backend/src/shared/api/` | `frontend/src/apis/shared/` |
-| 共享 ID/枚举 | `backend/src/shared/objects/ids.scala` | `frontend/src/objects/shared/ids.ts` |
+| API 基础设施 | `backend/src/platform/api/` | `frontend/src/apis/shared/` |
+| 共享 ID/枚举 | `backend/src/domain/ids.scala` | `frontend/src/objects/shared/ids.ts` |
 
 ## 5. 公开静态资源路由
 

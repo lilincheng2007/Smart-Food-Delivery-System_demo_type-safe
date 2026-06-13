@@ -4,7 +4,7 @@ import delivery.order.objects.Order
 import delivery.rider.objects.{RiderAccountPublic, RiderDeliveryStatus}
 import delivery.rider.objects.apiTypes.{RiderMeResponse}
 import delivery.rider.tables.RiderAccountRecord
-import delivery.shared.objects.{ErrorBody, UserRole}
+import delivery.domain.{ErrorBody, UserRole}
 
 object RiderApiSupport:
 

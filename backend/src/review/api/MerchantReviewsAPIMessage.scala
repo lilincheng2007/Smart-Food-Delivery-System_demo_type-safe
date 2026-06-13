@@ -3,8 +3,8 @@ package delivery.review.api
 import cats.effect.IO
 import delivery.review.objects.apiTypes.MerchantReviewsResponse
 import delivery.review.tables.MerchantReviewTable
-import delivery.shared.api.APIMessage
-import delivery.shared.objects.MerchantId
+import delivery.platform.api.APIMessage
+import delivery.domain.MerchantId
 
 import java.sql.Connection
 

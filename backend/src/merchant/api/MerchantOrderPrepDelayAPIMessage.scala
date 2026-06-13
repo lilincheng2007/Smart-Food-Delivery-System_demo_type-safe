@@ -1,13 +1,14 @@
 package delivery.merchant.api
 
+import delivery.merchant.services.MerchantBusinessService
 import cats.effect.IO
 import delivery.order.api.OrderChatNotificationTemplates
 import delivery.order.objects.{OrderChatMessage, OrderTimelineEvent}
 import delivery.order.tables.order.OrderTable
 import delivery.order.tables.orderchat.OrderChatMessageTable
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.{OrderId, OrderStatus}
-import delivery.shared.objects.apiTypes.OkResponse
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.{OrderId, OrderStatus}
+import delivery.domain.apiTypes.OkResponse
 
 import java.sql.Connection
 import java.time.{Instant, ZoneId}
@@ -25,7 +26,7 @@ final case class MerchantOrderPrepDelayAPIMessage(orderId: OrderId, extraMinutes
           case Some(value) => IO.pure(value)
           case None        => IO.raiseError(HttpApiError.BadRequest("未找到订单"))
         }
-        _ <- MerchantAPIMessageSupport.requireOwnedStore(connection, username, order.merchantId)
+        _ <- MerchantBusinessService.requireOwnedStore(connection, username, order.merchantId)
         _ <- if order.status == OrderStatus.制作中 then IO.unit else IO.raiseError(HttpApiError.BadRequest("只有制作中的订单可以延迟备餐"))
         now <- IO.realTime.map(duration => Instant.ofEpochMilli(duration.toMillis))
         readyAt = now.plusSeconds(safeExtraMinutes.toLong * 60)

@@ -1,6 +1,6 @@
 package delivery.rider.tables
 
-import delivery.shared.objects.{OrderId, OrderStatus, RiderId}
+import delivery.domain.{OrderId, OrderStatus, RiderId}
 
 import java.time.Instant
 

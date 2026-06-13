@@ -2,10 +2,10 @@ package delivery.admin.api
 
 import cats.effect.IO
 import delivery.admin.tables.platformpromotion.PlatformPromotionTable
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.Promotion
-import delivery.shared.objects.apiTypes.OkResponse
-import delivery.shared.utils.PromotionValidation
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.Promotion
+import delivery.domain.apiTypes.OkResponse
+import delivery.promotion.services.PromotionValidation
 
 import java.sql.Connection
 

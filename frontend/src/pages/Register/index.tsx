@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useAppChrome } from '@/hooks/useAppChrome'
-import { useRegisterPageStore } from '@/stores/pages/use-register-page-store'
+import { useRegisterPageStore } from '@/pages/Register/stores/use-register-page-store'
 
 import { AuthPageShell } from '@/components/auth/AuthPageShell'
 

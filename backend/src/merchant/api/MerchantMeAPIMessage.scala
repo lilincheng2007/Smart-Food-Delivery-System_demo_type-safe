@@ -1,5 +1,6 @@
 package delivery.merchant.api
 
+import delivery.merchant.services.MerchantBusinessService
 import cats.effect.IO
 import delivery.admin.tables.storeonboarding.StoreOnboardingRequestTable
 import delivery.merchant.objects.{MerchantStoreProfile}
@@ -9,7 +10,7 @@ import delivery.merchant.tables.merchantaccount.MerchantAccountTable
 import delivery.merchant.tables.merchantstore.MerchantStoreTable
 import delivery.merchant.utils.MerchantApiSupport
 import delivery.order.tables.order.OrderTable
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
 
 import java.sql.Connection
 
@@ -33,8 +34,8 @@ final case class MerchantMeAPIMessage() extends APIWithRoleMessage[MerchantMeRes
               MerchantStoreProfile(
                 merchant = merchant,
                 products = products.filter(_.merchantId == merchant.id),
-                pendingOrders = merchantOrders.filterNot(order => MerchantAPIMessageSupport.isHistoryOrderStatus(order.status)),
-                historyOrders = merchantOrders.filter(order => MerchantAPIMessageSupport.isHistoryOrderStatus(order.status))
+                pendingOrders = merchantOrders.filterNot(order => MerchantBusinessService.isHistoryOrderStatus(order.status)),
+                historyOrders = merchantOrders.filter(order => MerchantBusinessService.isHistoryOrderStatus(order.status))
               )
             }
             Some(

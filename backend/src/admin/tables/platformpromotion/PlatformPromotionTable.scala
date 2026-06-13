@@ -1,8 +1,8 @@
 package delivery.admin.tables.platformpromotion
 
 import cats.effect.IO
-import delivery.shared.json.ApiJsonCodecs.given
-import delivery.shared.objects.Promotion
+import delivery.platform.json.ApiJsonCodecs.given
+import delivery.domain.Promotion
 import io.circe.parser.decode
 import io.circe.syntax.*
 import org.postgresql.util.PGobject

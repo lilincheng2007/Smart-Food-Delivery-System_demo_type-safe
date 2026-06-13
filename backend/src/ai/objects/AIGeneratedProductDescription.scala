@@ -1,6 +1,6 @@
 package delivery.ai.objects
 
-import delivery.shared.objects.ProductId
+import delivery.domain.ProductId
 
 final case class AIGeneratedProductDescription(
     productId: ProductId,

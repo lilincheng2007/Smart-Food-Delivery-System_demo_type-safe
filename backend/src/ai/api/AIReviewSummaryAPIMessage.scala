@@ -5,8 +5,8 @@ import delivery.ai.objects.apiTypes.AIReviewSummaryResponse
 import delivery.ai.utils.OpenAIClient
 import delivery.merchant.api.CatalogAPIMessage
 import delivery.review.tables.MerchantReviewTable
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.MerchantId
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.MerchantId
 import io.circe.Json
 import io.circe.syntax.*
 

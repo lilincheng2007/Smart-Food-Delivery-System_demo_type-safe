@@ -1,5 +1,6 @@
 package delivery.order.api
 
+import delivery.order.services.OrderCheckoutService
 import cats.effect.IO
 import cats.syntax.all.*
 import delivery.order.objects.{Order, OrderChatMessage}
@@ -7,8 +8,8 @@ import delivery.order.objects.apiTypes.CustomerOrdersResponse
 import delivery.order.tables.order.OrderTable
 import delivery.order.tables.orderchat.OrderChatMessageTable
 import delivery.order.utils.OrderApiSupport
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.OrderStatus
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.OrderStatus
 import delivery.user.tables.customerprofile.CustomerProfileTable
 
 import java.sql.Connection
@@ -28,8 +29,8 @@ final case class CustomerOrdersAPIMessage() extends APIWithRoleMessage[CustomerO
             customerOrders <- OrderTable.listByCustomerId(connection, value.profile.id)
             refreshedOrders <- notifyPrepTimeouts(connection, customerOrders)
           yield CustomerOrdersResponse(
-            pendingOrders = refreshedOrders.filterNot(order => OrderAPIMessageSupport.isHistoryOrderStatus(order.status)),
-            historyOrders = refreshedOrders.filter(order => OrderAPIMessageSupport.isHistoryOrderStatus(order.status))
+            pendingOrders = refreshedOrders.filterNot(order => OrderCheckoutService.isHistoryOrderStatus(order.status)),
+            historyOrders = refreshedOrders.filter(order => OrderCheckoutService.isHistoryOrderStatus(order.status))
           )
     yield output
 

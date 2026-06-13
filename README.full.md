@@ -98,7 +98,13 @@
         ├── admin/               # 入驻审核、退款仲裁、订单监控、平台优惠
         ├── review/              # 评价、回复、投票、图片
         ├── ai/                  # AI 搜索、周报、文案、经营建议
-        └── shared/              # API、JWT、数据库、JSON、静态图片、种子数据
+        ├── platform/            # APIMessage、HTTP、JSON 聚合等平台基础设施
+        ├── auth/                # JWT 与认证鉴权
+        ├── db/                  # 数据库连接、事务与初始化入口
+        ├── bootstrap/           # 种子数据与启动导入
+        ├── domain/              # 跨模块 ID、角色、稳定枚举
+        ├── media/               # 图片存储、读取、校验和迁移
+        └── promotion/           # 促销、优惠券和结算辅助领域
 ```
 
 ## 快速启动
@@ -174,7 +180,7 @@ npm run dev
 POST /api/{apiName}
 ```
 
-前端通过 `frontend/src/apis/shared/sendAPI.ts` 发送 `APIMessage`；后端通过 `backend/src/shared/api/APIMessage.scala` 注册、解码、鉴权并执行。需要鉴权的 API 使用 `Authorization: Bearer <token>`，网关根据注册角色校验权限。
+前端通过 `frontend/src/apis/shared/sendAPI.ts` 发送 `APIMessage`；后端通过 `backend/src/platform/api/APIMessage.scala` 注册、解码、鉴权并执行。需要鉴权的 API 使用 `Authorization: Bearer <token>`，网关根据注册角色校验权限。
 
 示例：
 

@@ -16,7 +16,7 @@ import { businessStatusLabels } from '@/lib/merchant-business-hours'
 import type { MerchantBusinessStatus, MerchantHolidayBusinessHour, MerchantWeeklyBusinessHour } from '@/objects/merchant/MerchantBusinessHours'
 import type { MerchantStoreProfile } from '@/objects/merchant/MerchantStoreProfile'
 import { OrderStatuses } from '@/objects/shared/ids'
-import { useMerchantConsoleStore } from '@/stores/pages/use-merchant-console-store'
+import { useMerchantConsoleStore } from '@/pages/MerchantConsole/stores/use-merchant-console-store'
 import type { MerchantReviewsResponse } from '@/objects/review/apiTypes/MerchantReviewsResponse'
 
 type ProfileTabProps = {

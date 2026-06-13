@@ -7,9 +7,9 @@ import delivery.merchant.routes.MerchantRoutes
 import delivery.order.routes.OrderRoutes
 import delivery.review.routes.ReviewRoutes
 import delivery.rider.routes.RiderRoutes
-import delivery.shared.api.APIMessageRouter
+import delivery.platform.api.APIMessageRouter
 import delivery.user.routes.UserRoutes
-import delivery.shared.routes.StoredImageRoutes
+import delivery.media.routes.StoredImageRoutes
 import org.http4s.HttpRoutes
 import org.http4s.server.Router
 

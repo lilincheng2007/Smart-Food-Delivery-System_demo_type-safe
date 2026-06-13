@@ -2,7 +2,7 @@ package delivery.rider.tables.riderprofile
 
 import cats.effect.IO
 import delivery.rider.objects.Rider
-import delivery.shared.objects.{RiderId, RiderStatus}
+import delivery.domain.{RiderId, RiderStatus}
 
 import java.sql.{Connection, PreparedStatement, ResultSet}
 

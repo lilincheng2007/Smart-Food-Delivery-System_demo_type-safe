@@ -1,7 +1,7 @@
 package delivery.ai.objects.apiTypes
 
 import delivery.ai.objects.AIGeneratedProductDescription
-import delivery.shared.objects.MerchantId
+import delivery.domain.MerchantId
 
 final case class AIMerchantProductDescriptionsResponse(
     merchantId: MerchantId,

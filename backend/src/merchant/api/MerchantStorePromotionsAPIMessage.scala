@@ -3,10 +3,10 @@ package delivery.merchant.api
 import cats.effect.IO
 import delivery.merchant.tables.merchantstore.MerchantStoreTable
 import delivery.merchant.utils.MerchantApiSupport
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
-import delivery.shared.objects.{MerchantId, Promotion}
-import delivery.shared.objects.apiTypes.OkResponse
-import delivery.shared.utils.PromotionValidation
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
+import delivery.domain.{MerchantId, Promotion}
+import delivery.domain.apiTypes.OkResponse
+import delivery.promotion.services.PromotionValidation
 
 import java.sql.Connection
 

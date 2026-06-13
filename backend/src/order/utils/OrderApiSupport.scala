@@ -1,7 +1,7 @@
 package delivery.order.utils
 
 import delivery.order.objects.{CheckoutLine, Order}
-import delivery.shared.objects.ErrorBody
+import delivery.domain.ErrorBody
 
 object OrderApiSupport:
 

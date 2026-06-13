@@ -2,7 +2,7 @@ package delivery.order.tables.orderchat
 
 import cats.effect.IO
 import delivery.order.objects.{OrderChatMessage, OrderChatUnreadCount}
-import delivery.shared.objects.OrderId
+import delivery.domain.OrderId
 
 import java.sql.{Connection, ResultSet}
 

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { useAppChrome } from '@/hooks/useAppChrome'
-import { useCustomerPortalStore } from '@/stores/pages/use-customer-portal-store'
+import { useCustomerPortalStore } from '@/pages/CustomerPortal/stores/use-customer-portal-store'
 
 import { DeliveryContactAddDialog } from './DeliveryContactAddDialog'
 import {

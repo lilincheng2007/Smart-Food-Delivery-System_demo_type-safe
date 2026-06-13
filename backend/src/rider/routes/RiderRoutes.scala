@@ -3,10 +3,10 @@ package delivery.rider.routes
 import delivery.rider.api.*
 import delivery.rider.objects.{RiderDeliverySettlement}
 import delivery.rider.objects.apiTypes.{RiderAvailableOrdersResponse, RiderMeResponse, RiderTimeoutCardRedeemResponse, RiderUseTimeoutCardResponse}
-import delivery.shared.api.RegisteredAPIMessage
-import delivery.shared.api.RegisteredAPIMessage.apiWithRole
-import delivery.shared.json.ApiJsonCodecs.given
-import delivery.shared.objects.apiTypes.OkResponse
+import delivery.platform.api.RegisteredAPIMessage
+import delivery.platform.api.RegisteredAPIMessage.apiWithRole
+import delivery.platform.json.ApiJsonCodecs.given
+import delivery.domain.apiTypes.OkResponse
 import io.circe.generic.auto.*
 
 object RiderRoutes:

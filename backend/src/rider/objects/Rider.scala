@@ -1,6 +1,6 @@
 package delivery.rider.objects
 
-import delivery.shared.objects.{RiderId, RiderStatus}
+import delivery.domain.{RiderId, RiderStatus}
 
 final case class Rider(
     id: RiderId,

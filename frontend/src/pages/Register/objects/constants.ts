@@ -1,5 +1,5 @@
 import { UserRoles } from '@/objects/shared/ids'
-import type { RegisterRole } from '@/stores/pages/use-register-page-store'
+import type { RegisterRole } from '@/pages/Register/stores/use-register-page-store'
 
 export const registerRoleOptions: Array<{ value: RegisterRole; label: string }> = [
   { value: UserRoles.customer, label: '顾客' },

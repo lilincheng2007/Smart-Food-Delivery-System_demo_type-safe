@@ -1,7 +1,7 @@
 package delivery.order.tables.order
 
 import cats.effect.IO
-import delivery.shared.objects.{OrderStatus, RefundStatus}
+import delivery.domain.{OrderStatus, RefundStatus}
 
 import java.sql.Connection
 

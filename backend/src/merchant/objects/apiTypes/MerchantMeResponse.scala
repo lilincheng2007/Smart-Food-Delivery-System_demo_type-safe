@@ -2,7 +2,7 @@ package delivery.merchant.objects.apiTypes
 
 import delivery.admin.objects.StoreOnboardingRequest
 import delivery.merchant.objects.MerchantAccountPublic
-import delivery.shared.objects.UserRole
+import delivery.domain.UserRole
 
 final case class MerchantMeResponse(
     username: String,

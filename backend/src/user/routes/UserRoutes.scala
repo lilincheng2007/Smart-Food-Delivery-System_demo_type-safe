@@ -1,9 +1,9 @@
 package delivery.user.routes
 
-import delivery.shared.api.RegisteredAPIMessage
-import delivery.shared.api.RegisteredAPIMessage.{api, apiWithRole}
-import delivery.shared.json.ApiJsonCodecs.given
-import delivery.shared.objects.apiTypes.OkResponse
+import delivery.platform.api.RegisteredAPIMessage
+import delivery.platform.api.RegisteredAPIMessage.{api, apiWithRole}
+import delivery.platform.json.ApiJsonCodecs.given
+import delivery.domain.apiTypes.OkResponse
 import delivery.user.api.*
 import delivery.user.objects.apiTypes.{CustomerMeResponse, CustomerWalletTopUpResponse, LoginResponse}
 import io.circe.generic.auto.*

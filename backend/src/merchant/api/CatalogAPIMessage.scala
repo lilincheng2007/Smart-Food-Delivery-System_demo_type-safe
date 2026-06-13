@@ -6,8 +6,8 @@ import delivery.merchant.objects.apiTypes.CatalogResponse
 import delivery.merchant.tables.catalogproduct.CatalogProductTable
 import delivery.merchant.tables.merchantstore.MerchantStoreTable
 import delivery.review.tables.MerchantReviewTable
-import delivery.shared.api.APIMessage
-import delivery.shared.objects.ListingStatus
+import delivery.platform.api.APIMessage
+import delivery.domain.ListingStatus
 
 import java.sql.Connection
 

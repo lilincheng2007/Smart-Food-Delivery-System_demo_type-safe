@@ -1,6 +1,6 @@
 package delivery.order.api
 
-import delivery.shared.objects.OrderStatus
+import delivery.domain.OrderStatus
 
 object OrderStatusTransitionRules:
   private val allowedTransitions: Map[(OrderStatus, OrderStatus), Set[String]] = Map(

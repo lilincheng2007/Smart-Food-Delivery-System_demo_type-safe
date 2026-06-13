@@ -3,7 +3,7 @@ package delivery.admin.api
 import cats.effect.IO
 import delivery.admin.objects.apiTypes.PlatformPromotionsResponse
 import delivery.admin.tables.platformpromotion.PlatformPromotionTable
-import delivery.shared.api.APIWithRoleMessage
+import delivery.platform.api.APIWithRoleMessage
 
 import java.sql.Connection
 

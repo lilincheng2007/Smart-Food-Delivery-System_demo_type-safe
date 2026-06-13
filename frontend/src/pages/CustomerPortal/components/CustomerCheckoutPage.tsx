@@ -18,7 +18,7 @@ import { cartLineKey } from '@/lib/cart-inventory'
 import { createOrderPriceBreakdown, priceBreakdownAmountClassName, priceBreakdownAmountText } from '@/lib/order-price-breakdown'
 import { bestPromotion, promotionDisplayName, promotionSummary, roundMoney } from '@/lib/promotions'
 import type { MerchantId } from '@/objects/shared/ids'
-import { useCustomerPortalStore } from '@/stores/pages/use-customer-portal-store'
+import { useCustomerPortalStore } from '@/pages/CustomerPortal/stores/use-customer-portal-store'
 
 import { DeliveryContactAddDialog } from './DeliveryContactAddDialog'
 import { discountRateText } from '../functions/priceDisplay'

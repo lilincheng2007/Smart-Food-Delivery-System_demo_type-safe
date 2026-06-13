@@ -5,7 +5,7 @@ import delivery.order.tables.order.OrderTable
 import delivery.rider.objects.apiTypes.RiderAvailableOrdersResponse
 import delivery.rider.tables.rideraccount.RiderAccountTable
 import delivery.rider.utils.RiderApiSupport
-import delivery.shared.api.{APIWithRoleMessage, HttpApiError}
+import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
 
 import java.sql.Connection
 

@@ -1,7 +1,7 @@
 package delivery.rider.tables.riderprofile
 
 import cats.effect.IO
-import delivery.shared.objects.RiderStatus
+import delivery.domain.RiderStatus
 
 import java.sql.Connection
 

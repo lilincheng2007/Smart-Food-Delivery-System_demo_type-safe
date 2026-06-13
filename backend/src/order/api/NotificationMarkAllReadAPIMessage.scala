@@ -2,8 +2,8 @@ package delivery.order.api
 
 import cats.effect.IO
 import delivery.order.tables.notificationreadstate.NotificationReadStateTable
-import delivery.shared.api.APIWithRoleMessage
-import delivery.shared.objects.apiTypes.OkResponse
+import delivery.platform.api.APIWithRoleMessage
+import delivery.domain.apiTypes.OkResponse
 
 import java.sql.Connection
 

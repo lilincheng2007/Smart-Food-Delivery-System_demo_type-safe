@@ -1,7 +1,7 @@
 package delivery.merchant.tables.catalogproduct
 
 import cats.effect.IO
-import delivery.shared.objects.{InventoryStatus, ListingStatus}
+import delivery.domain.{InventoryStatus, ListingStatus}
 
 import java.sql.Connection
 

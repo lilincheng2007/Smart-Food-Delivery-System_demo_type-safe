@@ -1,6 +1,6 @@
 package delivery.admin.objects.apiTypes
 
-import delivery.shared.objects.Promotion
+import delivery.domain.Promotion
 
 final case class PlatformPromotionsResponse(promotions: List[Promotion])
 
