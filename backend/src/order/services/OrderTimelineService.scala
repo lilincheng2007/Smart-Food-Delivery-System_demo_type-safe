@@ -1,9 +1,9 @@
-package delivery.order.api
+package delivery.order.services
 
 import delivery.order.objects.{Order, OrderTimelineEvent}
 import delivery.domain.OrderStatus
 
-object OrderStatusTimelineSupport:
+object OrderTimelineService:
   def appendTransitionEvents(order: Order, previousStatus: OrderStatus, targetStatus: OrderStatus, actorRole: String, occurredAt: String): Order =
     val events = transitionEvents(previousStatus, targetStatus, actorRole, occurredAt)
     if events.isEmpty then order
@@ -33,4 +33,4 @@ object OrderStatusTimelineSupport:
         List(OrderTimelineEvent("refunded", "已退款", occurredAt, Some("订单已退款")))
       case _ => Nil
 
-end OrderStatusTimelineSupport
+end OrderTimelineService

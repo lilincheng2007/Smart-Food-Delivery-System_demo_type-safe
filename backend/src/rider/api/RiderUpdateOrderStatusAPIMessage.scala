@@ -1,7 +1,7 @@
 package delivery.rider.api
 
 import cats.effect.IO
-import delivery.order.api.OrderStatusTransitionService
+import delivery.order.services.OrderStatusTransitionService
 import delivery.order.tables.order.OrderTable
 import delivery.rider.objects.RiderDeliverySettlement
 import delivery.rider.tables.rideraccount.RiderAccountTable

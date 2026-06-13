@@ -2,7 +2,7 @@ package delivery.merchant.api
 
 import delivery.merchant.services.MerchantBusinessService
 import cats.effect.IO
-import delivery.order.api.OrderChatNotificationTemplates
+import delivery.order.services.OrderChatNotificationTemplateService
 import delivery.order.objects.{OrderChatMessage, OrderTimelineEvent}
 import delivery.order.tables.order.OrderTable
 import delivery.order.tables.orderchat.OrderChatMessageTable
@@ -55,7 +55,7 @@ final case class MerchantOrderPrepDelayAPIMessage(orderId: OrderId, extraMinutes
         senderRole = "merchant",
         peerRole = "customer",
         messageType = "text",
-        content = OrderChatNotificationTemplates.merchantPrepDelayed(order, reason),
+        content = OrderChatNotificationTemplateService.merchantPrepDelayed(order, reason),
         createdAt = Instant.now().toString
       )
     ).void

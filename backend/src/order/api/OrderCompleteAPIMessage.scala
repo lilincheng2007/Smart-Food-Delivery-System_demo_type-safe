@@ -1,6 +1,6 @@
 package delivery.order.api
 
-import delivery.order.services.OrderCheckoutService
+import delivery.order.services.{OrderCheckoutService, OrderStatusTransitionService}
 import cats.effect.IO
 import delivery.order.objects.Order
 import delivery.order.tables.order.OrderTable

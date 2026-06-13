@@ -3,7 +3,7 @@ package delivery.merchant.api
 import delivery.merchant.services.MerchantBusinessService
 import delivery.order.services.OrderCheckoutService
 import cats.effect.IO
-import delivery.order.api.OrderStatusTransitionService
+import delivery.order.services.OrderStatusTransitionService
 import delivery.order.tables.order.OrderTable
 import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
 import delivery.domain.{OrderId, OrderStatus}

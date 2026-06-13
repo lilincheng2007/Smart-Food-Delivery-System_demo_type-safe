@@ -1,6 +1,6 @@
 package delivery.order.api
 
-import delivery.order.services.OrderCheckoutService
+import delivery.order.services.{OrderCheckoutService, OrderChatNotificationTemplateService}
 import cats.effect.IO
 import cats.syntax.all.*
 import delivery.order.objects.{Order, OrderChatMessage}
@@ -56,7 +56,7 @@ final case class CustomerOrdersAPIMessage() extends APIWithRoleMessage[CustomerO
         senderRole = "merchant",
         peerRole = "customer",
         messageType = "text",
-        content = OrderChatNotificationTemplates.merchantPrepTimeout(order),
+        content = OrderChatNotificationTemplateService.merchantPrepTimeout(order),
         createdAt = Instant.now().toString
       )
     ).void

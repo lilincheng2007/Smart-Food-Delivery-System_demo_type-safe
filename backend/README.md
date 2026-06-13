@@ -430,7 +430,7 @@ CustomerVoucherDiscardAPIMessage -> POST /api/customervoucherdiscardapi
 
 - 商家只能操作自己拥有的店铺与商品。
 - 店铺资料支持描述、公告、图片、营业状态、每周营业时间、节假日特殊营业时间。
-- 顾客下单时后端通过 `MerchantBusinessHoursSupport` 校验店铺是否可接单。
+- 顾客下单时后端通过 `MerchantBusinessHoursService` 校验店铺是否可接单。
 - 商品支持普通菜品和套餐；套餐配置由 `ProductBundleGroup` 描述，并在创建/更新时校验选项归属。
 - 商品支持上下架、库存模式、每单限购、图片上传。
 - 店铺优惠、菜品优惠、平台优惠均有排期和启停状态；结算时以后端计算为准。
@@ -440,8 +440,8 @@ CustomerVoucherDiscardAPIMessage -> POST /api/customervoucherdiscardapi
 - 结算会创建订单、订单项、价格快照和结构化价格明细，并扣减钱包余额。
 - 下单时锁定商品行校验上下架、营业状态、售罄、库存不足和每单限购，并扣减有限库存。
 - 取消订单和退款通过后会退回实付金额。
-- 订单状态流转集中在 `OrderStatusTransitionService.scala`，规则在 `OrderStatusTransitionRules.scala`。
-- 状态变化通过 `OrderStatusTimelineSupport.scala` 追加时间线事件。
+- 订单状态流转集中在 `order/services/OrderStatusTransitionService.scala`，规则在 `order/validators/OrderStatusTransitionValidator.scala`。
+- 状态变化通过 `order/services/OrderTimelineService.scala` 追加时间线事件。
 - 商家接单可设置预计备餐时间；商家可主动延迟备餐并通知顾客。
 - 商家出餐、骑手送达等状态变化会自动写入系统聊天消息。
 

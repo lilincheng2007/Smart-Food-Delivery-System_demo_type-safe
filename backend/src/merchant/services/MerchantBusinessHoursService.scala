@@ -1,11 +1,11 @@
-package delivery.merchant.api
+package delivery.merchant.services
 
 import delivery.merchant.objects.{Merchant, MerchantHolidayBusinessHour, MerchantWeeklyBusinessHour}
 
 import java.time.{LocalDate, LocalTime, ZonedDateTime}
 import scala.util.Try
 
-object MerchantBusinessHoursSupport:
+object MerchantBusinessHoursService:
   val Open = "open"
   val Resting = "resting"
   val ClosedToday = "closedToday"
@@ -79,4 +79,4 @@ object MerchantBusinessHoursSupport:
 
   final case class Availability(isOpen: Boolean, status: String, nextOpenText: Option[String])
 
-end MerchantBusinessHoursSupport
+end MerchantBusinessHoursService

@@ -2,6 +2,7 @@ package delivery.merchant.api
 
 import cats.effect.IO
 import delivery.merchant.objects.{MerchantHolidayBusinessHour, MerchantWeeklyBusinessHour}
+import delivery.merchant.services.MerchantBusinessHoursService
 import delivery.merchant.tables.merchantstore.MerchantStoreTable
 import delivery.merchant.utils.MerchantApiSupport
 import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
@@ -17,13 +18,13 @@ final case class MerchantBusinessHoursAPIMessage(
     holidayBusinessHours: List[MerchantHolidayBusinessHour]
 ) extends APIWithRoleMessage[OkResponse]:
   override def plan(connection: Connection, username: String): IO[OkResponse] =
-    val status = MerchantBusinessHoursSupport.normalizeStatus(businessStatus)
+    val status = MerchantBusinessHoursService.normalizeStatus(businessStatus)
     val normalizedWeekly = weeklyBusinessHours
       .filter(hour => hour.dayOfWeek >= 1 && hour.dayOfWeek <= 7 && validTime(hour.startTime) && validTime(hour.endTime) && hour.startTime != hour.endTime)
       .take(28)
     val normalizedHoliday = holidayBusinessHours
       .filter(item => item.date.matches("\\d{4}-\\d{2}-\\d{2}"))
-      .map(item => item.copy(businessStatus = MerchantBusinessHoursSupport.normalizeStatus(item.businessStatus)))
+      .map(item => item.copy(businessStatus = MerchantBusinessHoursService.normalizeStatus(item.businessStatus)))
       .take(40)
 
     for

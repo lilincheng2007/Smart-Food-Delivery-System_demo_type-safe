@@ -4,7 +4,7 @@ import delivery.merchant.services.MerchantBusinessService
 import cats.effect.IO
 import cats.syntax.all.*
 import delivery.merchant.objects.apiTypes.MerchantRefundRequestsResponse
-import delivery.order.api.RefundWorkflowSupport
+import delivery.order.services.RefundWorkflowService
 import delivery.order.objects.Order
 import delivery.order.tables.order.OrderTable
 import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
@@ -26,9 +26,9 @@ final case class MerchantRefundRequestsAPIMessage() extends APIWithRoleMessage[M
 
   private def autoAcceptOverdue(connection: Connection, orders: List[Order], now: Instant): IO[Unit] =
     orders
-      .filter(order => RefundWorkflowSupport.isMerchantPending(order.refundStatus) && isOverdue(order.refundRequestedAt, now))
+      .filter(order => RefundWorkflowService.isMerchantPending(order.refundStatus) && isOverdue(order.refundRequestedAt, now))
       .traverse_(order =>
-        RefundWorkflowSupport.acceptRefund(
+        RefundWorkflowService.acceptRefund(
           connection,
           order,
           merchantReason = Some("商家超过30分钟未处理，系统自动通过退款"),

@@ -1,7 +1,7 @@
 package delivery.admin.api
 
 import cats.effect.IO
-import delivery.order.api.RefundWorkflowSupport
+import delivery.order.services.RefundWorkflowService
 import delivery.order.tables.order.OrderTable
 import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
 import delivery.domain.{OrderId, RefundStatus}
@@ -18,9 +18,9 @@ final case class AdminRefundAcceptAPIMessage(orderId: OrderId, reason: Option[St
         case None        => IO.raiseError(HttpApiError.BadRequest("未找到订单"))
       }
       _ <-
-        if !RefundWorkflowSupport.isAdminPending(order.refundStatus) then IO.raiseError(HttpApiError.BadRequest("该订单没有待管理员仲裁的退款申请"))
+        if !RefundWorkflowService.isAdminPending(order.refundStatus) then IO.raiseError(HttpApiError.BadRequest("该订单没有待管理员仲裁的退款申请"))
         else IO.unit
-      _ <- RefundWorkflowSupport.acceptRefund(
+      _ <- RefundWorkflowService.acceptRefund(
         connection,
         order,
         merchantReason = None,

@@ -2,7 +2,7 @@ package delivery.merchant.api
 
 import delivery.merchant.services.MerchantBusinessService
 import cats.effect.IO
-import delivery.order.api.RefundWorkflowSupport
+import delivery.order.services.RefundWorkflowService
 import delivery.order.tables.order.OrderTable
 import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
 import delivery.domain.{OrderId, RefundStatus}
@@ -21,7 +21,7 @@ final case class MerchantRefundRejectAPIMessage(orderId: OrderId, reason: String
       }
       _ <- MerchantBusinessService.requireOwnedStore(connection, username, order.merchantId)
       _ <-
-        if !RefundWorkflowSupport.isMerchantPending(order.refundStatus) then IO.raiseError(HttpApiError.BadRequest("该订单没有待商家处理的退款申请"))
+        if !RefundWorkflowService.isMerchantPending(order.refundStatus) then IO.raiseError(HttpApiError.BadRequest("该订单没有待商家处理的退款申请"))
         else if trimmedReason.isEmpty then IO.raiseError(HttpApiError.BadRequest("驳回理由不能为空"))
         else IO.unit
       now <- IO.realTimeInstant.map(_.toString)

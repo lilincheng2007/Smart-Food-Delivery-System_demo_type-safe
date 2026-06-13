@@ -1,10 +1,11 @@
-package delivery.order.api
+package delivery.order.services
 
 import cats.effect.IO
 import cats.syntax.all.*
 import delivery.order.objects.{Order, OrderChatMessage}
 import delivery.order.tables.order.OrderTable
 import delivery.order.tables.orderchat.OrderChatMessageTable
+import delivery.order.validators.OrderStatusTransitionValidator
 import delivery.platform.api.HttpApiError
 import delivery.domain.OrderStatus
 
@@ -23,17 +24,17 @@ object OrderStatusTransitionService:
     for
       _ <- validate(order.status, targetStatus, actorRole)
       now <- IO.realTime.map(duration => Instant.ofEpochMilli(duration.toMillis).toString)
-      updated = OrderStatusTimelineSupport.appendTransitionEvents(patch(order.copy(status = targetStatus)), order.status, targetStatus, actorRole, now)
+      updated = OrderTimelineService.appendTransitionEvents(patch(order.copy(status = targetStatus)), order.status, targetStatus, actorRole, now)
       _ <- OrderTable.upsert(connection, updated)
       _ <- emitTransitionMessages(connection, order, updated, actorRole)
     yield updated
 
   def canTransition(from: OrderStatus, to: OrderStatus, actorRole: String): Boolean =
-    OrderStatusTransitionRules.canTransition(from, to, actorRole)
+    OrderStatusTransitionValidator.canTransition(from, to, actorRole)
 
   private def validate(from: OrderStatus, to: OrderStatus, actorRole: String): IO[Unit] =
     if canTransition(from, to, actorRole) then IO.unit
-    else IO.raiseError(HttpApiError.BadRequest(OrderStatusTransitionRules.invalidTransitionMessage(from, to, actorRole)))
+    else IO.raiseError(HttpApiError.BadRequest(OrderStatusTransitionValidator.invalidTransitionMessage(from, to, actorRole)))
 
   private def emitTransitionMessages(connection: Connection, previous: Order, updated: Order, actorRole: String): IO[Unit] =
     (previous.status, updated.status, actorRole) match
@@ -43,7 +44,7 @@ object OrderStatusTransitionService:
           updated,
           senderRole = "merchant",
           peerRole = "customer",
-          content = OrderChatNotificationTemplates.merchantOrderAccepted(updated)
+          content = OrderChatNotificationTemplateService.merchantOrderAccepted(updated)
         )
       case (OrderStatus.制作中, OrderStatus.待骑手接单, "merchant") =>
         createSystemChatMessage(
@@ -51,7 +52,7 @@ object OrderStatusTransitionService:
           updated,
           senderRole = "merchant",
           peerRole = "customer",
-          content = OrderChatNotificationTemplates.merchantOrderReady(updated)
+          content = OrderChatNotificationTemplateService.merchantOrderReady(updated)
         )
       case (OrderStatus.配送中, OrderStatus.已送达, "rider") =>
         createSystemChatMessage(
@@ -59,7 +60,7 @@ object OrderStatusTransitionService:
           updated,
           senderRole = "rider",
           peerRole = "customer",
-          content = OrderChatNotificationTemplates.riderOrderDelivered(updated)
+          content = OrderChatNotificationTemplateService.riderOrderDelivered(updated)
         )
       case _ => IO.unit
 

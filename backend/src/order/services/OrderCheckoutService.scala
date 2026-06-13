@@ -1,7 +1,7 @@
 package delivery.order.services
 
 import cats.effect.IO
-import delivery.merchant.api.MerchantBusinessHoursSupport
+import delivery.merchant.services.MerchantBusinessHoursService
 import delivery.merchant.objects.{Merchant, Product}
 import delivery.order.objects.{CheckoutLine, Order, OrderItem, OrderPriceBreakdown, OrderPriceBreakdownLine, OrderPriceSnapshot, OrderPriceSnapshotItem, OrderTimelineEvent}
 import delivery.order.objects.apiTypes.OrderMerchantNote
@@ -135,7 +135,7 @@ object OrderCheckoutService:
         else
           val merchantsById = merchants.map(merchant => merchant.id -> merchant).toMap
           val closedMerchantMessage = grouped.flatMap { case (merchantId, _) =>
-            merchantsById.get(merchantId).filterNot(MerchantBusinessHoursSupport.isAcceptingOrders(_)).map(merchant => MerchantBusinessHoursSupport.unavailableMessage(merchant))
+            merchantsById.get(merchantId).filterNot(MerchantBusinessHoursService.isAcceptingOrders(_)).map(merchant => MerchantBusinessHoursService.unavailableMessage(merchant))
           }.headOption
           val rawOrders = grouped.flatMap { case (merchantId, groupLines) =>
             val items = groupLines.flatMap { line =>

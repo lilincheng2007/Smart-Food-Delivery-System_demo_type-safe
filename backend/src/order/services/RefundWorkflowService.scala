@@ -1,4 +1,4 @@
-package delivery.order.api
+package delivery.order.services
 
 import delivery.order.services.OrderCheckoutService
 import cats.effect.IO
@@ -9,7 +9,7 @@ import delivery.user.tables.customerprofile.CustomerProfileTable
 
 import java.sql.Connection
 
-object RefundWorkflowSupport:
+object RefundWorkflowService:
 
   def isMerchantPending(status: Option[RefundStatus]): Boolean =
     status.exists(value => value == RefundStatus.待商家审核 || value == RefundStatus.待审核)
@@ -55,4 +55,4 @@ object RefundWorkflowSupport:
       _ <- CustomerProfileTable.upsert(connection, account.copy(profile = nextProfile))
     yield refundedOrder
 
-end RefundWorkflowSupport
+end RefundWorkflowService

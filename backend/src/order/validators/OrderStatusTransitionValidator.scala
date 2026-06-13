@@ -1,8 +1,8 @@
-package delivery.order.api
+package delivery.order.validators
 
 import delivery.domain.OrderStatus
 
-object OrderStatusTransitionRules:
+object OrderStatusTransitionValidator:
   private val allowedTransitions: Map[(OrderStatus, OrderStatus), Set[String]] = Map(
     (OrderStatus.待商家接单, OrderStatus.制作中) -> Set("merchant"),
     (OrderStatus.待商家接单, OrderStatus.已取消) -> Set("customer", "merchant"),
@@ -27,4 +27,4 @@ object OrderStatusTransitionRules:
   def invalidTransitionMessage(from: OrderStatus, to: OrderStatus, actorRole: String): String =
     s"当前状态不可由${actorLabel(actorRole)}从${from}变更为${to}"
 
-end OrderStatusTransitionRules
+end OrderStatusTransitionValidator

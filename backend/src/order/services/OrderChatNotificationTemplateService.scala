@@ -1,8 +1,8 @@
-package delivery.order.api
+package delivery.order.services
 
 import delivery.order.objects.Order
 
-object OrderChatNotificationTemplates:
+object OrderChatNotificationTemplateService:
   def merchantOrderAccepted(order: Order): String =
     val prepText = order.estimatedPrepMinutes.map(minutes => s"预计备餐${minutes}分钟").getOrElse("商家正在安排备餐")
     val readyText = order.estimatedReadyAt.map(value => s"，预计${value}出餐").getOrElse("")

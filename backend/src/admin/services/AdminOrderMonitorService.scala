@@ -1,4 +1,4 @@
-package delivery.admin.api
+package delivery.admin.services
 
 import delivery.admin.objects.apiTypes.AdminOrderMonitorItem
 import delivery.order.objects.Order
@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
 import scala.util.Try
 
-object AdminOrderMonitorSupport:
+object AdminOrderMonitorService:
   private val PlacedAtFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
   private val MerchantAcceptTimeoutMinutes = 10
   private val MerchantReadyTimeoutMinutes = 30
@@ -64,4 +64,4 @@ object AdminOrderMonitorSupport:
   private def parseInstant(value: String): Option[Instant] =
     Try(Instant.parse(value)).toOption
 
-end AdminOrderMonitorSupport
+end AdminOrderMonitorService
