@@ -449,6 +449,7 @@ CustomerVoucherDiscardAPIMessage -> POST /api/customervoucherdiscardapi
 
 - 顾客、商家、骑手使用分角色聊天 API，消息持久化到 `order_chat_messages`。
 - 聊天图片、退款图片、评价图片走 `StoredImageRoutes` 和 `stored_images` 元数据表。
+- `notificationfeedapi` 统一聚合订单、退款、聊天和入驻审核事实源，前端仅负责展示和轮询。
 - 全局通知中心的已读状态通过 `notification_read_states` 持久化，支持单条已读和全部已读。
 
 ### 评价与退款

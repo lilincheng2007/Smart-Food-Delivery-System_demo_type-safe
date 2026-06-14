@@ -2,7 +2,7 @@ package delivery.order.routes
 
 import delivery.order.api.*
 import delivery.order.objects.Order
-import delivery.order.objects.apiTypes.{CheckoutResponse, CustomerOrdersResponse, NotificationReadStatesResponse, OrderCancelResponse, OrderChatMessagesResponse, OrderChatUnreadCountsResponse, OrderRefundRequestResponse}
+import delivery.order.objects.apiTypes.{CheckoutQuoteResponse, CheckoutResponse, CustomerOrdersResponse, NotificationFeedResponse, NotificationReadStatesResponse, OrderCancelResponse, OrderChatMessagesResponse, OrderChatUnreadCountsResponse, OrderRefundRequestResponse}
 import delivery.platform.api.RegisteredAPIMessage
 import delivery.platform.api.RegisteredAPIMessage.{apiWithRole, apiWithRoles}
 import delivery.platform.json.ApiJsonCodecs.given
@@ -30,9 +30,11 @@ object OrderRoutes:
     apiWithRole[RiderOrderChatMessagesAPIMessage, OrderChatMessagesResponse]("rider"),
     apiWithRole[RiderSendOrderChatMessageAPIMessage, OrderChatMessagesResponse]("rider"),
     apiWithRole[RiderOrderChatUnreadCountsAPIMessage, OrderChatUnreadCountsResponse]("rider"),
+    apiWithRoles[NotificationFeedAPIMessage, NotificationFeedResponse](Set("customer", "merchant", "rider", "admin")),
     apiWithRoles[NotificationReadStatesAPIMessage, NotificationReadStatesResponse](Set("customer", "merchant", "rider", "admin")),
     apiWithRoles[NotificationMarkReadAPIMessage, delivery.domain.apiTypes.OkResponse](Set("customer", "merchant", "rider", "admin")),
     apiWithRoles[NotificationMarkAllReadAPIMessage, delivery.domain.apiTypes.OkResponse](Set("customer", "merchant", "rider", "admin")),
+    apiWithRole[CheckoutQuoteAPIMessage, CheckoutQuoteResponse]("customer"),
     apiWithRole[CheckoutAPIMessage, CheckoutResponse]("customer")
     )
     val requiredNames = Set(

@@ -1,336 +1,72 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Bell } from 'lucide-react'
 
-import { fetchAdminRefundRequestsIO } from '@/apis/admin/AdminRefundRequestsAPI'
-import { fetchAdminStoreOnboardingRequestsIO } from '@/apis/admin/AdminStoreOnboardingRequestsAPI'
-import { fetchCatalogIO } from '@/apis/merchant/CatalogAPI'
-import { fetchMerchantMeIO } from '@/apis/merchant/MerchantMeAPI'
-import { fetchMerchantRefundRequestsIO } from '@/apis/merchant/MerchantRefundRequestsAPI'
-import { fetchCustomerOrdersIO } from '@/apis/order/CustomerOrdersAPI'
 import { markAllNotificationsReadIO } from '@/apis/order/NotificationMarkAllReadAPI'
 import { markNotificationReadIO } from '@/apis/order/NotificationMarkReadAPI'
-import { fetchNotificationReadStatesIO } from '@/apis/order/NotificationReadStatesAPI'
-import { fetchOrderChatUnreadCountsIO } from '@/apis/order/OrderChatClient'
-import { fetchMerchantReviewsIO } from '@/apis/review/MerchantReviewsAPI'
-import { fetchRiderMeIO } from '@/apis/rider/RiderMeAPI'
-import { fetchCustomerMeIO } from '@/apis/user/CustomerMeAPI'
+import { fetchNotificationFeedIO } from '@/apis/order/NotificationFeedAPI'
 import { useAuthSession } from '@/hooks/useAuthSession'
-import type { AuthSession } from '@/lib/auth-session'
 import { cn } from '@/lib/utils'
-import type { Merchant } from '@/objects/merchant/Merchant'
-import type { OrderChatUnreadCount } from '@/objects/order/OrderChatUnreadCount'
-import type { Promotion } from '@/objects/shared/Promotion'
-import { OrderStatuses, RefundStatuses, UserRoles } from '@/objects/shared/ids'
-
-import {
-  formatNotificationTime,
-  latestMessageSummary,
-  makeNotification,
-  merchantName,
-  mergeNotifications,
-  peerDisplayName,
-  refundFeedbackMessage,
-  roleLabel,
-  type NotificationContext,
-} from './notifications/notificationDisplay'
-import {
-  readNotifications,
-  readSnapshot,
-  writeNotifications,
-  writeSnapshot,
-  type GlobalNotification,
-  type NotificationSnapshot,
-} from './notifications/notificationStorage'
+import type { NotificationFeedItem } from '@/objects/order/apiTypes/NotificationFeedResponse'
+import { UserRoles } from '@/objects/shared/ids'
 
 const pollIntervalMs = 8000
 
-function enabledPromotionKeys(merchants: Merchant[], platformPromotions: Promotion[]) {
-  const platform = platformPromotions
-    .filter((promotion) => promotion.enabled)
-    .map((promotion) => `platform:${promotion.id}:${promotion.title}`)
-  const merchant = merchants.flatMap((store) =>
-    (store.promotions ?? [])
-      .filter((promotion) => promotion.enabled)
-      .map((promotion) => `merchant:${store.id}:${promotion.id}:${promotion.title}`),
-  )
-  return [...platform, ...merchant]
-}
-
-async function customerEvents() {
-  const [me, ordersResponse, catalog, unreadResponse] = await Promise.all([
-    fetchCustomerMeIO()(),
-    fetchCustomerOrdersIO()(),
-    fetchCatalogIO()(),
-    fetchOrderChatUnreadCountsIO()(),
-  ])
-  const orders = [...ordersResponse.pendingOrders, ...ordersResponse.historyOrders]
-  const context: NotificationContext = { orders, merchants: catalog.merchants }
-  const customerId = me.customerAccount.profile.id
-  const reviewMerchantIds = [...new Set(orders.map((order) => order.merchantId))]
-  const reviewResponses = await Promise.all(reviewMerchantIds.map((merchantId) => fetchMerchantReviewsIO(merchantId)().catch(() => null)))
-  const reviewReplyEvents = reviewResponses.flatMap((response) =>
-    (response?.reviews ?? [])
-      .filter((review) => review.customerId === customerId && Boolean(review.merchantReply?.trim()))
-      .map((review) => ({
-        key: `customer-review-reply:${review.id}:${review.merchantReplyAt ?? review.merchantReply}`,
-        message: `店铺「${catalog.merchants.find((merchant) => merchant.id === review.merchantId)?.storeName ?? review.merchantId}」回复了你对订单 ${review.orderId} 的评价`,
-        target: `/delivery/customer/m/${encodeURIComponent(review.merchantId)}`,
-      })),
-  )
-
-  return {
-    chatCounts: unreadResponse.counts,
-    context,
-    events: [
-      ...orders.map((order) => ({
-        key: `customer-order-created:${order.id}`,
-        message: `你已向店铺「${merchantName(order, context)}」下单，订单 ${order.id} 已创建`,
-        target: '/delivery/customer?tab=profile',
-      })),
-      ...orders
-        .filter((order) => order.status === OrderStatuses.delivered)
-        .map((order) => ({
-          key: `customer-order-delivered:${order.id}`,
-          message: `店铺「${merchantName(order, context)}」的订单 ${order.id} 已送达`,
-          target: '/delivery/customer?tab=profile',
-        })),
-      ...orders.flatMap((order) => {
-        const message = refundFeedbackMessage(order, context)
-        return message && order.refundStatus
-          ? [{ key: `customer-refund:${order.id}:${order.refundStatus}:${order.refundMerchantReason ?? ''}:${order.refundAdminReason ?? ''}`, message, target: '/delivery/customer?tab=profile' }]
-          : []
-      }),
-      ...enabledPromotionKeys(catalog.merchants, catalog.platformPromotions ?? []).map((key) => ({
-        key: `customer-promotion:${key}`,
-        message: key.startsWith('platform:')
-          ? `平台推出了新的优惠：${key.split(':')[2] ?? '优惠'}`
-          : `店铺「${catalog.merchants.find((merchant) => merchant.id === key.split(':')[1])?.storeName ?? key.split(':')[1] ?? '商家'}」推出了新的优惠：${key.split(':')[3] ?? '优惠'}`,
-        target: '/delivery/customer?tab=home',
-      })),
-      ...reviewReplyEvents,
-    ],
-  }
-}
-
-async function merchantEvents() {
-  const [me, refunds, unreadResponse] = await Promise.all([
-    fetchMerchantMeIO()(),
-    fetchMerchantRefundRequestsIO()().catch(() => ({ requests: [] })),
-    fetchOrderChatUnreadCountsIO()(),
-  ])
-  const stores = me.merchantAccount.profile.stores ?? []
-  const orders = stores.flatMap((store) => [...store.pendingOrders, ...store.historyOrders])
-  const merchants = stores.map((store) => store.merchant)
-  const context: NotificationContext = { orders, merchants }
-  const onboardingEvents = (me.onboardingRequests ?? [])
-    .filter((request) => request.status !== 'pending')
-    .map((request) => ({
-      key: `merchant-onboarding:${request.id}:${request.status}:${request.reviewedAt ?? ''}`,
-      message: request.status === 'accepted' ? `店铺「${request.storeName}」入驻申请已通过` : `店铺「${request.storeName}」入驻申请已驳回`,
-      target: '/delivery/merchant?tab=profile',
-    }))
-
-  return {
-    chatCounts: unreadResponse.counts,
-    context,
-    events: [
-      ...onboardingEvents,
-      ...refunds.requests
-        .filter((order) => order.refundStatus === RefundStatuses.pending || order.refundStatus === RefundStatuses.legacyPending)
-        .map((order) => ({
-          key: `merchant-refund-request:${order.id}:${order.refundRequestedAt ?? ''}`,
-          message: `顾客「${order.customerName || order.customerId}」向店铺「${merchantName(order, context)}」提出订单 ${order.id} 的退款申请：${order.refundReason || '未填写原因'}`,
-          target: '/delivery/merchant?tab=reviews',
-        })),
-      ...refunds.requests
-        .filter((order) => order.refundStatus === RefundStatuses.accepted && Boolean(order.refundAdminReason?.trim()))
-        .map((order) => ({
-          key: `merchant-refund-forced:${order.id}:${order.refundedAt ?? order.refundAdminReason ?? ''}`,
-          message: `平台已强制通过顾客「${order.customerName || order.customerId}」对店铺「${merchantName(order, context)}」订单 ${order.id} 的退款申请`,
-          target: '/delivery/merchant?tab=reviews',
-        })),
-    ],
-  }
-}
-
-async function adminEvents() {
-  const [onboarding, refunds] = await Promise.all([
-    fetchAdminStoreOnboardingRequestsIO()(),
-    fetchAdminRefundRequestsIO()().catch(() => ({ requests: [] })),
-  ])
-  return {
-    chatCounts: [],
-    events: [
-      ...onboarding.requests
-        .filter((request) => request.status === 'pending')
-        .map((request) => ({
-          key: `admin-onboarding:${request.id}:${request.createdAt}`,
-          message: `商家账号「${request.ownerUsername}」提交了店铺「${request.storeName}」入驻申请`,
-          target: '/delivery/admin',
-        })),
-      ...refunds.requests
-        .filter((order) => order.refundStatus === RefundStatuses.adminPending)
-        .map((order) => ({
-          key: `admin-refund:${order.id}:${order.refundRequestedAt ?? ''}:${order.refundMerchantReviewedAt ?? ''}`,
-          message: `顾客「${order.customerName || order.customerId}」提交了订单 ${order.id} 的退款仲裁申请`,
-          target: '/delivery/admin',
-        })),
-    ],
-  }
-}
-
-async function riderEvents() {
-  const [me, catalog, unreadResponse] = await Promise.all([
-    fetchRiderMeIO()(),
-    fetchCatalogIO()().catch(() => ({ merchants: [], products: [], platformPromotions: [] })),
-    fetchOrderChatUnreadCountsIO()(),
-  ])
-  const orders = [
-    ...(me.riderAccount.profile.pendingOrders ?? []),
-    ...(me.riderAccount.profile.historyOrders ?? []),
-    ...(me.availableOrders ?? []),
-  ]
-  return {
-    chatCounts: unreadResponse.counts,
-    context: {
-      orders,
-      merchants: catalog.merchants,
-      currentRider: me.riderAccount.profile.rider,
-    } satisfies NotificationContext,
-    events: [],
-  }
-}
-
-async function collectEvents(session: AuthSession): Promise<{ chatCounts: OrderChatUnreadCount[]; events: Array<{ key: string; message: string; target: string }>; context: NotificationContext }> {
-  if (session.role === UserRoles.customer) return customerEvents()
-  if (session.role === UserRoles.merchant) return merchantEvents()
-  if (session.role === UserRoles.admin) return { ...(await adminEvents()), context: { orders: [], merchants: [] } }
-  if (session.role === UserRoles.rider) return riderEvents()
-  return { chatCounts: [], events: [], context: { orders: [], merchants: [] } }
-}
-
-function chatEvents(counts: OrderChatUnreadCount[], snapshot: NotificationSnapshot, context: NotificationContext) {
-  const nextChatCounts = { ...snapshot.chatCounts }
-  const notifications: GlobalNotification[] = []
-  counts.forEach((count) => {
-    const key = `${count.orderId}:${count.peerRole}`
-    const previous = snapshot.chatCounts[key] ?? 0
-    nextChatCounts[key] = count.unreadCount
-    if (count.unreadCount > previous && count.unreadCount > 0) {
-      const order = context.orders.find((item) => item.id === count.orderId)
-      const peerName = peerDisplayName(order, count.peerRole, context)
-      const storeName = merchantName(order, context)
-      notifications.push(
-        makeNotification(
-          `chat:${key}:${count.unreadCount}:${count.latestMessageType ?? ''}:${count.latestContent ?? ''}`,
-          `${roleLabel(count.peerRole)}「${peerName}」在店铺「${storeName}」的订单 ${count.orderId} 中${latestMessageSummary(count)}（${count.unreadCount} 条未读）`,
-          `/delivery/chat/${encodeURIComponent(count.orderId)}?peer=${encodeURIComponent(count.peerRole)}`,
-        ),
-      )
-    }
-  })
-  return { nextChatCounts, notifications }
+function formatNotificationTime(createdAt: string) {
+  const date = new Date(createdAt)
+  if (Number.isNaN(date.getTime())) return createdAt
+  return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
 }
 
 export function GlobalNotificationCenter() {
   const session = useAuthSession()
-  const [notifications, setNotifications] = useState<GlobalNotification[]>([])
-  const [, setReadNotificationIds] = useState<string[]>([])
+  const [notifications, setNotifications] = useState<NotificationFeedItem[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
   const [isCustomerPanelOpen, setIsCustomerPanelOpen] = useState(false)
 
   const activeSession = useMemo(() => (session && session.role ? session : null), [session])
   const isCustomerSession = activeSession?.role === UserRoles.customer
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      if (!activeSession) {
-        setNotifications([])
-        setReadNotificationIds([])
-        setIsCustomerPanelOpen(false)
-        return
-      }
-      const localNotifications = readNotifications(activeSession)
-      setNotifications(localNotifications)
-      void fetchNotificationReadStatesIO()()
-        .then((response) => {
-          setReadNotificationIds(response.readNotificationIds)
-          const readIds = new Set(response.readNotificationIds)
-          const unread = localNotifications.filter((item) => !readIds.has(item.id))
-          if (unread.length !== localNotifications.length) {
-            writeNotifications(activeSession, unread)
-            setNotifications(unread)
-          }
-        })
-        .catch(() => {})
-    }, 0)
-    return () => window.clearTimeout(timer)
-  }, [activeSession])
-
   const poll = useCallback(async () => {
     if (!activeSession) return
     try {
-      const snapshot = readSnapshot(activeSession)
-      const seenEvents = new Set(snapshot.seenEvents)
-      const [result, readResponse] = await Promise.all([collectEvents(activeSession), fetchNotificationReadStatesIO()()])
-      const readIds = new Set(readResponse.readNotificationIds)
-      setReadNotificationIds(readResponse.readNotificationIds)
-      const { nextChatCounts, notifications: chatNotifications } = chatEvents(result.chatCounts, snapshot, result.context)
-      const eventNotifications = result.events.flatMap((event) => {
-        if (seenEvents.has(event.key)) return []
-        seenEvents.add(event.key)
-        return snapshot.initialized ? [makeNotification(event.key, event.message, event.target)] : []
-      })
-      const nextSnapshot = {
-        initialized: true,
-        seenEvents: [...seenEvents].slice(-600),
-        chatCounts: nextChatCounts,
-      }
-      writeSnapshot(activeSession, nextSnapshot)
-      const nextNotifications = mergeNotifications(readNotifications(activeSession), [...chatNotifications, ...eventNotifications])
-        .filter((item) => !readIds.has(item.id))
-      writeNotifications(activeSession, nextNotifications)
-      setNotifications(nextNotifications)
+      const response = await fetchNotificationFeedIO(activeSession.role, undefined, 80)()
+      setNotifications(response.items.filter((item) => !item.isRead))
+      setUnreadCount(response.unreadCount)
     } catch {
-      // 全局通知不能打断当前页面的正常业务流程。
+      // 全局通知不能打断当前页面业务流程。
     }
   }, [activeSession])
 
   useEffect(() => {
-    if (!activeSession) return
-    const initialTimer = window.setTimeout(() => {
-      void poll()
-    }, 0)
+    if (!activeSession) {
+      setNotifications([])
+      setUnreadCount(0)
+      setIsCustomerPanelOpen(false)
+      return
+    }
+
+    void poll()
     const timer = window.setInterval(() => {
       void poll()
     }, pollIntervalMs)
+
     return () => {
-      window.clearTimeout(initialTimer)
       window.clearInterval(timer)
     }
   }, [activeSession, poll])
 
-  const updateNotifications = (next: GlobalNotification[]) => {
-    if (!activeSession) return
-    writeNotifications(activeSession, next)
-    setNotifications(next)
-  }
-
-  const markReadLocally = (ids: string[]) => {
-    setReadNotificationIds((current) => [...new Set([...current, ...ids])])
-  }
-
-  const handleClick = (notification: GlobalNotification) => {
-    const next = notifications.filter((item) => item.id !== notification.id)
-    markReadLocally([notification.id])
-    updateNotifications(next)
+  const handleClick = (notification: NotificationFeedItem) => {
+    setNotifications((current) => current.filter((item) => item.id !== notification.id))
+    setUnreadCount((current) => Math.max(0, current - 1))
     void markNotificationReadIO(notification.id)().catch(() => {})
     window.location.assign(notification.target)
   }
 
   const markAllRead = () => {
+    if (notifications.length === 0) return
     const ids = notifications.map((item) => item.id)
-    markReadLocally(ids)
-    updateNotifications([])
+    setNotifications([])
+    setUnreadCount(0)
     void markAllNotificationsReadIO(ids)().catch(() => {})
   }
 
@@ -348,7 +84,7 @@ export function GlobalNotificationCenter() {
             onClick={() => setIsCustomerPanelOpen((open) => !open)}
           >
             <Bell className="size-5" />
-            {notifications.length > 0 ? <span className="absolute right-2 top-2 size-2.5 rounded-full bg-rose-500 ring-2 ring-white" /> : null}
+            {unreadCount > 0 ? <span className="absolute right-2 top-2 size-2.5 rounded-full bg-rose-500 ring-2 ring-white" /> : null}
           </button>
 
           {isCustomerPanelOpen ? (
@@ -356,7 +92,7 @@ export function GlobalNotificationCenter() {
               <div className="flex items-center justify-between border-b border-orange-100 px-4 py-3">
                 <div>
                   <p className="font-semibold text-slate-950">最近通知</p>
-                  <p className="text-xs text-slate-500">{notifications.length > 0 ? `${notifications.length} 条未读` : '暂无未读通知'}</p>
+                  <p className="text-xs text-slate-500">{unreadCount > 0 ? `${unreadCount} 条未读` : '暂无未读通知'}</p>
                 </div>
                 {notifications.length > 0 ? (
                   <button type="button" className="text-xs font-medium text-orange-600 hover:text-orange-700" onClick={markAllRead}>

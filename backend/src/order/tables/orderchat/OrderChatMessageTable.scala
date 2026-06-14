@@ -105,7 +105,8 @@ object OrderChatMessageTable:
                 peerRole = OrderChatRole.fromString(rs.getString("sender_role")).getOrElse(OrderChatRole.customer),
                 unreadCount = rs.getInt("unread_count"),
                 latestMessageType = Option(rs.getString("latest_message_type")).flatMap(OrderChatMessageType.fromString),
-                latestContent = Option(rs.getString("latest_content"))
+                latestContent = Option(rs.getString("latest_content")),
+                latestCreatedAt = Option(rs.getTimestamp("latest_created_at")).map(_.toInstant.toString)
               )
             b.result()
           finally rs.close()

@@ -7,4 +7,5 @@ export interface OrderChatUnreadCount {
   unreadCount: number
   latestMessageType?: 'text' | 'image' | string | null
   latestContent?: string | null
+  latestCreatedAt?: string | null
 }

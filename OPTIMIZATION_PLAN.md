@@ -258,6 +258,8 @@ cd frontend && npx eslint <changed-files>
 | 2026-06-14 | 已完成第五批枚举收敛 | 新增并接入商家营业状态、商品库存模式、套餐选择类型、促销类型、聊天角色和聊天消息类型枚举；前端补齐对应类型文件，JSON 值保持兼容字符串。 |
 | 2026-06-14 | 已完成第六批 JSON codec 模块化 | 将业务 codec 下沉到各模块 `json/*JsonCodecs.scala`，新增平台 `CommonJsonCodecs`，`ApiJsonCodecs.scala` 收敛为 14 行聚合导出。 |
 | 2026-06-14 | 已完成第七批过宽 API 与兼容 alias 收敛 | 删除未使用 `merchantprofileapi`；新增 `merchantcreatestoreonboardingrequestapi` 并保留 `merchantstoreapi` 兼容入口；清理后端 `Promotion`/`Voucher`/`ErrorBody` compatibility alias 导入。 |
+| 2026-06-14 | 已完成第八批前端大页面和大 store 拆分 | `OrderChatPage` 拆分 hooks/components，`AdminConsole` 拆分数据 hook 与关键组件，`CustomerPortal` store 按子域 actions 拆分组合。 |
+| 2026-06-14 | 已完成第九批通知与结算预估后端化 | 新增 `checkoutquoteapi` 与 `notificationfeedapi`，前端 `checkoutActions` 与 `CustomerCheckoutPage` 改为消费后端 quote，`GlobalNotificationCenter` 改为消费后端 feed 并仅负责展示/轮询/已读。 |
 
 ## 6. 当前代码现状快照
 
@@ -290,10 +292,10 @@ cd frontend && npx eslint <changed-files>
 
 ### 仍需优化的结构
 
-- `domain/CompatibilityAliases.scala` 仍隐藏部分对象真实归属，应作为短期兼容层逐步收敛。
-- 部分 API 名称过泛或写入面过宽，例如商家资料整包写回、店铺入驻申请命名不够精确。
-- `OrderChatPage`、`AdminConsole`、`CustomerPortal` store 等前端文件仍偏大。
-- 前端仍存在对结算预估、通知事件的本地推导，长期应收敛到后端事实源。
+- `domain/CompatibilityAliases.scala` 仍隐藏部分对象真实归属，应作为短期兼容层继续收敛。
+- 部分历史 API 仍保留兼容包装（如 `merchantstoreapi`），后续可结合版本窗口逐步下线。
+- 前端仍有少量商品展示级别的本地优惠提示逻辑，需继续约束为“仅展示，不做业务事实判断”。
+- 第十批应聚焦低优先级清理与文档/审计脚本同步，避免规则落后于代码结构。
 
 ## 7. 后续维护记录空间
 
@@ -309,14 +311,15 @@ cd frontend && npx eslint <changed-files>
 | 2026-06-14 | 第六批：模块化 JSON codec | 新增 `platform/json/CommonJsonCodecs.scala`；将促销、订单、商家、顾客、管理员、评价、骑手、AI 的 codec 从 `ApiJsonCodecs.scala` 下沉到各模块 `json/*JsonCodecs.scala`；保留 `Order`、`Merchant`、`CustomerProfile`、`CheckoutRequest` 等手写 decoder / encoder 的历史字段兼容；同步 `DIRECTORY_LAYERING_GUIDE.md`、`AGENTS.md`、`backend/README.md`。 | `cd backend && sbt -batch compile` 通过；`npm run typecheck --prefix frontend` 通过；类型安全审计通过（45 pass / 0 fail）；可维护性审计通过（10 pass / 0 warn / 0 fail）；`ApiJsonCodecs.scala` 已收敛为 14 行聚合导出；相关文件无 IDE lint 诊断。 | 第七批进入过宽 API 与 compatibility alias 收敛；优先确认 `MerchantProfileAPIMessage` 是否仍被前端使用，再处理 `MerchantStoreAPIMessage` 命名和 `CompatibilityAliases` 依赖。 |
 | 2026-06-14 | 第七批：收敛过宽 API 与兼容 alias | 删除后端 `MerchantProfileAPIMessage.scala` 与前端 `MerchantProfileAPI.ts`；新增 `MerchantCreateStoreOnboardingRequestAPIMessage.scala` 与 `MerchantCreateStoreOnboardingRequestAPI.ts`，并将旧 `MerchantStoreAPIMessage` / `MerchantStoreAPI.ts` 收敛为兼容包装；更新 `MerchantRoutes.scala`、`API_INVENTORY.md`、`backend/README.md`、`frontend/README.md`；将后端 `Promotion` / `Voucher` / `ErrorBody` 导入切换到真实归属模块。 | `cd backend && sbt -batch compile` 通过；`npm run typecheck --prefix frontend` 通过；类型安全审计通过（45 pass / 0 fail）；可维护性审计通过（10 pass / 0 warn / 0 fail）；相关文件无 IDE lint 诊断。 | 第八批进入前端大页面和大 store 拆分，优先 `OrderChatPage`、`AdminConsole`、`CustomerPortal` store。 |
 | 2026-06-14 | 第八批：前端大页面和大 store 拆分 | `OrderChatPage/index.tsx` 拆分为 `hooks/useOrderChatMessages.ts`、`hooks/useOrderChatPeerContext.ts`、`hooks/usePendingChatImage.ts` 与 `components/ChatHeader.tsx`、`components/MessageList.tsx`、`components/ChatComposer.tsx`；`AdminConsole/index.tsx` 拆分为 `hooks/useAdminConsoleData.ts`、`hooks/useRefundReviewDialog.ts` 与 `components/AdminMetricCards.tsx`、`components/OnboardingRequestList.tsx`、`components/RefundReviewDialog.tsx`；`use-customer-portal-store.ts` 拆分为 `portalDataActions`、`cartActions`、`orderReviewActions`、`checkoutActions`、`profileAiActions` 子域 action builder 组合。 | `npm run typecheck --prefix frontend` 通过；`cd backend && sbt -batch compile` 通过；类型安全审计通过（45 pass / 0 fail）；可维护性审计通过（10 pass / 0 warn / 0 fail）；相关文件无 IDE lint 诊断。 | 第九批进入通知与结算预估后端化，优先补齐 `CheckoutQuoteAPI` 与 `NotificationFeedService`。 |
+| 2026-06-14 | 第九批：通知和结算预估后端化 | 新增后端 `CheckoutQuoteAPIMessage.scala` + 前端 `CheckoutQuoteAPI.ts` 与 `CheckoutQuoteResponse` 契约；新增后端 `NotificationFeedService.scala` + `NotificationFeedAPIMessage.scala` 与 `NotificationFeedResponse` 契约；`CustomerPortal` 的 `checkoutActions.ts`、`CustomerCheckoutPage.tsx` 改为“先读取 quote 再提交 checkout”；`GlobalNotificationCenter.tsx` 改为消费 `notificationfeedapi`，前端仅保留展示、轮询、已读回写。同步更新 `API_INVENTORY.md`、`backend/README.md`、`frontend/README.md`。 | `cd backend && sbt -batch compile` 通过；`npm run typecheck --prefix frontend` 通过；相关文件无 IDE lint 诊断。 | 第十批进入低优先级清理与文档同步，优先处理媒体遗留函数、图片上传路径一致性与审计脚本扩展。 |
 
-## 8. 下一批次建议：第九批通知与结算预估后端化
+## 8. 下一批次建议：第十批低优先级清理与文档同步
 
-建议按“先新增后端事实源 API，再逐步切前端消费路径”的方式推进：
+建议按“清理遗留噪音 + 强化规则可执行性”的方式推进：
 
-1. 新增 `CheckoutQuoteAPI`（建议 `order/api/CheckoutQuoteAPIMessage.scala` + 前端 `CheckoutQuoteAPI.ts`），后端统一返回预估金额、商家优惠、平台优惠、券抵扣、余额校验和失败原因。
-2. 将前端 `CustomerPortal` 的本地预估逻辑从 `checkoutActions` 中抽离为“读取 quote + 展示”模式，保留短期兼容兜底并逐步删除本地计价分支。
-3. 新增 `NotificationFeedService` 与对应 APIMessage，统一聚合订单、退款、聊天、评价等通知事件；前端通知中心仅负责展示、轮询和已读回写。
-4. 为通知 feed 增加已读状态与分页游标，避免前端本地推导未读数导致跨端不一致。
-5. 本批文档需同步 `API_INVENTORY.md`、`backend/README.md`、`frontend/README.md`，明确“结算预估与通知事件以后端为准”。
-6. 验证重点：后端编译、前端 typecheck、类型安全审计、可维护性审计，并额外核对前端是否仍残留大段本地计价/通知推导逻辑。
+1. 清理并确认无引用的媒体遗留函数（如 `storeImageExtension`），仅删除无业务影响项，必要时补充迁移说明。
+2. 统一订单图片上传链路：梳理退款图、聊天图、订单备注图的服务入口，收敛到一致的文件服务与校验路径。
+3. 更新并对齐文档：同步 `README.full.md`、`AGENTS.md`、`DIRECTORY_LAYERING_GUIDE.md`，反映第9批后“结算 quote + 通知 feed 后端化”事实。
+4. 扩展可维护性审计脚本：新增对 `checkoutquoteapi` / `notificationfeedapi` 前后端一一对应检查，以及前端本地业务推导退化检测。
+5. 评估 `domain/CompatibilityAliases.scala` 仍在使用的条目，制定下一阶段 alias 下线顺序与兼容窗口。
+6. 验证重点：后端编译、前端 typecheck、类型安全审计、可维护性审计；并抽样回归顾客结算页与全局通知中心的核心交互。

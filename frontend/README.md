@@ -103,7 +103,7 @@ src/
 
 路由守卫位于 `src/components/RoleRouteGuards.tsx`，根据 `src/lib/auth-session.ts` 中保存的 JWT 与角色控制访问。
 
-全局壳层由 `src/components/AppChromeProvider.tsx` 挂载，统一承载 toast、全局通知中心、反馈弹窗和预览检查桥接；`src/components/GlobalNotificationCenter.tsx` 会按当前角色聚合业务事件并同步通知已读状态。
+全局壳层由 `src/components/AppChromeProvider.tsx` 挂载，统一承载 toast、全局通知中心、反馈弹窗和预览检查桥接；`src/components/GlobalNotificationCenter.tsx` 通过 `notificationfeedapi` 拉取后端聚合通知并同步通知已读状态。
 
 ## 页面功能结构
 

@@ -205,7 +205,10 @@ object OrderJsonCodecs:
   }
 
   given Codec[CheckoutRequest] = Codec.from(checkoutRequestDecoder, checkoutRequestEncoder)
+  given Codec[CheckoutQuoteResponse] = deriveCodec
   given Codec[CheckoutResponse] = deriveCodec
+  given Codec[NotificationFeedItem] = deriveCodec
+  given Codec[NotificationFeedResponse] = deriveCodec
   given Codec[NotificationReadStatesResponse] = deriveCodec
   given Codec[CustomerOrdersResponse] = deriveCodec
   given Codec[OrderCancelResponse] = deriveCodec

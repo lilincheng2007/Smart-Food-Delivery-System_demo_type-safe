@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, ClipboardList, ImagePlus, MapPin, Phone, TicketPercent, User } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
+import { checkoutQuoteIO } from '@/apis/order/CheckoutQuoteAPI'
+import { runTask } from '@/apis/shared/client'
 import { DeliveryPageShell } from '@/components/DeliveryPageShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -16,13 +18,14 @@ import { resolveApiMediaUrl } from '@/lib/api-media-url'
 import { bundleLineUnitPrice, bundleSelectionSummary } from '@/lib/bundles'
 import { cartLineKey } from '@/lib/cart-inventory'
 import { createOrderPriceBreakdown, priceBreakdownAmountClassName, priceBreakdownAmountText } from '@/lib/order-price-breakdown'
-import { bestPromotion, promotionDisplayName, promotionSummary, roundMoney } from '@/lib/promotions'
+import { bestPromotion, roundMoney } from '@/lib/promotions'
+import type { CheckoutQuoteResponse } from '@/objects/order/apiTypes/CheckoutQuoteResponse'
 import type { MerchantId } from '@/objects/shared/ids'
 import { useCustomerPortalStore } from '@/pages/CustomerPortal/stores/use-customer-portal-store'
 
 import { DeliveryContactAddDialog } from './DeliveryContactAddDialog'
 import { discountRateText } from '../functions/priceDisplay'
-import { getTodayStart, isDateOnlyExpired, voucherUnavailableReason } from '../functions/voucherFilters'
+import { getTodayStart, isDateOnlyExpired } from '../functions/voucherFilters'
 
 export default function CustomerCheckoutPage() {
   const [searchParams] = useSearchParams()
@@ -32,6 +35,9 @@ export default function CustomerCheckoutPage() {
   const [addContactOpen, setAddContactOpen] = useState(false)
   const [selectedId, setSelectedId] = useState('')
   const [selectedVoucherId, setSelectedVoucherId] = useState('')
+  const [quote, setQuote] = useState<CheckoutQuoteResponse | null>(null)
+  const [quoteLoading, setQuoteLoading] = useState(false)
+  const [quoteError, setQuoteError] = useState<string | null>(null)
   const [merchantNoteTextById, setMerchantNoteTextById] = useState<Record<string, string>>({})
   const [merchantNoteImageById, setMerchantNoteImageById] = useState<Record<string, string>>({})
 
@@ -40,7 +46,6 @@ export default function CustomerCheckoutPage() {
   const customerAccount = useCustomerPortalStore((s) => s.customerAccount)
   const merchants = useCustomerPortalStore((s) => s.merchants)
   const products = useCustomerPortalStore((s) => s.products)
-  const platformPromotions = useCustomerPortalStore((s) => s.platformPromotions)
   const cartLines = useCustomerPortalStore((s) => s.cartLines)
   const walletBalance = useCustomerPortalStore((s) => s.walletBalance)
   const checkout = useCustomerPortalStore((s) => s.checkout)
@@ -64,63 +69,23 @@ export default function CustomerCheckoutPage() {
     return cartLines.filter((l) => l.merchantId === merchantIdParam)
   }, [cartLines, merchantIdParam])
 
-  const total = useMemo(() => {
-    return lines.reduce((sum, line) => {
-      const p = products.find((x) => x.id === line.productId)
-      return sum + (p ? bundleLineUnitPrice(p, line.bundleSelections, products) * line.quantity : 0)
-    }, 0)
-  }, [lines, products])
-  const itemCount = useMemo(() => lines.reduce((sum, line) => sum + line.quantity, 0), [lines])
-  const merchantDiscounts = useMemo(() => {
-    return [...new Set(lines.map((line) => line.merchantId))].map((merchantId) => {
-      const merchantLines = lines.filter((line) => line.merchantId === merchantId)
-      const merchantTotal = merchantLines.reduce((sum, line) => {
-        const product = products.find((item) => item.id === line.productId)
-        return sum + (product ? bundleLineUnitPrice(product, line.bundleSelections, products) * line.quantity : 0)
-      }, 0)
-      const merchantItemCount = merchantLines.reduce((sum, line) => sum + line.quantity, 0)
-      const merchant = merchants.find((item) => item.id === merchantId)
-      const promotionLines = merchantLines.flatMap((line) => {
-        const product = products.find((item) => item.id === line.productId)
-        return product ? [{ productId: line.productId, unitPrice: bundleLineUnitPrice(product, line.bundleSelections, products), quantity: line.quantity }] : []
-      })
-      return {
-        merchantId,
-        merchantName: merchant?.storeName ?? '未知商家',
-        applied: bestPromotion(merchant?.promotions, merchantTotal, merchantItemCount, promotionLines),
-      }
-    }).filter((item) => item.applied)
-  }, [lines, merchants, products])
-  const merchantDiscount = roundMoney(merchantDiscounts.reduce((sum, item) => sum + (item.applied?.discountAmount ?? 0), 0))
-  const afterMerchantDiscount = Math.max(0, roundMoney(total - merchantDiscount))
+  const merchantIdsInOrder = useMemo(() => [...new Set(lines.map((line) => line.merchantId))], [lines])
 
   const vouchers = customerAccount?.profile.vouchers ?? []
   const todayStart = useMemo(() => getTodayStart(), [])
-  const usableVouchers = vouchers.filter(
-    (voucher) => voucher.remainingCount > 0 && afterMerchantDiscount >= voucher.minSpend && !isDateOnlyExpired(voucher.expiresAt, todayStart),
-  )
   const checkoutVouchers = vouchers.filter((voucher) => !isDateOnlyExpired(voucher.expiresAt, todayStart))
-  const selectedVoucher = usableVouchers.find((voucher) => voucher.id === selectedVoucherId)
-  const voucherDiscount = selectedVoucher ? Math.min(selectedVoucher.discountAmount, afterMerchantDiscount) : 0
-  const promotionLines = lines.flatMap((line) => {
-    const product = products.find((item) => item.id === line.productId)
-    return product ? [{ productId: line.productId, unitPrice: bundleLineUnitPrice(product, line.bundleSelections, products), quantity: line.quantity }] : []
-  })
-  const platformPromotion = bestPromotion(platformPromotions, Math.max(0, afterMerchantDiscount - voucherDiscount), itemCount, promotionLines)
-  const platformDiscount = platformPromotion?.discountAmount ?? 0
-  const discount = roundMoney(merchantDiscount + voucherDiscount + platformDiscount)
-  const payable = Math.max(0, roundMoney(total - discount))
-  const checkoutPriceBreakdown = createOrderPriceBreakdown({
-    productOriginalAmount: total,
-    merchantDiscountAmount: merchantDiscount,
-    voucherDiscountAmount: voucherDiscount,
-    platformDiscountAmount: platformDiscount,
+
+  const checkoutPriceBreakdown = quote?.priceBreakdown ?? createOrderPriceBreakdown({
+    productOriginalAmount: 0,
+    merchantDiscountAmount: 0,
+    voucherDiscountAmount: 0,
+    platformDiscountAmount: 0,
     deliveryFeeAmount: 0,
-    payableAmount: payable,
+    payableAmount: 0,
   })
+  const payable = quote?.payableAmount ?? 0
   const estimatedPoints = Math.floor(payable)
-  const insufficient = walletBalance < payable
-  const merchantIdsInOrder = useMemo(() => [...new Set(lines.map((line) => line.merchantId))], [lines])
+  const insufficient = quote ? !quote.canCheckout && (quote.failureReason ?? '').includes('余额不足') : false
 
   useEffect(() => {
     if (!bootstrapDone || loadError) return
@@ -134,10 +99,41 @@ export default function CustomerCheckoutPage() {
   }, [bootstrapDone, customerAccount, lines.length, loadError, navigate])
 
   useEffect(() => {
-    if (selectedVoucherId && !usableVouchers.some((voucher) => voucher.id === selectedVoucherId)) {
+    if (selectedVoucherId && !checkoutVouchers.some((voucher) => voucher.id === selectedVoucherId)) {
       setSelectedVoucherId('')
     }
-  }, [selectedVoucherId, usableVouchers])
+  }, [selectedVoucherId, checkoutVouchers])
+
+  useEffect(() => {
+    if (!bootstrapDone || loadError || !customerAccount || lines.length === 0) {
+      setQuote(null)
+      setQuoteError(null)
+      return
+    }
+
+    let cancelled = false
+    setQuoteLoading(true)
+    setQuoteError(null)
+
+    void runTask(checkoutQuoteIO(lines, undefined, selectedVoucherId || undefined))
+      .then((result) => {
+        if (cancelled) return
+        setQuote(result)
+      })
+      .catch((error) => {
+        if (cancelled) return
+        setQuote(null)
+        setQuoteError(error instanceof Error ? error.message : '结算预估失败')
+      })
+      .finally(() => {
+        if (cancelled) return
+        setQuoteLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [bootstrapDone, customerAccount, lines, loadError, selectedVoucherId])
 
   const handleBack = () => {
     if (merchantIdParam) {
@@ -168,7 +164,17 @@ export default function CustomerCheckoutPage() {
   }, [contacts])
 
   const handleConfirm = async () => {
-    if (insufficient || lines.length === 0 || submitting) return
+    if (lines.length === 0 || submitting || quoteLoading) return
+
+    if (!quote) {
+      showNotice(quoteError ?? '结算预估尚未完成，请稍后重试。', 'error')
+      return
+    }
+
+    if (!quote.canCheckout) {
+      showNotice(quote.failureReason ?? '当前订单暂不可结算。', 'error')
+      return
+    }
     const selected = contacts.find((c) => c.id === selectedId) ?? contacts[0]
     if (!selected) {
       showNotice('请选择一组收货信息。', 'error')
@@ -427,20 +433,10 @@ export default function CustomerCheckoutPage() {
             <CardDescription>每单最多使用 1 张优惠券，最终优惠以后端结算为准。</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {merchantDiscounts.length > 0 || platformPromotion ? (
-              <div className="space-y-2 rounded-2xl border border-orange-200 bg-white/75 px-4 py-3 text-sm">
-                {merchantDiscounts.map((item) => (
-                  <p key={item.merchantId} className="text-orange-700">
-                    {item.merchantName}：{item.applied ? `${promotionDisplayName(item.applied.promotion)} · ${promotionSummary(item.applied.promotion)}` : ''}，已减 ¥{item.applied?.discountAmount.toFixed(2)}
-                  </p>
-                ))}
-                {platformPromotion ? (
-                  <p className="text-green-700">
-                    平台优惠：{promotionDisplayName(platformPromotion.promotion)} · {promotionSummary(platformPromotion.promotion)}，已减 ¥{platformPromotion.discountAmount.toFixed(2)}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
+            <div className="space-y-2 rounded-2xl border border-orange-200 bg-white/75 px-4 py-3 text-sm">
+              <p className="text-orange-700">优惠金额与可用券判断以后端结算预估为准。</p>
+              {quote ? <p className="text-green-700">当前预计总优惠 ¥{quote.discountAmount.toFixed(2)}</p> : null}
+            </div>
             <div className="space-y-3">
               {checkoutVouchers.length === 0 ? (
                 <p className="rounded-xl border border-dashed border-orange-200 bg-white/60 px-4 py-3 text-sm text-muted-foreground">
@@ -448,7 +444,7 @@ export default function CustomerCheckoutPage() {
                 </p>
               ) : null}
               {checkoutVouchers.map((voucher) => {
-                const reason = voucherUnavailableReason(voucher, todayStart, afterMerchantDiscount)
+                const reason = voucher.remainingCount <= 0 ? '已用尽' : null
                 const disabled = reason !== null
                 const selected = selectedVoucherId === voucher.id && !disabled
                 return (
@@ -527,9 +523,20 @@ export default function CustomerCheckoutPage() {
               <span>当前钱包余额</span>
               <span className="tabular-nums">¥{walletBalance.toFixed(2)}</span>
             </div>
+            {quoteLoading ? <p className="text-sm text-muted-foreground">正在获取后端结算预估…</p> : null}
+            {quoteError ? (
+              <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                结算预估失败：{quoteError}
+              </p>
+            ) : null}
             {insufficient ? (
               <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                余额不足，请先充值后再结算。
+                {quote?.failureReason ?? '余额不足，请先充值后再结算。'}
+              </p>
+            ) : null}
+            {!insufficient && quote && !quote.canCheckout ? (
+              <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {quote.failureReason ?? '当前订单暂不可结算，请调整后重试。'}
               </p>
             ) : null}
           </CardContent>
@@ -542,10 +549,10 @@ export default function CustomerCheckoutPage() {
           <Button
             type="button"
             className="h-11 min-w-[10rem] cursor-pointer bg-gradient-to-r from-primary to-[oklch(0.62_0.18_45)] text-base font-semibold text-primary-foreground shadow-md disabled:opacity-50 dark:to-[oklch(0.68_0.14_45)]"
-            disabled={insufficient || submitting}
+            disabled={submitting || quoteLoading || !quote || !quote.canCheckout}
             onClick={() => void handleConfirm()}
           >
-            {submitting ? '提交中…' : `确认支付 ¥${payable.toFixed(2)}`}
+            {submitting ? '提交中…' : quoteLoading ? '计算中…' : `确认支付 ¥${payable.toFixed(2)}`}
           </Button>
         </div>
       </div>

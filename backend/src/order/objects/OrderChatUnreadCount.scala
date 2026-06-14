@@ -7,5 +7,6 @@ final case class OrderChatUnreadCount(
     peerRole: OrderChatRole,
     unreadCount: Int,
     latestMessageType: Option[OrderChatMessageType] = None,
-    latestContent: Option[String] = None
+    latestContent: Option[String] = None,
+    latestCreatedAt: Option[String] = None
 )
