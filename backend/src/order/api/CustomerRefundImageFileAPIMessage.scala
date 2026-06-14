@@ -1,8 +1,8 @@
 package delivery.order.api
 
 import cats.effect.IO
+import delivery.order.services.OrderImageFileService
 import delivery.platform.api.APIWithRoleMessage
-import delivery.media.services.StoredImageService
 
 import java.sql.Connection
 

@@ -13,7 +13,7 @@
 - 结算页支持优惠券、商家优惠、平台优惠、配送费和结构化价格明细。
 - 钱包充值、余额校验、取消订单、退款申请/申诉、图片上传。
 - 订单详情、状态时间线、预计出餐/送达、完成确认、商家/骑手评价与评价投票。
-- 订单聊天、图片消息、未读数和全局通知中心，通知已读状态后端持久化。
+- 订单聊天、图片消息、未读数和全局通知中心；通知列表通过 `notificationfeedapi` 聚合，通知已读状态后端持久化。
 - 吃货积分与等级：确认完成订单后按实付金额累计积分，升级发券。
 - AI 智能搜索、AI 饮食周报、AI 订单进度叙事、AI 评价摘要。
 
@@ -79,7 +79,7 @@
 │       ├── apis/                # 前端 APIMessage，一 API 一文件
 │       ├── objects/             # 与后端对象对应的 TS 契约
 │       ├── pages/               # 登录、注册、顾客、商家、骑手、管理员、聊天页面
-│       ├── stores/              # Zustand 页面状态与拆分 helper
+│       ├── stores/              # 全局 Zustand 状态；页面私有 store 就近放入 pages/{Page}/stores
 │       ├── components/          # 通用组件、通知中心、UI 组件
 │       ├── hooks/               # app chrome、鉴权等 hooks
 │       └── lib/                 # 会话、计价、库存、时间线等工具
@@ -171,6 +171,7 @@ npm run dev
 | `npm run build --prefix frontend` | 前端生产构建 |
 | `cd backend && sbt -batch compile` | 后端编译检查 |
 | `.codebuddy/skills/type-safety-audit/scripts/check-type-safety.sh /Users/leonli/Desktop/Type-safe_project` | 类型安全与结构审计 |
+| `.codebuddy/skills/maintainability-audit/scripts/check-maintainability.sh /Users/leonli/Desktop/Type-safe_project` | 可维护性与分层审计 |
 
 ## API 约定
 
@@ -188,6 +189,7 @@ POST /api/{apiName}
 |---|---|
 | 目录 | `catalogapi` |
 | 登录 | `loginapi` |
+| 顾客结算预估 | `checkoutquoteapi` |
 | 顾客结算 | `checkoutapi` |
 | 商家接单 | `merchantorderacceptapi` |
 | 商家出餐完成 | `merchantorderreadyapi` |

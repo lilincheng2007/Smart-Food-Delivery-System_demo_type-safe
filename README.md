@@ -40,7 +40,7 @@ Type-safe_project/
 │       ├── apis/             # 前端 APIMessage，一 API 一文件
 │       ├── objects/          # TypeScript 领域对象与 API 类型
 │       ├── pages/            # 顾客、商家、骑手、管理员等页面
-│       ├── stores/           # Zustand 页面状态
+│       ├── stores/           # 全局 Zustand 状态；页面私有 store 就近放入 pages/{Page}/stores
 │       ├── components/       # 通用组件与 UI
 │       └── lib/              # 会话、计价、库存、时间线等工具
 └── backend/                  # Scala 3 + http4s 后端
@@ -207,6 +207,8 @@ npm run dev
 ```bash
 npm run typecheck --prefix frontend
 cd backend && sbt -batch compile
+.codebuddy/skills/type-safety-audit/scripts/check-type-safety.sh /Users/leonli/Desktop/Type-safe_project
+.codebuddy/skills/maintainability-audit/scripts/check-maintainability.sh /Users/leonli/Desktop/Type-safe_project
 ```
 
 ## 6. 环境变量

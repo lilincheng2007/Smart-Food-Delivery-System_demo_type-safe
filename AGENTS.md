@@ -5,7 +5,7 @@
 ## 1. 项目定位
 
 - 项目覆盖顾客、商家、骑手、管理员四类角色，并包含评价、退款、通知、聊天、AI 辅助等完整业务链路。
-- 所有真实业务数据必须以后端 PostgreSQL 为准：订单、钱包、库存、优惠、通知已读、聊天、评价、退款等都不能只存在前端状态中。
+- 所有真实业务数据必须以后端 PostgreSQL 为准：订单、钱包、库存、优惠、结算预估、通知 feed / 已读、聊天、评价、退款等都不能只存在前端状态中。
 - 前端 Zustand、localStorage 仅用于页面状态、会话信息、展示缓存或 UI 偏好。
 - 新增业务能力时优先保持现有类型安全结构，不新增绕过 `APIMessage` 的零散业务路由。
 
@@ -130,7 +130,7 @@ GET /api/reviews/images/{fileName}
 - 页面按当前拆分风格组织：`index.tsx` 做装配，局部 UI 放 `components/`，函数放 `functions/`，局部常量/类型放 `objects/`，复杂数据协调优先进入 `hooks/`。
 - 页面私有 Zustand store 放到对应 `pages/{Page}/stores/`；`frontend/src/stores/` 仅保留全局状态。
 - 页面交互产生的业务数据必须通过 API 写入后端，并可由后端再次查询得到。
-- 不要用浏览器状态伪造订单、库存、钱包、优惠、退款、评价等持久化业务结果。
+- 不要用浏览器状态伪造订单、库存、钱包、优惠、结算预估、通知、退款、评价等持久化业务结果。
 - 顾客端、商家端、骑手端、管理员端的跨角色数据必须来自同一后端事实源。
 - UI 改动优先使用现有 shadcn/ui、Radix、Tailwind 风格，避免引入新的 UI 框架。
 - 已有弹窗和卡片通常需要显式设置 `bg-*`、`border`、`rounded-*`、`p-*`，因为基础 `DialogContent` 不默认提供完整卡片外观。
@@ -152,7 +152,7 @@ GET /api/reviews/images/{fileName}
 - 详细目录职责以 `DIRECTORY_LAYERING_GUIDE.md` 为准。
 - 新增功能时优先使用 `.codebuddy/skills/layered-feature-development/` 的工作流确定落位。
 - 结构审计时使用 `.codebuddy/skills/maintainability-audit/`，并区分历史债务与本次新增问题。
-- 媒体/静态图片能力归属独立 `media` 模块；迁移实现时不改变既有 HTTP 公开路径。
+- 媒体/静态图片能力归属独立 `media` 模块；订单退款图、聊天图、备注图上传统一经 `OrderImageFileService` 编排，迁移实现时不改变既有 HTTP 公开路径。
 - 维护策略采用“新代码遵守、触碰即收敛、小步迁移”，避免无验证的大规模重构。
 
 ## 9. 主要功能边界

@@ -2,7 +2,7 @@
 
 `frontend/` 是外卖平台 Web 前端，基于 Vite + React + TypeScript 构建。前端使用 `APIMessage` 封装访问后端 `POST /api/{apiName}` 网关；页面状态由 Zustand 管理；UI 使用 shadcn/ui、Radix UI、Tailwind CSS 和 lucide-react。
 
-前端只负责页面展示、交互缓存和乐观前校验；订单、钱包、优惠、库存、通知已读、评价等真实业务结果必须由后端 API 返回。
+前端只负责页面展示、交互缓存和乐观前校验；订单、钱包、优惠、库存、结算预估、通知 feed / 已读、评价等真实业务结果必须由后端 API 返回。
 
 ## 技术栈
 
@@ -228,6 +228,7 @@ APIMessage class -> sendAPI -> POST /api/{apiName}
 | `customerrefundimagefileapi` | 上传退款凭证 |
 | `customerorderimagefileapi` / `merchantorderimagefileapi` / `riderorderimagefileapi` | 聊天图片上传 |
 | `*orderchatmessagesapi` / `*sendorderchatmessageapi` / `*orderchatunreadcountsapi` | 分角色订单聊天和未读数 |
+| `notificationfeedapi` | 拉取后端聚合通知 feed（含分页与未读计数） |
 | `notificationreadstatesapi` / `notificationmarkreadapi` / `notificationmarkallreadapi` | 通知已读状态 |
 
 #### `src/apis/rider/`
@@ -275,31 +276,33 @@ APIMessage class -> sendAPI -> POST /api/{apiName}
 
 ## 状态管理
 
-页面级业务状态使用 Zustand：
+页面级业务状态使用 Zustand，并就近放在页面目录：
 
 ```text
 src/stores/
-├── use-app-store.ts
-└── pages/
-    ├── use-login-page-store.ts
-    ├── use-register-page-store.ts
-    ├── use-customer-portal-store.ts      # 兼容入口
-    ├── customerPortal/                   # 顾客 store 类型、初始状态、helper、收藏存储
-    ├── use-merchant-console-store.ts     # 兼容入口
-    ├── merchantConsole/                  # 商家 store 类型、初始状态、helper
-    └── use-rider-app-store.ts
+└── use-app-store.ts                      # 全局应用状态
+
+src/pages/CustomerPortal/stores/
+├── use-customer-portal-store.ts
+└── customerPortal/                       # 顾客 store 类型、初始状态、子域 actions/helper
+
+src/pages/MerchantConsole/stores/
+└── use-merchant-console-store.ts
+
+src/pages/RiderApp/stores/
+└── use-rider-app-store.ts
 ```
 
 重点 store：
 
-- `use-customer-portal-store.ts`
+- `pages/CustomerPortal/stores/use-customer-portal-store.ts`
   - 保存顾客档案、商家目录、商品、购物车、钱包余额、订单、评价、AI 周报和 AI 订单文案。
   - 提供刷新、加购、改数量、再来一单、结算、取消、确认完成、退款、评价、充值、舍弃过期券、保存收货联系人等动作。
   - `refreshPortal` 做 in-flight 去重，并并行加载顾客档案、目录和订单。
 - `use-merchant-console-store.ts`
   - 保存商家账号、店铺列表、当前店铺、标签页、退款/评价/经营数据。
   - 提供刷新、创建店铺、接单/拒单/出餐、创建/更新商品、保存营业时间、保存优惠、上传图片等动作。
-- `use-rider-app-store.ts`
+- `pages/RiderApp/stores/use-rider-app-store.ts`
   - 保存骑手账号、可抢订单、配送状态、薪资和免责卡信息。
   - 提供刷新、抢单、更新配送状态、兑换免责卡、使用免责卡等动作。
 
@@ -308,7 +311,7 @@ src/stores/
 - `src/lib/auth-session.ts`：会话存取，只保存 JWT、账号、角色和登录时间。
 - `src/lib/bundles.ts`：套餐价格、选项汇总和加价计算。
 - `src/lib/cart-inventory.ts`：购物车库存/售罄/限购计算。
-- `src/lib/promotions.ts`：商家/平台优惠匹配与金额计算。
+- `src/lib/promotions.ts`：商品展示级优惠提示；结算页最终优惠金额以后端 quote 为准。
 - `src/lib/order-price-breakdown.ts`：结构化结算明细解释器。
 - `src/lib/order-timeline.ts`：订单状态时间线、预计送达和异常提示。
 - `src/lib/api-media-url.ts`：API 返回媒体路径解析，处理 `/api/...` 与 `VITE_API_BASE`。

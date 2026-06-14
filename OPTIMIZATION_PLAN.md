@@ -260,6 +260,7 @@ cd frontend && npx eslint <changed-files>
 | 2026-06-14 | 已完成第七批过宽 API 与兼容 alias 收敛 | 删除未使用 `merchantprofileapi`；新增 `merchantcreatestoreonboardingrequestapi` 并保留 `merchantstoreapi` 兼容入口；清理后端 `Promotion`/`Voucher`/`ErrorBody` compatibility alias 导入。 |
 | 2026-06-14 | 已完成第八批前端大页面和大 store 拆分 | `OrderChatPage` 拆分 hooks/components，`AdminConsole` 拆分数据 hook 与关键组件，`CustomerPortal` store 按子域 actions 拆分组合。 |
 | 2026-06-14 | 已完成第九批通知与结算预估后端化 | 新增 `checkoutquoteapi` 与 `notificationfeedapi`，前端 `checkoutActions` 与 `CustomerCheckoutPage` 改为消费后端 quote，`GlobalNotificationCenter` 改为消费后端 feed 并仅负责展示/轮询/已读。 |
+| 2026-06-14 | 已完成第十批低优先级清理与文档同步 | 删除无引用媒体遗留函数 `storeImageExtension`；统一订单图片上传入口复用 `OrderImageFileService`；扩展可维护性审计脚本并同步项目描述性文件；十批优化计划收官。 |
 
 ## 6. 当前代码现状快照
 
@@ -289,13 +290,17 @@ cd frontend && npx eslint <changed-files>
 - `MerchantBusinessStatus`、`ProductInventoryMode`、`ProductBundleSelectionType`、`PromotionDiscountType`、`PromotionTriggerType`、`OrderChatRole`、`OrderChatMessageType` 已接入后端对象、业务逻辑和 JSON codec。
 - 前端已补齐同名类型文件，并在现有 `MerchantBusinessHours`、`Product`、`Promotion`、`OrderChatMessage` 类型中复用，保持前后端契约值一致。
 - JSON codec 已拆为模块 codec 定义与平台聚合导出：`merchant`、`order`、`promotion`、`user`、`admin`、`review`、`rider`、`ai` 均已有真实 `*JsonCodecs.scala`，`CommonJsonCodecs.scala` 承载平台通用 codec。
+- 结算预估已由 `checkoutquoteapi` 提供后端 quote，前端结算页只展示后端价格明细和可结算状态。
+- 通知列表已由 `notificationfeedapi` 聚合订单、退款、聊天和入驻审核事实源，前端通知中心只负责展示、轮询和已读回写。
+- 订单退款图、聊天图、备注图上传已统一复用 `OrderImageFileService`，底层存储仍归属 `media` 模块。
+- 可维护性审计脚本已补充订单图片上传链路、quote/feed 契约齐备和前端消费路径回归检查。
 
 ### 仍需优化的结构
 
 - `domain/CompatibilityAliases.scala` 仍隐藏部分对象真实归属，应作为短期兼容层继续收敛。
 - 部分历史 API 仍保留兼容包装（如 `merchantstoreapi`），后续可结合版本窗口逐步下线。
 - 前端仍有少量商品展示级别的本地优惠提示逻辑，需继续约束为“仅展示，不做业务事实判断”。
-- 第十批应聚焦低优先级清理与文档/审计脚本同步，避免规则落后于代码结构。
+- 十批优化计划已收官，后续建议按“例行审计 + 触碰即收敛”机制持续维护，避免结构回退。
 
 ## 7. 后续维护记录空间
 
@@ -312,8 +317,9 @@ cd frontend && npx eslint <changed-files>
 | 2026-06-14 | 第七批：收敛过宽 API 与兼容 alias | 删除后端 `MerchantProfileAPIMessage.scala` 与前端 `MerchantProfileAPI.ts`；新增 `MerchantCreateStoreOnboardingRequestAPIMessage.scala` 与 `MerchantCreateStoreOnboardingRequestAPI.ts`，并将旧 `MerchantStoreAPIMessage` / `MerchantStoreAPI.ts` 收敛为兼容包装；更新 `MerchantRoutes.scala`、`API_INVENTORY.md`、`backend/README.md`、`frontend/README.md`；将后端 `Promotion` / `Voucher` / `ErrorBody` 导入切换到真实归属模块。 | `cd backend && sbt -batch compile` 通过；`npm run typecheck --prefix frontend` 通过；类型安全审计通过（45 pass / 0 fail）；可维护性审计通过（10 pass / 0 warn / 0 fail）；相关文件无 IDE lint 诊断。 | 第八批进入前端大页面和大 store 拆分，优先 `OrderChatPage`、`AdminConsole`、`CustomerPortal` store。 |
 | 2026-06-14 | 第八批：前端大页面和大 store 拆分 | `OrderChatPage/index.tsx` 拆分为 `hooks/useOrderChatMessages.ts`、`hooks/useOrderChatPeerContext.ts`、`hooks/usePendingChatImage.ts` 与 `components/ChatHeader.tsx`、`components/MessageList.tsx`、`components/ChatComposer.tsx`；`AdminConsole/index.tsx` 拆分为 `hooks/useAdminConsoleData.ts`、`hooks/useRefundReviewDialog.ts` 与 `components/AdminMetricCards.tsx`、`components/OnboardingRequestList.tsx`、`components/RefundReviewDialog.tsx`；`use-customer-portal-store.ts` 拆分为 `portalDataActions`、`cartActions`、`orderReviewActions`、`checkoutActions`、`profileAiActions` 子域 action builder 组合。 | `npm run typecheck --prefix frontend` 通过；`cd backend && sbt -batch compile` 通过；类型安全审计通过（45 pass / 0 fail）；可维护性审计通过（10 pass / 0 warn / 0 fail）；相关文件无 IDE lint 诊断。 | 第九批进入通知与结算预估后端化，优先补齐 `CheckoutQuoteAPI` 与 `NotificationFeedService`。 |
 | 2026-06-14 | 第九批：通知和结算预估后端化 | 新增后端 `CheckoutQuoteAPIMessage.scala` + 前端 `CheckoutQuoteAPI.ts` 与 `CheckoutQuoteResponse` 契约；新增后端 `NotificationFeedService.scala` + `NotificationFeedAPIMessage.scala` 与 `NotificationFeedResponse` 契约；`CustomerPortal` 的 `checkoutActions.ts`、`CustomerCheckoutPage.tsx` 改为“先读取 quote 再提交 checkout”；`GlobalNotificationCenter.tsx` 改为消费 `notificationfeedapi`，前端仅保留展示、轮询、已读回写。同步更新 `API_INVENTORY.md`、`backend/README.md`、`frontend/README.md`。 | `cd backend && sbt -batch compile` 通过；`npm run typecheck --prefix frontend` 通过；相关文件无 IDE lint 诊断。 | 第十批进入低优先级清理与文档同步，优先处理媒体遗留函数、图片上传路径一致性与审计脚本扩展。 |
+| 2026-06-14 | 第十批：低优先级清理与文档同步 | 删除 `MerchantBusinessService.storeImageExtension` 无引用遗留函数；`CustomerRefundImageFileAPIMessage` 改为复用 `OrderImageFileService.upload`，统一订单退款图/聊天图/备注图上传入口；扩展 `.codebuddy/skills/maintainability-audit/scripts/check-maintainability.sh`，新增订单图片上传直连检查、`checkoutquoteapi`/`notificationfeedapi` 契约齐备检查、结算页与通知中心回归检查；同步更新 `AGENTS.md`、`API_INVENTORY.md`、`README.full.md`、`README.md`、`backend/README.md`、`frontend/README.md`。 | `cd backend && sbt -batch compile` 通过；`npm run typecheck --prefix frontend` 通过；类型安全审计通过（45 pass / 0 fail）；可维护性审计通过（18 pass / 0 warn / 0 fail）；相关文件无 IDE lint 诊断。 | 十批优化计划已收官；后续转入常态化维护，优先关注 compatibility alias 退场与审计规则持续更新。 |
 
-## 8. 下一批次建议：第十批低优先级清理与文档同步
+## 8. 计划收官后的持续维护建议
 
 十批优化计划已完成，后续建议按“固定审计节奏 + 触碰即收敛”持续维护：
 

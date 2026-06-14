@@ -31,7 +31,7 @@ POST /api/{apiName}
 | `review` | 5 | 评价、回复、投票、评价图片 |
 | `rider` | 6 | 骑手主页、可抢单、抢单、配送、免责卡 |
 | `user` | 6 | 登录注册、顾客资料、钱包、优惠券 |
-| **合计** | **78** | 统一经 `POST /api/{apiName}` 暴露 |
+| **合计** | **80** | 统一经 `POST /api/{apiName}` 暴露 |
 
 ## 3. API 列表
 
@@ -111,9 +111,11 @@ POST /api/{apiName}
 | `riderorderchatmessagesapi` | `rider` | `backend/src/order/api/RiderOrderChatMessagesAPIMessage.scala` | `frontend/src/apis/order/RiderOrderChatMessagesAPI.ts` | `OrderChatMessagesResponse` |
 | `ridersendorderchatmessageapi` | `rider` | `backend/src/order/api/RiderSendOrderChatMessageAPIMessage.scala` | `frontend/src/apis/order/RiderSendOrderChatMessageAPI.ts` | `OrderChatMessagesResponse` |
 | `riderorderchatunreadcountsapi` | `rider` | `backend/src/order/api/RiderOrderChatUnreadCountsAPIMessage.scala` | `frontend/src/apis/order/RiderOrderChatUnreadCountsAPI.ts` | `OrderChatUnreadCountsResponse` |
+| `notificationfeedapi` | `customer/merchant/rider/admin` | `backend/src/order/api/NotificationFeedAPIMessage.scala` | `frontend/src/apis/order/NotificationFeedAPI.ts` | `NotificationFeedResponse` |
 | `notificationreadstatesapi` | `customer/merchant/rider/admin` | `backend/src/order/api/NotificationReadStatesAPIMessage.scala` | `frontend/src/apis/order/NotificationReadStatesAPI.ts` | `NotificationReadStatesResponse` |
 | `notificationmarkreadapi` | `customer/merchant/rider/admin` | `backend/src/order/api/NotificationMarkReadAPIMessage.scala` | `frontend/src/apis/order/NotificationMarkReadAPI.ts` | `OkResponse` |
 | `notificationmarkallreadapi` | `customer/merchant/rider/admin` | `backend/src/order/api/NotificationMarkAllReadAPIMessage.scala` | `frontend/src/apis/order/NotificationMarkAllReadAPI.ts` | `OkResponse` |
+| `checkoutquoteapi` | `customer` | `backend/src/order/api/CheckoutQuoteAPIMessage.scala` | `frontend/src/apis/order/CheckoutQuoteAPI.ts` | `CheckoutQuoteResponse` |
 | `checkoutapi` | `customer` | `backend/src/order/api/CheckoutAPIMessage.scala` | `frontend/src/apis/order/CheckoutAPI.ts` | `CheckoutResponse` |
 
 ### 3.5 review
@@ -165,7 +167,7 @@ POST /api/{apiName}
 |---|---|
 | `GET /api/merchant/store-images/{fileName}` | 店铺图片 |
 | `GET /api/merchant/product-images/{fileName}` | 商品图片 |
-| `GET /api/orders/refund-images/{fileName}` | 订单图片，当前包含退款凭证图片和订单聊天图片 |
+| `GET /api/orders/refund-images/{fileName}` | 订单图片，当前包含退款凭证图片、订单聊天图片和订单备注图片 |
 | `GET /api/reviews/images/{fileName}` | 评价图片 |
 
 ## 6. 对齐验证
@@ -176,4 +178,4 @@ POST /api/{apiName}
 .codebuddy/skills/type-safety-audit/scripts/check-type-safety.sh /Users/leonli/Desktop/Type-safe_project
 ```
 
-结果：`43 PASS / 0 FAIL`。
+结果：`45 PASS / 0 FAIL`。

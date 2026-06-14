@@ -1,6 +1,6 @@
 # Delivery Backend
 
-`backend/` 是外卖平台的 Scala 后端服务。服务以单进程方式启动，监听 `8787` 端口，对外提供统一 `APIMessage` 网关，并连接 PostgreSQL 持久化业务数据。后端覆盖顾客、商家、骑手、管理员、评价和 AI 模块，负责鉴权、订单状态机、结算、优惠、库存、营业时间、钱包、退款、聊天、通知已读、骑手配送和 AI 调用。
+`backend/` 是外卖平台的 Scala 后端服务。服务以单进程方式启动，监听 `8787` 端口，对外提供统一 `APIMessage` 网关，并连接 PostgreSQL 持久化业务数据。后端覆盖顾客、商家、骑手、管理员、评价和 AI 模块，负责鉴权、订单状态机、结算与结算预估、优惠、库存、营业时间、钱包、退款、聊天、通知 feed / 已读、骑手配送和 AI 调用。
 
 ## 技术栈
 
@@ -119,7 +119,7 @@ POST /api/{apiName}
 ```text
 GET /api/merchant/store-images/{fileName}
 GET /api/merchant/product-images/{fileName}
-GET /api/orders/refund-images/{fileName}   # 订单图片，当前包含退款凭证和订单聊天图片
+GET /api/orders/refund-images/{fileName}   # 订单图片，当前包含退款凭证、订单聊天图片、订单备注图片
 GET /api/reviews/images/{fileName}
 ```
 
@@ -207,9 +207,11 @@ CustomerVoucherDiscardAPIMessage -> POST /api/customervoucherdiscardapi
 | `riderorderchatmessagesapi` | rider | `OrderChatMessagesResponse` |
 | `ridersendorderchatmessageapi` | rider | `OrderChatMessagesResponse` |
 | `riderorderchatunreadcountsapi` | rider | `OrderChatUnreadCountsResponse` |
+| `notificationfeedapi` | customer/merchant/rider/admin | `NotificationFeedResponse` |
 | `notificationreadstatesapi` | customer/merchant/rider/admin | `NotificationReadStatesResponse` |
 | `notificationmarkreadapi` | customer/merchant/rider/admin | `OkResponse` |
 | `notificationmarkallreadapi` | customer/merchant/rider/admin | `OkResponse` |
+| `checkoutquoteapi` | customer | `CheckoutQuoteResponse` |
 | `checkoutapi` | customer | `CheckoutResponse` |
 
 ### Rider API
@@ -448,7 +450,7 @@ CustomerVoucherDiscardAPIMessage -> POST /api/customervoucherdiscardapi
 ### 订单聊天、通知与图片
 
 - 顾客、商家、骑手使用分角色聊天 API，消息持久化到 `order_chat_messages`。
-- 聊天图片、退款图片、评价图片走 `StoredImageRoutes` 和 `stored_images` 元数据表。
+- 聊天图片、退款图片、订单备注图片、评价图片走 `StoredImageRoutes` 和 `stored_images` 元数据表；订单相关图片上传统一由 `OrderImageFileService` 编排。
 - `notificationfeedapi` 统一聚合订单、退款、聊天和入驻审核事实源，前端仅负责展示和轮询。
 - 全局通知中心的已读状态通过 `notification_read_states` 持久化，支持单条已读和全部已读。
 
