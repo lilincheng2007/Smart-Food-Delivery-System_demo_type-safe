@@ -1,41 +1,40 @@
 package delivery.merchant.validators
 
-import delivery.merchant.objects.{MerchantHolidayBusinessHour, MerchantWeeklyBusinessHour}
+import delivery.merchant.objects.{MerchantBusinessStatus, MerchantHolidayBusinessHour, MerchantWeeklyBusinessHour}
 
 import java.time.{LocalDate, LocalTime}
 import scala.util.Try
 
 object MerchantBusinessHoursValidator:
-  val Open = "open"
-  val Resting = "resting"
-  val ClosedToday = "closedToday"
-  val Paused = "paused"
+  val Open = MerchantBusinessStatus.open
+  val Resting = MerchantBusinessStatus.resting
+  val ClosedToday = MerchantBusinessStatus.closedToday
+  val Paused = MerchantBusinessStatus.paused
 
   private val AllowedStatuses = Set(Open, Resting, ClosedToday, Paused)
   private val MaxWeeklyHours = 28
   private val MaxHolidayHours = 40
 
   final case class NormalizedBusinessHours(
-      businessStatus: String,
+      businessStatus: MerchantBusinessStatus,
       weeklyBusinessHours: List[MerchantWeeklyBusinessHour],
       holidayBusinessHours: List[MerchantHolidayBusinessHour]
   )
 
-  def normalizeStatus(value: String): String =
-    val trimmed = value.trim
-    if AllowedStatuses.contains(trimmed) then trimmed else Open
+  def normalizeStatus(value: String): MerchantBusinessStatus =
+    MerchantBusinessStatus.normalize(value)
 
   def validateAndNormalize(
-      businessStatus: String,
+      businessStatus: MerchantBusinessStatus,
       weeklyBusinessHours: List[MerchantWeeklyBusinessHour],
       holidayBusinessHours: List[MerchantHolidayBusinessHour]
   ): Either[String, NormalizedBusinessHours] =
     val normalizedWeekly = weeklyBusinessHours.take(MaxWeeklyHours)
-    val normalizedHoliday = holidayBusinessHours.take(MaxHolidayHours).map(item => item.copy(businessStatus = normalizeStatus(item.businessStatus)))
+    val normalizedHoliday = holidayBusinessHours.take(MaxHolidayHours)
     for
       _ <- validateWeeklyHours(normalizedWeekly)
       _ <- validateHolidayHours(normalizedHoliday)
-    yield NormalizedBusinessHours(normalizeStatus(businessStatus), normalizedWeekly, normalizedHoliday)
+    yield NormalizedBusinessHours(businessStatus, normalizedWeekly, normalizedHoliday)
 
   private def validateWeeklyHours(hours: List[MerchantWeeklyBusinessHour]): Either[String, Unit] =
     hours.zipWithIndex.collectFirst {
@@ -51,8 +50,6 @@ object MerchantBusinessHoursValidator:
     hours.zipWithIndex.collectFirst {
       case (hour, index) if parseDate(hour.date).isEmpty =>
         s"第 ${index + 1} 条节假日营业日期不合法"
-      case (hour, index) if !AllowedStatuses.contains(hour.businessStatus.trim) =>
-        s"第 ${index + 1} 条节假日营业状态不合法"
       case (hour, index) if hour.startTime.exists(parseTime(_).isEmpty) || hour.endTime.exists(parseTime(_).isEmpty) =>
         s"第 ${index + 1} 条节假日营业时间格式不合法"
       case (hour, index) if hour.startTime.exists(_.nonEmpty) != hour.endTime.exists(_.nonEmpty) =>

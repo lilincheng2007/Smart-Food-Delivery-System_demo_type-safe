@@ -1,7 +1,9 @@
 import type { OrderId } from '@/objects/shared/ids'
+import type { OrderChatMessageType } from './OrderChatMessageType'
+import type { OrderChatRole } from './OrderChatRole'
 
-export type OrderChatRole = 'customer' | 'merchant' | 'rider'
-export type OrderChatMessageType = 'text' | 'image'
+export type { OrderChatMessageType } from './OrderChatMessageType'
+export type { OrderChatRole } from './OrderChatRole'
 
 export interface OrderChatMessage {
   id: string

@@ -1,6 +1,6 @@
 package delivery.merchant.objects.apiTypes
 
-import delivery.merchant.objects.ProductBundleGroup
+import delivery.merchant.objects.{ProductBundleGroup, ProductInventoryMode}
 import delivery.domain.ListingStatus
 
 final case class UpdateProductRequest(
@@ -11,7 +11,7 @@ final case class UpdateProductRequest(
     price: Double,
     remainingStock: Int,
     listingStatus: ListingStatus,
-    inventoryMode: Option[String] = None,
+    inventoryMode: Option[ProductInventoryMode] = None,
     maxPerOrder: Option[Int] = None,
     bundleGroups: Option[List[ProductBundleGroup]] = None
 )

@@ -256,6 +256,7 @@ cd frontend && npx eslint <changed-files>
 | 2026-06-13 | 已完成第二批清理 | 清理泛化 `Support` / `ApiSupport` 命名，将响应装配、归属校验、自有商品列表、标准平台券和 JWT 能力迁到语义明确的 service / validator。 |
 | 2026-06-13 | 已完成第三批 validators 补齐 | 将商家营业时间、结算行 / 库存 / 套餐选择、促销、评价输入等规则迁入对应 validators，并继续收敛订单状态流转 actor role 字符串。 |
 | 2026-06-13 | 已完成第四批结算服务拆分 | 将 `OrderCheckoutService` 的库存扣减、价格明细、订单构造、优惠券兑换和积分等级职责拆入独立 service，`OrderCheckoutService` 保留结算编排门面。 |
+| 2026-06-14 | 已完成第五批枚举收敛 | 新增并接入商家营业状态、商品库存模式、套餐选择类型、促销类型、聊天角色和聊天消息类型枚举；前端补齐对应类型文件，JSON 值保持兼容字符串。 |
 
 ## 6. 当前代码现状快照
 
@@ -282,11 +283,12 @@ cd frontend && npx eslint <changed-files>
 - `CheckoutOrderFactory` 已负责订单项、订单价格快照和初始订单构造。
 - `VoucherRedemptionService` 已负责优惠券校验、奖励券构造和消费。
 - `CustomerLoyaltyService` 已负责吃货积分等级计算。
+- `MerchantBusinessStatus`、`ProductInventoryMode`、`ProductBundleSelectionType`、`PromotionDiscountType`、`PromotionTriggerType`、`OrderChatRole`、`OrderChatMessageType` 已接入后端对象、业务逻辑和 JSON codec。
+- 前端已补齐同名类型文件，并在现有 `MerchantBusinessHours`、`Product`、`Promotion`、`OrderChatMessage` 类型中复用，保持前后端契约值一致。
 
 ### 仍需优化的结构
 
-- 后端还有核心业务状态使用裸 `String`，例如营业状态、促销类型、聊天角色 / 消息类型、库存模式和套餐选择类型，需要逐步 enum 化。
-- `platform/json/ApiJsonCodecs.scala` 仍较中心化，模块 `json/` 当前更多是 re-export。
+- `platform/json/ApiJsonCodecs.scala` 仍较中心化，且第五批新增 enum codec 后更需要按模块下沉。
 - `domain/CompatibilityAliases.scala` 仍隐藏部分对象真实归属，应作为短期兼容层逐步收敛。
 - 部分 API 名称过泛或写入面过宽，例如商家资料整包写回、店铺入驻申请命名不够精确。
 - `OrderChatPage`、`AdminConsole`、`CustomerPortal` store 等前端文件仍偏大。
@@ -302,14 +304,15 @@ cd frontend && npx eslint <changed-files>
 | 2026-06-13 | 第二批：清理泛化 `Support` / `ApiSupport` 命名 | 删除 `MerchantApiSupport`、`OrderApiSupport`、`RiderApiSupport`、`UserApiSupport`；新增 `MerchantStoreOwnershipValidator`、`MerchantOwnedProductService`、三类 Me 响应装配器和账号 validator；将 `VoucherSupport` 重命名为 `StandardPlatformVoucherService`，将 `JwtSupport` 重命名为 `JwtTokenService`；同步 `backend/README.md`。 | `cd backend && sbt -batch compile` 通过；类型安全审计通过（45 pass / 0 fail）；可维护性审计通过（10 pass / 0 warn / 0 fail）；后端源码已无 `*Support.scala`。 | 第三批继续补齐 validators：本批只先建立少量 validator / assembler 落点，尚未系统迁出购物车、营业时间、促销、评价图片等复杂规则。 |
 | 2026-06-13 | 第三批：补齐 validators，并迁出独立规则 | 新增 `MerchantBusinessHoursValidator`、`CheckoutLineValidator`、`PromotionValidator`；扩展 `ReviewImageValidator` 和 `OrderStatusTransitionValidator`；更新 `MerchantBusinessHoursAPIMessage`、`OrderCheckoutService`、平台 / 商家优惠 API、评价提交 API 调用对应 validator。 | `cd backend && sbt -batch compile` 通过；类型安全审计通过（45 pass / 0 fail）；可维护性审计通过（10 pass / 0 warn / 0 fail）；相关目录无 IDE lint 诊断。 | 第四批继续拆分 `OrderCheckoutService`：本批只迁出校验和消耗数量计算，价格、库存扣减、订单构造、优惠券兑换仍在同一服务内。 |
 | 2026-06-13 | 第四批：拆分 `OrderCheckoutService` | 新增 `CheckoutInventoryService`、`CheckoutPricingService`、`CheckoutOrderFactory`、`VoucherRedemptionService`、`CustomerLoyaltyService`；更新结算、取消、拒单、退款、完成订单和顾客订单列表相关调用，移除外部对 `OrderCheckoutService` 的价格 / 库存 / 券 / 等级依赖。 | `cd backend && sbt -batch compile` 通过；类型安全审计通过（45 pass / 0 fail）；可维护性审计通过（10 pass / 0 warn / 0 fail）；相关目录无 IDE lint 诊断。 | 第五批进入字符串枚举收敛；本批仍保留 `OrderCheckoutService.buildOrdersForCheckout` 作为兼容编排门面。 |
+| 2026-06-14 | 第五批：收敛字符串枚举和前后端类型契约 | 新增后端枚举 `MerchantBusinessStatus`、`ProductInventoryMode`、`ProductBundleSelectionType`、`PromotionDiscountType`、`PromotionTriggerType`、`OrderChatRole`、`OrderChatMessageType`；更新领域对象、业务服务、表读写和 APIMessage；前端补齐同名类型文件并复用现有 union。 | `cd backend && sbt -batch compile` 通过；`npm run typecheck --prefix frontend` 通过；类型安全审计通过（45 pass / 0 fail）；可维护性审计通过（10 pass / 0 warn / 0 fail）；后端核心字段已无目标裸 `String`。 | 第六批进入 JSON codec 模块化；本批为了控制风险仍将 enum codec 注册在 `platform/json/ApiJsonCodecs.scala` 聚合入口。 |
 
-## 8. 下一批次建议：第五批收敛字符串枚举和前后端类型契约
+## 8. 下一批次建议：第六批模块化 JSON codec
 
-建议按低风险、高复用的枚举先后推进：
+建议先拆最容易产生字段漂移、同时本次 enum 变化最多的模块：
 
-1. 优先新增 `MerchantBusinessStatus` 后端 enum / 值对象，对齐前端 `MerchantBusinessStatus = 'open' | 'resting' | 'closedToday' | 'paused'`，并让 `MerchantBusinessHoursValidator`、`MerchantBusinessHoursService` 使用它。
-2. 新增 `PromotionDiscountType` 与 `PromotionTriggerType`，替代 `Promotion.discountType`、`Promotion.triggerType` 的裸 `String`，同步更新 `PromotionValidator`、`PromotionPricing` 与前端 `Promotion` 类型。
-3. 新增 `OrderChatRole` 与 `OrderChatMessageType`，替代聊天相关 `senderRole`、`peerRole`、`messageType` 字符串，并逐步更新聊天 API、通知模板和未读统计。
-4. 新增 `InventoryMode`，替代商品库存模式字符串 `unlimited`、`finite`、`soldOut`，同步 `MerchantBusinessService`、`CheckoutLineValidator`、`CheckoutInventoryService` 与前端 `ProductInventoryMode`。
-5. 新增 `BundleSelectionType`，替代套餐选择类型字符串 `fixed`、`repeatable`、`nonRepeatable`，同步商品校验、套餐表单和结算套餐选择规则。
-6. 每个 enum 迁移都应先保持 JSON 值不变，只收紧后端类型和 codec，避免破坏现有前端与数据库数据。
+1. 优先拆 `merchant/json/MerchantJsonCodecs.scala`：下沉 `Merchant`、`Product`、`ProductBundleGroup`、`MerchantBusinessStatus`、`ProductInventoryMode`、`ProductBundleSelectionType` 相关 codec，并保留对既有字符串 JSON 值的兼容。
+2. 再拆 `promotion/json/PromotionJsonCodecs.scala`：下沉 `Promotion`、`Voucher`、`PromotionDiscountType`、`PromotionTriggerType` codec，让促销规则与 codec 靠近 `promotion` 模块。
+3. 再拆 `order/json/OrderJsonCodecs.scala`：下沉 `Order`、聊天消息、未读统计、结算请求 / 响应、价格快照和时间线 codec。
+4. `platform/json/ApiJsonCodecs.scala` 保留统一聚合导出，不再承载具体业务对象的手写 encoder / decoder。
+5. 拆分时每移动一组 codec 后立即运行后端编译和类型安全审计，避免隐式 given 冲突或遗漏。
+6. 第六批可顺手修正文档中 JSON codec 入口说明，明确“模块 codec 定义 + platform 聚合导出”的最终结构。

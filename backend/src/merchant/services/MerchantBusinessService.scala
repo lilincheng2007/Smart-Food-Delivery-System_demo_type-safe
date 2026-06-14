@@ -1,7 +1,7 @@
 package delivery.merchant.services
 
 import cats.effect.IO
-import delivery.merchant.objects.{Merchant, Product, ProductBundleGroup}
+import delivery.merchant.objects.{Merchant, Product, ProductBundleGroup, ProductBundleSelectionType, ProductInventoryMode}
 import delivery.merchant.tables.merchantstore.MerchantStoreTable
 import delivery.merchant.validators.MerchantStoreOwnershipValidator
 import delivery.platform.api.HttpApiError
@@ -23,16 +23,15 @@ object MerchantBusinessService:
   def canFinishCooking(status: OrderStatus): Boolean =
     status == OrderStatus.制作中
 
-  def inventoryStatus(remainingStock: Int, listingStatus: ListingStatus, inventoryMode: String): InventoryStatus =
-    val mode = inventoryMode.trim
-    if listingStatus == ListingStatus.下架 || mode == "soldOut" then InventoryStatus.售罄
-    else if mode == "unlimited" then InventoryStatus.充足
+  def inventoryStatus(remainingStock: Int, listingStatus: ListingStatus, inventoryMode: ProductInventoryMode): InventoryStatus =
+    if listingStatus == ListingStatus.下架 || inventoryMode == ProductInventoryMode.soldOut then InventoryStatus.售罄
+    else if inventoryMode == ProductInventoryMode.unlimited then InventoryStatus.充足
     else if remainingStock <= 0 then InventoryStatus.售罄
     else if remainingStock <= 20 then InventoryStatus.紧张
     else InventoryStatus.充足
 
-  def normalizeInventoryMode(value: Option[String]): String =
-    value.map(_.trim).filter(Set("unlimited", "finite", "soldOut").contains).getOrElse("finite")
+  def normalizeInventoryMode(value: Option[ProductInventoryMode]): ProductInventoryMode =
+    value.getOrElse(ProductInventoryMode.finite)
 
   def normalizeMaxPerOrder(value: Option[Int]): Option[Int] =
     value.filter(_ > 0).map(limit => math.min(limit, 999))
@@ -70,7 +69,7 @@ object MerchantBusinessService:
           else
             val optionProducts = group.options.flatMap(option => products.find(product => product.id == option.productId))
             val invalid = optionProducts.length != group.options.length || optionProducts.exists(product => product.merchantId != merchantId || product.bundleGroups.nonEmpty || selfId.contains(product.id))
-            val selectionTypeValid = Set("fixed", "repeatable", "nonRepeatable").contains(group.selectionType)
+            val selectionTypeValid = ProductBundleSelectionType.values.contains(group.selectionType)
             val hasFreeOption = group.options.exists { option =>
               optionProducts.find(_.id == option.productId).exists { product =>
                 val extraPrice =

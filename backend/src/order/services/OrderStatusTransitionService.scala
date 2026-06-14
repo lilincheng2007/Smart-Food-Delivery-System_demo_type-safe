@@ -2,7 +2,7 @@ package delivery.order.services
 
 import cats.effect.IO
 import cats.syntax.all.*
-import delivery.order.objects.{Order, OrderChatMessage}
+import delivery.order.objects.{Order, OrderChatMessage, OrderChatMessageType, OrderChatRole}
 import delivery.order.tables.order.OrderTable
 import delivery.order.tables.orderchat.OrderChatMessageTable
 import delivery.order.validators.OrderStatusTransitionValidator
@@ -42,24 +42,24 @@ object OrderStatusTransitionService:
         createSystemChatMessage(
           connection,
           updated,
-          senderRole = "merchant",
-          peerRole = "customer",
+          senderRole = OrderChatRole.merchant,
+          peerRole = OrderChatRole.customer,
           content = OrderChatNotificationTemplateService.merchantOrderAccepted(updated)
         )
       case (OrderStatus.制作中, OrderStatus.待骑手接单, "merchant") =>
         createSystemChatMessage(
           connection,
           updated,
-          senderRole = "merchant",
-          peerRole = "customer",
+          senderRole = OrderChatRole.merchant,
+          peerRole = OrderChatRole.customer,
           content = OrderChatNotificationTemplateService.merchantOrderReady(updated)
         )
       case (OrderStatus.配送中, OrderStatus.已送达, "rider") =>
         createSystemChatMessage(
           connection,
           updated,
-          senderRole = "rider",
-          peerRole = "customer",
+          senderRole = OrderChatRole.rider,
+          peerRole = OrderChatRole.customer,
           content = OrderChatNotificationTemplateService.riderOrderDelivered(updated)
         )
       case _ => IO.unit
@@ -67,8 +67,8 @@ object OrderStatusTransitionService:
   private def createSystemChatMessage(
       connection: Connection,
       order: Order,
-      senderRole: String,
-      peerRole: String,
+      senderRole: OrderChatRole,
+      peerRole: OrderChatRole,
       content: String
   ): IO[Unit] =
     OrderChatMessageTable.create(
@@ -78,7 +78,7 @@ object OrderStatusTransitionService:
         orderId = order.id,
         senderRole = senderRole,
         peerRole = peerRole,
-        messageType = "text",
+        messageType = OrderChatMessageType.text,
         content = content,
         createdAt = Instant.now().toString
       )

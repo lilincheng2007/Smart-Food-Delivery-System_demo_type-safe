@@ -9,7 +9,7 @@ final case class MerchantWeeklyBusinessHour(
 
 final case class MerchantHolidayBusinessHour(
     date: String,
-    businessStatus: String,
+    businessStatus: MerchantBusinessStatus,
     startTime: Option[String] = None,
     endTime: Option[String] = None
 )

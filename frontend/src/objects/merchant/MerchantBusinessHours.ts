@@ -1,4 +1,6 @@
-export type MerchantBusinessStatus = 'open' | 'resting' | 'closedToday' | 'paused'
+import type { MerchantBusinessStatus } from './MerchantBusinessStatus'
+
+export type { MerchantBusinessStatus } from './MerchantBusinessStatus'
 
 export interface MerchantWeeklyBusinessHour {
   dayOfWeek: number

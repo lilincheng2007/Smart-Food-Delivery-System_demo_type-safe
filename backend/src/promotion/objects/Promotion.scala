@@ -5,9 +5,9 @@ import delivery.domain.ProductId
 final case class Promotion(
     id: String,
     title: String,
-    discountType: String,
+    discountType: PromotionDiscountType,
     discountValue: Double,
-    triggerType: String,
+    triggerType: PromotionTriggerType,
     triggerValue: Double,
     startsAt: Option[String],
     endsAt: Option[String],

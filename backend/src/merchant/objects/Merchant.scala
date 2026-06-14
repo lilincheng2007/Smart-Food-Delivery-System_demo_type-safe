@@ -15,7 +15,7 @@ final case class Merchant(
     description: String = "",
     announcement: String = "",
     promotions: List[Promotion] = Nil,
-    businessStatus: String = "open",
+    businessStatus: MerchantBusinessStatus = MerchantBusinessStatus.open,
     weeklyBusinessHours: List[MerchantWeeklyBusinessHour] = Nil,
     holidayBusinessHours: List[MerchantHolidayBusinessHour] = Nil
 )

@@ -1,7 +1,7 @@
 package delivery.order.tables.orderchat
 
 import cats.effect.IO
-import delivery.order.objects.{OrderChatMessage, OrderChatUnreadCount}
+import delivery.order.objects.{OrderChatMessage, OrderChatMessageType, OrderChatRole, OrderChatUnreadCount}
 import delivery.domain.OrderId
 
 import java.sql.{Connection, ResultSet}
@@ -19,16 +19,16 @@ object OrderChatMessageTable:
       try
         statement.setString(1, message.id)
         statement.setString(2, message.orderId)
-        statement.setString(3, message.senderRole)
-        statement.setString(4, message.peerRole)
-        statement.setString(5, message.messageType)
+        statement.setString(3, message.senderRole.toString)
+        statement.setString(4, message.peerRole.toString)
+        statement.setString(5, message.messageType.toString)
         statement.setString(6, message.content)
         statement.executeUpdate()
         ()
       finally statement.close()
     }.map(_ => message)
 
-  def listForPair(connection: Connection, orderId: OrderId, roleA: String, roleB: String): IO[List[OrderChatMessage]] =
+  def listForPair(connection: Connection, orderId: OrderId, roleA: OrderChatRole, roleB: OrderChatRole): IO[List[OrderChatMessage]] =
     IO.blocking {
       val statement = connection.prepareStatement(
         """
@@ -43,10 +43,10 @@ object OrderChatMessageTable:
       )
       try
         statement.setString(1, orderId)
-        statement.setString(2, roleA)
-        statement.setString(3, roleB)
-        statement.setString(4, roleB)
-        statement.setString(5, roleA)
+        statement.setString(2, roleA.toString)
+        statement.setString(3, roleB.toString)
+        statement.setString(4, roleB.toString)
+        statement.setString(5, roleA.toString)
         val rs = statement.executeQuery()
         try
           val b = List.newBuilder[OrderChatMessage]
@@ -56,7 +56,7 @@ object OrderChatMessageTable:
       finally statement.close()
     }
 
-  def markReadForPair(connection: Connection, orderId: OrderId, currentRole: String, peerRole: String): IO[Unit] =
+  def markReadForPair(connection: Connection, orderId: OrderId, currentRole: OrderChatRole, peerRole: OrderChatRole): IO[Unit] =
     IO.blocking {
       val statement = connection.prepareStatement(
         """
@@ -67,14 +67,14 @@ object OrderChatMessageTable:
       )
       try
         statement.setString(1, orderId)
-        statement.setString(2, peerRole)
-        statement.setString(3, currentRole)
+        statement.setString(2, peerRole.toString)
+        statement.setString(3, currentRole.toString)
         val _ = statement.executeUpdate()
         ()
       finally statement.close()
     }
 
-  def unreadCountsForOrders(connection: Connection, currentRole: String, orderIds: List[OrderId]): IO[List[OrderChatUnreadCount]] =
+  def unreadCountsForOrders(connection: Connection, currentRole: OrderChatRole, orderIds: List[OrderId]): IO[List[OrderChatUnreadCount]] =
     val distinctOrderIds = orderIds.distinct
     if distinctOrderIds.isEmpty then IO.pure(Nil)
     else
@@ -94,7 +94,7 @@ object OrderChatMessageTable:
              |""".stripMargin
         )
         try
-          statement.setString(1, currentRole)
+          statement.setString(1, currentRole.toString)
           distinctOrderIds.zipWithIndex.foreach { case (orderId, index) => statement.setString(index + 2, orderId) }
           val rs = statement.executeQuery()
           try
@@ -102,9 +102,9 @@ object OrderChatMessageTable:
             while rs.next() do
               b += OrderChatUnreadCount(
                 orderId = rs.getString("order_id"),
-                peerRole = rs.getString("sender_role"),
+                peerRole = OrderChatRole.fromString(rs.getString("sender_role")).getOrElse(OrderChatRole.customer),
                 unreadCount = rs.getInt("unread_count"),
-                latestMessageType = Option(rs.getString("latest_message_type")),
+                latestMessageType = Option(rs.getString("latest_message_type")).flatMap(OrderChatMessageType.fromString),
                 latestContent = Option(rs.getString("latest_content"))
               )
             b.result()
@@ -116,10 +116,12 @@ object OrderChatMessageTable:
     OrderChatMessage(
       id = rs.getString("id"),
       orderId = rs.getString("order_id"),
-      senderRole = rs.getString("sender_role"),
-      peerRole = rs.getString("peer_role"),
-      messageType = rs.getString("message_type"),
+      senderRole = OrderChatRole.fromString(rs.getString("sender_role")).getOrElse(OrderChatRole.customer),
+      peerRole = OrderChatRole.fromString(rs.getString("peer_role")).getOrElse(OrderChatRole.customer),
+      messageType = OrderChatMessageType.fromString(rs.getString("message_type")).getOrElse(OrderChatMessageType.text),
       content = rs.getString("content"),
       createdAt = rs.getTimestamp("created_at").toInstant.toString,
       readAt = Option(rs.getTimestamp("read_at")).map(_.toInstant.toString)
     )
+
+end OrderChatMessageTable

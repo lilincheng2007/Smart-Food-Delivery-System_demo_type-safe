@@ -1,6 +1,6 @@
 package delivery.order.validators
 
-import delivery.merchant.objects.Product
+import delivery.merchant.objects.{Product, ProductBundleSelectionType, ProductInventoryMode}
 import delivery.order.objects.CheckoutLine
 import delivery.domain.{ListingStatus, ProductId}
 
@@ -20,12 +20,12 @@ object CheckoutLineValidator:
   def validateInventory(productsById: Map[ProductId, Product], lines: List[CheckoutLine]): Option[String] =
     consumedQuantities(productsById, lines).toList.flatMap { case (productId, quantity) =>
       productsById.get(productId).flatMap { product =>
-        val mode = normalizeInventoryMode(product.inventoryMode)
+        val mode = product.inventoryMode
         if product.listingStatus != ListingStatus.上架 then Some(s"${product.name}暂未上架")
-        else if mode == "soldOut" then Some(s"${product.name}已售罄")
+        else if mode == ProductInventoryMode.soldOut then Some(s"${product.name}已售罄")
         else if product.maxPerOrder.exists(limit => quantity > limit) then Some(s"${product.name}每单限购${product.maxPerOrder.get}份")
-        else if mode == "finite" && product.remainingStock <= 0 then Some(s"${product.name}已售罄")
-        else if mode == "finite" && quantity > product.remainingStock then Some(s"${product.name}库存不足，当前仅剩${product.remainingStock}份")
+        else if mode == ProductInventoryMode.finite && product.remainingStock <= 0 then Some(s"${product.name}已售罄")
+        else if mode == ProductInventoryMode.finite && quantity > product.remainingStock then Some(s"${product.name}库存不足，当前仅剩${product.remainingStock}份")
         else None
       }
     }.headOption
@@ -59,15 +59,11 @@ object CheckoutLineValidator:
         val duplicated = selected.exists(selection => selection.quantity > 1)
         if selectedCount != group.quantity then Some(s"${product.name}的${group.name}需要选择${group.quantity}件")
         else if invalid then Some(s"${product.name}的${group.name}包含不可选菜品")
-        else if group.selectionType == "nonRepeatable" && duplicated then Some(s"${product.name}的${group.name}不可重复选择同一菜品")
+        else if group.selectionType == ProductBundleSelectionType.nonRepeatable && duplicated then Some(s"${product.name}的${group.name}不可重复选择同一菜品")
         else None
       }.headOption
 
   private def addQuantity(values: Map[ProductId, Int], productId: ProductId, quantity: Int): Map[ProductId, Int] =
     values.updated(productId, values.getOrElse(productId, 0) + math.max(0, quantity))
-
-  private def normalizeInventoryMode(value: String): String =
-    val trimmed = value.trim
-    if Set("unlimited", "finite", "soldOut").contains(trimmed) then trimmed else "finite"
 
 end CheckoutLineValidator

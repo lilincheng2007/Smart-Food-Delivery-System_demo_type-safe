@@ -1,5 +1,8 @@
-export type PromotionDiscountType = 'amount' | 'percent' | 'productAmount'
-export type PromotionTriggerType = 'none' | 'amount' | 'items'
+import type { PromotionDiscountType } from './PromotionDiscountType'
+import type { PromotionTriggerType } from './PromotionTriggerType'
+
+export type { PromotionDiscountType } from './PromotionDiscountType'
+export type { PromotionTriggerType } from './PromotionTriggerType'
 
 export interface Promotion {
   id: string

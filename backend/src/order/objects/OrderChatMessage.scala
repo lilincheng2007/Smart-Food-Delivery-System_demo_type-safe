@@ -5,9 +5,9 @@ import delivery.domain.OrderId
 final case class OrderChatMessage(
     id: String,
     orderId: OrderId,
-    senderRole: String,
-    peerRole: String,
-    messageType: String,
+    senderRole: OrderChatRole,
+    peerRole: OrderChatRole,
+    messageType: OrderChatMessageType,
     content: String,
     createdAt: String,
     readAt: Option[String] = None

@@ -4,8 +4,8 @@ import delivery.domain.OrderId
 
 final case class OrderChatUnreadCount(
     orderId: OrderId,
-    peerRole: String,
+    peerRole: OrderChatRole,
     unreadCount: Int,
-    latestMessageType: Option[String] = None,
+    latestMessageType: Option[OrderChatMessageType] = None,
     latestContent: Option[String] = None
 )

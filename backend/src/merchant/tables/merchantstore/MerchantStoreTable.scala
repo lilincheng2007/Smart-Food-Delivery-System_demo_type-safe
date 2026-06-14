@@ -1,7 +1,7 @@
 package delivery.merchant.tables.merchantstore
 
 import cats.effect.IO
-import delivery.merchant.objects.Merchant
+import delivery.merchant.objects.{Merchant, MerchantBusinessStatus}
 import delivery.platform.json.ApiJsonCodecs.given
 import delivery.domain.MerchantCategory
 import io.circe.parser.decode
@@ -154,7 +154,7 @@ object MerchantStoreTable:
         statement.setString(11, merchant.description)
         statement.setString(12, merchant.announcement)
         statement.setObject(13, jsonb(merchant.promotions.asJson.noSpaces))
-        statement.setString(14, merchant.businessStatus)
+        statement.setString(14, merchant.businessStatus.toString)
         statement.setObject(15, jsonb(merchant.weeklyBusinessHours.asJson.noSpaces))
         statement.setObject(16, jsonb(merchant.holidayBusinessHours.asJson.noSpaces))
       case None =>
@@ -171,7 +171,7 @@ object MerchantStoreTable:
         statement.setString(10, merchant.description)
         statement.setString(11, merchant.announcement)
         statement.setObject(12, jsonb(merchant.promotions.asJson.noSpaces))
-        statement.setString(13, merchant.businessStatus)
+        statement.setString(13, merchant.businessStatus.toString)
         statement.setObject(14, jsonb(merchant.weeklyBusinessHours.asJson.noSpaces))
         statement.setObject(15, jsonb(merchant.holidayBusinessHours.asJson.noSpaces))
 
@@ -189,7 +189,7 @@ object MerchantStoreTable:
       description = Option(resultSet.getString("description")).getOrElse(""),
       announcement = Option(resultSet.getString("announcement")).getOrElse(""),
       promotions = Option(resultSet.getString("promotions")).flatMap(raw => decode[List[delivery.domain.Promotion]](raw).toOption).getOrElse(Nil),
-      businessStatus = Option(resultSet.getString("business_status")).getOrElse("open"),
+      businessStatus = MerchantBusinessStatus.normalize(Option(resultSet.getString("business_status")).getOrElse("open")),
       weeklyBusinessHours = Option(resultSet.getString("weekly_business_hours")).flatMap(raw => decode[List[delivery.merchant.objects.MerchantWeeklyBusinessHour]](raw).toOption).getOrElse(Nil),
       holidayBusinessHours = Option(resultSet.getString("holiday_business_hours")).flatMap(raw => decode[List[delivery.merchant.objects.MerchantHolidayBusinessHour]](raw).toOption).getOrElse(Nil)
     )

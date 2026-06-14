@@ -3,7 +3,7 @@ package delivery.order.api
 import delivery.order.services.OrderChatNotificationTemplateService
 import cats.effect.IO
 import cats.syntax.all.*
-import delivery.order.objects.{Order, OrderChatMessage}
+import delivery.order.objects.{Order, OrderChatMessage, OrderChatMessageType, OrderChatRole}
 import delivery.order.objects.apiTypes.CustomerOrdersResponse
 import delivery.order.tables.order.OrderTable
 import delivery.order.tables.orderchat.OrderChatMessageTable
@@ -52,9 +52,9 @@ final case class CustomerOrdersAPIMessage() extends APIWithRoleMessage[CustomerO
       OrderChatMessage(
         id = UUID.randomUUID().toString,
         orderId = order.id,
-        senderRole = "merchant",
-        peerRole = "customer",
-        messageType = "text",
+        senderRole = OrderChatRole.merchant,
+        peerRole = OrderChatRole.customer,
+        messageType = OrderChatMessageType.text,
         content = OrderChatNotificationTemplateService.merchantPrepTimeout(order),
         createdAt = Instant.now().toString
       )

@@ -1,7 +1,7 @@
 package delivery.merchant.tables.catalogproduct
 
 import cats.effect.IO
-import delivery.merchant.objects.{Product, ProductBundleGroup}
+import delivery.merchant.objects.{Product, ProductBundleGroup, ProductInventoryMode}
 import delivery.platform.json.ApiJsonCodecs.given
 import delivery.domain.{InventoryStatus, ListingStatus, ProductId}
 import io.circe.parser.decode
@@ -115,7 +115,7 @@ object CatalogProductTable:
     statement.setInt(8, product.remainingStock)
     statement.setString(9, product.listingStatus.toString)
     statement.setString(10, product.inventoryStatus.toString)
-    statement.setString(11, normalizedInventoryMode(product.inventoryMode))
+    statement.setString(11, product.inventoryMode.toString)
     product.maxPerOrder match
       case Some(value) => statement.setInt(12, value)
       case None        => statement.setNull(12, java.sql.Types.INTEGER)
@@ -137,7 +137,7 @@ object CatalogProductTable:
       remainingStock = resultSet.getInt("remaining_stock"),
       listingStatus = ListingStatus.fromString(resultSet.getString("listing_status")).getOrElse(ListingStatus.下架),
       inventoryStatus = InventoryStatus.fromString(resultSet.getString("inventory_status")).getOrElse(InventoryStatus.售罄),
-      inventoryMode = normalizedInventoryMode(Option(resultSet.getString("inventory_mode")).getOrElse("finite")),
+      inventoryMode = ProductInventoryMode.normalize(Option(resultSet.getString("inventory_mode")).getOrElse("finite")),
       maxPerOrder = Option(resultSet.getInt("max_per_order")).filter(_ => !resultSet.wasNull()),
       discountText = Option(resultSet.getString("discount_text")),
       categoryName = normalizedCategoryName(Option(resultSet.getString("category_name")).getOrElse("")),
@@ -147,10 +147,6 @@ object CatalogProductTable:
   private def normalizedCategoryName(raw: String): String =
     val trimmed = raw.trim
     if trimmed.isEmpty then "默认分类" else trimmed
-
-  private def normalizedInventoryMode(raw: String): String =
-    val trimmed = raw.trim
-    if Set("unlimited", "finite", "soldOut").contains(trimmed) then trimmed else "finite"
 
   private def jsonb(value: String): PGobject =
     val pg = PGobject()

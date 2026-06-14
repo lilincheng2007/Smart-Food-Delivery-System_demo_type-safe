@@ -10,6 +10,7 @@ import delivery.merchant.tables.*
 import delivery.order.objects.*
 import delivery.order.objects.apiTypes.*
 import delivery.order.tables.*
+import delivery.promotion.objects.*
 import delivery.review.objects.*
 import delivery.review.objects.apiTypes.*
 import delivery.rider.objects.*
@@ -48,6 +49,13 @@ object ApiJsonCodecs:
   given Codec[RefundStatus] = enumCodec("退款状态", RefundStatus.values)
   given Codec[ListingStatus] = enumCodec("上下架状态", ListingStatus.values)
   given Codec[InventoryStatus] = enumCodec("库存状态", InventoryStatus.values)
+  given Codec[MerchantBusinessStatus] = enumCodec("商家营业状态", MerchantBusinessStatus.values)
+  given Codec[ProductInventoryMode] = enumCodec("商品库存模式", ProductInventoryMode.values)
+  given Codec[ProductBundleSelectionType] = enumCodec("套餐选择类型", ProductBundleSelectionType.values)
+  given Codec[PromotionDiscountType] = enumCodec("优惠类型", PromotionDiscountType.values)
+  given Codec[PromotionTriggerType] = enumCodec("优惠触发类型", PromotionTriggerType.values)
+  given Codec[OrderChatRole] = enumCodec("订单聊天角色", OrderChatRole.values)
+  given Codec[OrderChatMessageType] = enumCodec("订单聊天消息类型", OrderChatMessageType.values)
 
   given Codec[HealthOk] = deriveCodec
   given Codec[OkResponse] = deriveCodec
@@ -111,10 +119,10 @@ object ApiJsonCodecs:
       id <- c.downField("id").as[String]
       name <- c.downField("name").as[String]
       quantity <- c.downField("quantity").as[Int]
-      selectionType <- c.downField("selectionType").as[Option[String]]
+      selectionType <- c.downField("selectionType").as[Option[ProductBundleSelectionType]]
       includedPrice <- c.downField("includedPrice").as[Option[Double]]
       options <- c.downField("options").as[Option[List[ProductBundleOption]]]
-    yield ProductBundleGroup(id, name, quantity, selectionType.getOrElse("repeatable"), math.max(0.0, includedPrice.getOrElse(0.0)), options.getOrElse(Nil))
+    yield ProductBundleGroup(id, name, quantity, selectionType.getOrElse(ProductBundleSelectionType.repeatable), math.max(0.0, includedPrice.getOrElse(0.0)), options.getOrElse(Nil))
   }
 
   private val productBundleGroupEncoder: Encoder[ProductBundleGroup] = Encoder.instance { group =>
@@ -392,10 +400,10 @@ object ApiJsonCodecs:
       description <- c.downField("description").as[Option[String]]
       announcement <- c.downField("announcement").as[Option[String]]
       promotions <- c.downField("promotions").as[Option[List[Promotion]]]
-      businessStatus <- c.downField("businessStatus").as[Option[String]]
+      businessStatus <- c.downField("businessStatus").as[Option[MerchantBusinessStatus]]
       weeklyBusinessHours <- c.downField("weeklyBusinessHours").as[Option[List[MerchantWeeklyBusinessHour]]]
       holidayBusinessHours <- c.downField("holidayBusinessHours").as[Option[List[MerchantHolidayBusinessHour]]]
-    yield Merchant(id, storeName, category, address, phone, rating, tags, featuredProductIds, imageUrl, description.getOrElse(""), announcement.getOrElse(""), promotions.getOrElse(Nil), businessStatus.getOrElse("open"), weeklyBusinessHours.getOrElse(Nil), holidayBusinessHours.getOrElse(Nil))
+    yield Merchant(id, storeName, category, address, phone, rating, tags, featuredProductIds, imageUrl, description.getOrElse(""), announcement.getOrElse(""), promotions.getOrElse(Nil), businessStatus.getOrElse(MerchantBusinessStatus.open), weeklyBusinessHours.getOrElse(Nil), holidayBusinessHours.getOrElse(Nil))
   }
 
   private val merchantEncoder0: Encoder[Merchant] = Encoder.instance { m =>
@@ -411,7 +419,10 @@ object ApiJsonCodecs:
       "imageUrl" -> m.imageUrl.asJson,
       "description" -> m.description.asJson,
       "announcement" -> m.announcement.asJson,
-      "promotions" -> m.promotions.asJson
+      "promotions" -> m.promotions.asJson,
+      "businessStatus" -> m.businessStatus.asJson,
+      "weeklyBusinessHours" -> m.weeklyBusinessHours.asJson,
+      "holidayBusinessHours" -> m.holidayBusinessHours.asJson
     )
   }
 

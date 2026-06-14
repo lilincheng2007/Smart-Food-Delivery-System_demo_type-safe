@@ -1,6 +1,6 @@
 package delivery.merchant.objects.apiTypes
 
-import delivery.merchant.objects.ProductBundleGroup
+import delivery.merchant.objects.{ProductBundleGroup, ProductInventoryMode}
 import delivery.domain.{ListingStatus, MerchantId}
 
 final case class CreateProductRequest(
@@ -12,7 +12,7 @@ final case class CreateProductRequest(
     price: Double,
     remainingStock: Int,
     listingStatus: ListingStatus,
-    inventoryMode: Option[String] = None,
+    inventoryMode: Option[ProductInventoryMode] = None,
     maxPerOrder: Option[Int] = None,
     bundleGroups: Option[List[ProductBundleGroup]] = None
 )

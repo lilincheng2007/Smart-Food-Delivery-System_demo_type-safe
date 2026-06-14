@@ -1,6 +1,7 @@
 package delivery.promotion.services
 
 import delivery.domain.Promotion
+import delivery.promotion.objects.{PromotionDiscountType, PromotionTriggerType}
 
 import java.time.{LocalDate, LocalTime}
 import scala.util.Try
@@ -29,14 +30,13 @@ object PromotionPricing:
       .flatMap { promotion =>
         val discount =
           promotion.discountType match
-            case "amount"  => math.min(promotion.discountValue, amount)
-            case "percent" => math.max(0, amount * (10 - promotion.discountValue) / 10)
-            case "productAmount" =>
+            case PromotionDiscountType.amount  => math.min(promotion.discountValue, amount)
+            case PromotionDiscountType.percent => math.max(0, amount * (10 - promotion.discountValue) / 10)
+            case PromotionDiscountType.productAmount =>
               val eligibleItems = items.filter(item => promotion.productIds.contains(item.productId))
               val eligibleAmount = eligibleItems.map(item => item.unitPrice * item.quantity).sum
               val eligibleQuantity = eligibleItems.map(_.quantity).sum
               if eligibleAmount > 0 then math.min(promotion.discountValue * eligibleQuantity, eligibleAmount) else 0
-            case _         => 0
         if discount > 0 then Some(AppliedPromotion(promotion, roundMoney(discount))) else None
       }
       .sortBy(promotion => (-promotion.discountAmount, promotion.promotion.title))
@@ -51,10 +51,9 @@ object PromotionPricing:
 
   def meetsTrigger(promotion: Promotion, amount: Double, itemCount: Int): Boolean =
     promotion.triggerType match
-      case "none"   => true
-      case "amount" => amount >= promotion.triggerValue
-      case "items"  => itemCount >= promotion.triggerValue
-      case _        => false
+      case PromotionTriggerType.none   => true
+      case PromotionTriggerType.amount => amount >= promotion.triggerValue
+      case PromotionTriggerType.items  => itemCount >= promotion.triggerValue
 
   private def parseDate(value: String): Option[LocalDate] =
     Try(LocalDate.parse(value)).toOption

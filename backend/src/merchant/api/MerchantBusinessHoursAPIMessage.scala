@@ -1,7 +1,7 @@
 package delivery.merchant.api
 
 import cats.effect.IO
-import delivery.merchant.objects.{MerchantHolidayBusinessHour, MerchantWeeklyBusinessHour}
+import delivery.merchant.objects.{MerchantBusinessStatus, MerchantHolidayBusinessHour, MerchantWeeklyBusinessHour}
 import delivery.merchant.tables.merchantstore.MerchantStoreTable
 import delivery.merchant.validators.{MerchantBusinessHoursValidator, MerchantStoreOwnershipValidator}
 import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
@@ -12,7 +12,7 @@ import java.sql.Connection
 
 final case class MerchantBusinessHoursAPIMessage(
     merchantId: MerchantId,
-    businessStatus: String,
+    businessStatus: MerchantBusinessStatus,
     weeklyBusinessHours: List[MerchantWeeklyBusinessHour],
     holidayBusinessHours: List[MerchantHolidayBusinessHour]
 ) extends APIWithRoleMessage[OkResponse]:

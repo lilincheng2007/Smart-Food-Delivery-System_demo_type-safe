@@ -1,6 +1,6 @@
 package delivery.merchant.services
 
-import delivery.merchant.objects.{Merchant, MerchantHolidayBusinessHour, MerchantWeeklyBusinessHour}
+import delivery.merchant.objects.{Merchant, MerchantBusinessStatus, MerchantHolidayBusinessHour, MerchantWeeklyBusinessHour}
 import delivery.merchant.validators.MerchantBusinessHoursValidator
 
 import java.time.{LocalDate, LocalTime, ZonedDateTime}
@@ -12,7 +12,7 @@ object MerchantBusinessHoursService:
   val ClosedToday = MerchantBusinessHoursValidator.ClosedToday
   val Paused = MerchantBusinessHoursValidator.Paused
 
-  def normalizeStatus(value: String): String =
+  def normalizeStatus(value: String): MerchantBusinessStatus =
     MerchantBusinessHoursValidator.normalizeStatus(value)
 
   def isAcceptingOrders(merchant: Merchant, now: ZonedDateTime = ZonedDateTime.now()): Boolean =
@@ -28,17 +28,17 @@ object MerchantBusinessHoursService:
     val currentTime = now.toLocalTime
     merchant.holidayBusinessHours.find(_.date == today.toString) match
       case Some(holiday) => holidayAvailability(merchant, holiday, today, currentTime)
-      case None => regularAvailability(merchant, today, currentTime, normalizeStatus(merchant.businessStatus))
+      case None => regularAvailability(merchant, today, currentTime, merchant.businessStatus)
 
   private def holidayAvailability(merchant: Merchant, holiday: MerchantHolidayBusinessHour, today: LocalDate, currentTime: LocalTime): Availability =
-    val status = normalizeStatus(holiday.businessStatus)
+    val status = holiday.businessStatus
     if status != Open then Availability(false, status, nextOpenText(merchant, today, currentTime))
     else
       (holiday.startTime.flatMap(parseTime), holiday.endTime.flatMap(parseTime)) match
         case (Some(start), Some(end)) => Availability(inWindow(currentTime, start, end), Open, if inWindow(currentTime, start, end) then None else Some(formatTime(start)))
         case _ => regularAvailability(merchant, today, currentTime, Open)
 
-  private def regularAvailability(merchant: Merchant, today: LocalDate, currentTime: LocalTime, status: String): Availability =
+  private def regularAvailability(merchant: Merchant, today: LocalDate, currentTime: LocalTime, status: MerchantBusinessStatus): Availability =
     if status != Open then Availability(false, status, nextOpenText(merchant, today, currentTime))
     else
       val todayHours = merchant.weeklyBusinessHours.filter(hour => hour.enabled && hour.dayOfWeek == today.getDayOfWeek.getValue)
@@ -70,14 +70,14 @@ object MerchantBusinessHoursService:
 
   private def formatTime(value: LocalTime): String = f"${value.getHour}%02d:${value.getMinute}%02d"
 
-  private def statusLabel(status: String): String =
-    normalizeStatus(status) match
+  private def statusLabel(status: MerchantBusinessStatus): String =
+    status match
       case Open => "营业中"
       case Resting => "休息中"
       case ClosedToday => "今日打烊"
       case Paused => "临时暂停接单"
       case _ => "休息中"
 
-  final case class Availability(isOpen: Boolean, status: String, nextOpenText: Option[String])
+  final case class Availability(isOpen: Boolean, status: MerchantBusinessStatus, nextOpenText: Option[String])
 
 end MerchantBusinessHoursService

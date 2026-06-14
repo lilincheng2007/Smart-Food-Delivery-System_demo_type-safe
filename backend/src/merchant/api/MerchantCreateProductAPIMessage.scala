@@ -2,7 +2,7 @@ package delivery.merchant.api
 
 import delivery.merchant.services.MerchantBusinessService
 import cats.effect.IO
-import delivery.merchant.objects.{Product, ProductBundleGroup}
+import delivery.merchant.objects.{Product, ProductBundleGroup, ProductInventoryMode}
 import delivery.merchant.tables.catalogproduct.CatalogProductTable
 import delivery.merchant.tables.merchantstore.MerchantStoreTable
 import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
@@ -19,7 +19,7 @@ final case class MerchantCreateProductAPIMessage(
     price: Double,
     remainingStock: Int,
     listingStatus: ListingStatus,
-    inventoryMode: Option[String] = None,
+    inventoryMode: Option[ProductInventoryMode] = None,
     maxPerOrder: Option[Int] = None,
     bundleGroups: Option[List[ProductBundleGroup]] = None
 ) extends APIWithRoleMessage[Product]:
@@ -48,7 +48,7 @@ final case class MerchantCreateProductAPIMessage(
           imageUrl = productImageUrl,
           categoryName = productCategoryName,
           monthlySales = 0,
-          remainingStock = if normalizedInventoryMode == "unlimited" then 999999 else remainingStock,
+          remainingStock = if normalizedInventoryMode == ProductInventoryMode.unlimited then 999999 else remainingStock,
           listingStatus = listingStatus,
           inventoryStatus = MerchantBusinessService.inventoryStatus(remainingStock, listingStatus, normalizedInventoryMode),
           inventoryMode = normalizedInventoryMode,

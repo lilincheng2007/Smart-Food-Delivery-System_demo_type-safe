@@ -8,7 +8,7 @@ final case class ProductBundleGroup(
     id: String,
     name: String,
     quantity: Int,
-    selectionType: String = "repeatable",
+    selectionType: ProductBundleSelectionType = ProductBundleSelectionType.repeatable,
     includedPrice: Double = 0,
     options: List[ProductBundleOption] = Nil
 )
@@ -27,6 +27,6 @@ final case class Product(
     discountText: Option[String] = None,
     categoryName: String = "默认分类",
     bundleGroups: List[ProductBundleGroup] = Nil,
-    inventoryMode: String = "finite",
+    inventoryMode: ProductInventoryMode = ProductInventoryMode.finite,
     maxPerOrder: Option[Int] = None
 )

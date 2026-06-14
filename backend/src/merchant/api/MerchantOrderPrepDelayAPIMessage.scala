@@ -3,7 +3,7 @@ package delivery.merchant.api
 import delivery.merchant.services.MerchantBusinessService
 import cats.effect.IO
 import delivery.order.services.OrderChatNotificationTemplateService
-import delivery.order.objects.{OrderChatMessage, OrderTimelineEvent}
+import delivery.order.objects.{OrderChatMessage, OrderChatMessageType, OrderChatRole, OrderTimelineEvent}
 import delivery.order.tables.order.OrderTable
 import delivery.order.tables.orderchat.OrderChatMessageTable
 import delivery.platform.api.{APIWithRoleMessage, HttpApiError}
@@ -52,9 +52,9 @@ final case class MerchantOrderPrepDelayAPIMessage(orderId: OrderId, extraMinutes
       OrderChatMessage(
         id = UUID.randomUUID().toString,
         orderId = order.id,
-        senderRole = "merchant",
-        peerRole = "customer",
-        messageType = "text",
+        senderRole = OrderChatRole.merchant,
+        peerRole = OrderChatRole.customer,
+        messageType = OrderChatMessageType.text,
         content = OrderChatNotificationTemplateService.merchantPrepDelayed(order, reason),
         createdAt = Instant.now().toString
       )

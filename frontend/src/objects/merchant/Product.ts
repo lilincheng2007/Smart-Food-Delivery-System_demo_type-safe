@@ -1,7 +1,9 @@
 import type { InventoryStatus, ListingStatus, MerchantId, ProductId } from '@/objects/shared/ids'
+import type { ProductBundleSelectionType } from './ProductBundleSelectionType'
+import type { ProductInventoryMode } from './ProductInventoryMode'
 
-export type ProductBundleGroupSelectionType = 'fixed' | 'repeatable' | 'nonRepeatable'
-export type ProductInventoryMode = 'unlimited' | 'finite' | 'soldOut'
+export type { ProductInventoryMode } from './ProductInventoryMode'
+export type ProductBundleGroupSelectionType = ProductBundleSelectionType
 
 export interface ProductBundleOption {
   productId: ProductId
