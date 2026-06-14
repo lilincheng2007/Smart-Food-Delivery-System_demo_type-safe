@@ -315,11 +315,11 @@ cd frontend && npx eslint <changed-files>
 
 ## 8. 下一批次建议：第十批低优先级清理与文档同步
 
-建议按“清理遗留噪音 + 强化规则可执行性”的方式推进：
+十批优化计划已完成，后续建议按“固定审计节奏 + 触碰即收敛”持续维护：
 
-1. 清理并确认无引用的媒体遗留函数（如 `storeImageExtension`），仅删除无业务影响项，必要时补充迁移说明。
-2. 统一订单图片上传链路：梳理退款图、聊天图、订单备注图的服务入口，收敛到一致的文件服务与校验路径。
-3. 更新并对齐文档：同步 `README.full.md`、`AGENTS.md`、`DIRECTORY_LAYERING_GUIDE.md`，反映第9批后“结算 quote + 通知 feed 后端化”事实。
-4. 扩展可维护性审计脚本：新增对 `checkoutquoteapi` / `notificationfeedapi` 前后端一一对应检查，以及前端本地业务推导退化检测。
-5. 评估 `domain/CompatibilityAliases.scala` 仍在使用的条目，制定下一阶段 alias 下线顺序与兼容窗口。
-6. 验证重点：后端编译、前端 typecheck、类型安全审计、可维护性审计；并抽样回归顾客结算页与全局通知中心的核心交互。
+1. 每次新增 API 继续同步维护 `API_INVENTORY.md` 与前后端 API 文件一一对应。
+2. 按季度评估 `domain/CompatibilityAliases.scala` 使用情况，逐步下线可替换 alias。
+3. 保持订单图片上传链路统一由 `OrderImageFileService` 入口编排，避免 API 层回退为直连 `StoredImageService`。
+4. 继续将前端业务事实判断收敛到后端（结算与通知场景已完成，新增场景默认按同一策略实施）。
+5. 可维护性审计脚本与目录规则同步演进：新增规则先以 warn 观察，再在稳定后升级为 fail。
+6. 例行验证维持不变：后端编译、前端 typecheck、类型安全审计、可维护性审计。

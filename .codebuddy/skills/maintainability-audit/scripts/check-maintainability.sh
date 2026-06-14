@@ -91,6 +91,64 @@ else
   printf '%s' "$media_missing"
 fi
 
+printf '%s\n' '--- 订单图片上传链路 ---'
+order_image_api_direct=$(find "$BACKEND/order/api" -name '*ImageFileAPIMessage.scala' -type f -exec grep -l 'delivery.media.services.StoredImageService' {} + 2>/dev/null | sort || true)
+if [ -z "$order_image_api_direct" ]; then
+  pass "订单图片上传 API 未直接依赖 StoredImageService"
+else
+  legacy "订单图片上传 API 存在直连 StoredImageService，建议统一走 OrderImageFileService"
+  print_block "涉及文件：" "$order_image_api_direct"
+fi
+
+if grep -q 'OrderImageFileService.upload' "$BACKEND/order/api/CustomerRefundImageFileAPIMessage.scala" 2>/dev/null; then
+  pass "退款图片上传已复用 OrderImageFileService"
+else
+  legacy "CustomerRefundImageFileAPIMessage 尚未复用 OrderImageFileService"
+fi
+
+printf '%s\n' '--- 第九批后端事实源契约 ---'
+if [ -f "$BACKEND/order/api/CheckoutQuoteAPIMessage.scala" ] && [ -f "$FRONTEND/apis/order/CheckoutQuoteAPI.ts" ]; then
+  pass "checkoutquoteapi 前后端契约文件齐备"
+else
+  fail "checkoutquoteapi 前后端契约缺失"
+fi
+
+if [ -f "$BACKEND/order/api/NotificationFeedAPIMessage.scala" ] && [ -f "$FRONTEND/apis/order/NotificationFeedAPI.ts" ]; then
+  pass "notificationfeedapi 前后端契约文件齐备"
+else
+  fail "notificationfeedapi 前后端契约缺失"
+fi
+
+printf '%s\n' '--- 第九批前端消费路径回归检查 ---'
+checkout_page="$FRONTEND/pages/CustomerPortal/components/CustomerCheckoutPage.tsx"
+notification_center="$FRONTEND/components/GlobalNotificationCenter.tsx"
+
+if [ -f "$checkout_page" ] && grep -q 'checkoutQuoteIO' "$checkout_page" 2>/dev/null; then
+  pass "结算页已接入 checkoutquoteapi"
+else
+  fail "结算页未检测到 checkoutquoteapi 接入"
+fi
+
+if [ -f "$notification_center" ] && grep -q 'fetchNotificationFeedIO' "$notification_center" 2>/dev/null; then
+  pass "全局通知中心已接入 notificationfeedapi"
+else
+  fail "全局通知中心未检测到 notificationfeedapi 接入"
+fi
+
+checkout_local_derive=$(grep -E 'usableVouchers|platformPromotion|merchantDiscounts|afterMerchantDiscount' "$checkout_page" 2>/dev/null || true)
+if [ -z "$checkout_local_derive" ]; then
+  pass "结算页未检测到旧版本地优惠主推导变量"
+else
+  legacy "结算页仍存在本地优惠主推导痕迹，建议继续收敛为后端 quote 展示"
+fi
+
+notification_local_derive=$(grep -E 'fetchCustomerOrdersIO|fetchMerchantMeIO|fetchRiderMeIO|fetchAdminRefundRequestsIO' "$notification_center" 2>/dev/null || true)
+if [ -z "$notification_local_derive" ]; then
+  pass "通知中心未检测到旧版本地事件聚合入口"
+else
+  legacy "通知中心仍存在本地事件聚合入口，建议仅消费 notificationfeedapi"
+fi
+
 printf '%s\n' '--- 前端 store 内聚性 ---'
 page_stores=$(find "$FRONTEND/stores/pages" -type f \( -name '*.ts' -o -name '*.tsx' \) 2>/dev/null | sort || true)
 if [ -z "$page_stores" ]; then

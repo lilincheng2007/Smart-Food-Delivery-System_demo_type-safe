@@ -167,7 +167,7 @@ backend/src/media/
 ```text
 GET /api/merchant/store-images/{fileName}
 GET /api/merchant/product-images/{fileName}
-GET /api/orders/refund-images/{fileName}
+GET /api/orders/refund-images/{fileName}    # 订单图片，当前包含退款凭证、订单聊天图片、订单备注图片
 GET /api/reviews/images/{fileName}
 ```
 

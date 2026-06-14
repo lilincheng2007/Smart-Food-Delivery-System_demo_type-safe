@@ -98,22 +98,4 @@ object MerchantBusinessService:
       IO.raiseError(HttpApiError.BadRequest(errorMessage))
     else IO.pure(if trimmed.isEmpty then None else Some(trimmed))
 
-  def storeImageExtension(contentTypeLower: String, filenameHint: Option[String]): Either[String, String] =
-    val fromContentType =
-      if contentTypeLower.contains("jpeg") || contentTypeLower.contains("jpg") then Some(".jpg")
-      else if contentTypeLower.contains("png") then Some(".png")
-      else if contentTypeLower.contains("gif") then Some(".gif")
-      else if contentTypeLower.contains("webp") then Some(".webp")
-      else None
-    fromContentType.orElse {
-      filenameHint.flatMap { name =>
-        val lower = name.toLowerCase
-        if lower.endsWith(".jpg") || lower.endsWith(".jpeg") then Some(".jpg")
-        else if lower.endsWith(".png") then Some(".png")
-        else if lower.endsWith(".gif") then Some(".gif")
-        else if lower.endsWith(".webp") then Some(".webp")
-        else None
-      }
-    }.toRight("仅支持 JPEG、PNG、GIF、WebP 图片")
-
 end MerchantBusinessService

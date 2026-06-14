@@ -8,6 +8,4 @@ import java.sql.Connection
 
 final case class CustomerRefundImageFileAPIMessage(bytesBase64: String, contentTypeLower: String, filenameHint: Option[String]) extends APIWithRoleMessage[String]:
   override def plan(connection: Connection, username: String): IO[String] =
-    for
-      publicPath <- StoredImageService.saveBase64Image(connection, "order", "/api/orders/refund-images", bytesBase64, contentTypeLower, filenameHint)
-    yield publicPath
+    OrderImageFileService.upload(connection, bytesBase64, contentTypeLower, filenameHint)
