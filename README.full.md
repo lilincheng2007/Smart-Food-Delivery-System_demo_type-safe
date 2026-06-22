@@ -248,6 +248,8 @@ GET /api/reviews/images/{fileName}
 - 后端 Scala 代码使用不可变绑定 `val`，避免新增 `var`。
 - 新增业务路由优先使用 `APIMessage` / `APIWithRoleMessage`，不要新增零散字符串路由。
 - AI 能力优先复用 `backend/src/ai/utils/OpenAIClient.scala`。
+- AI `api/` 层只做入口与参数校验，prompt/解析/业务查询下沉到 `backend/src/ai/services/`；禁止在 AI API 中调用其它 `APIMessage().plan(...)`。
+- routes 层不依赖 `io.circe.generic.auto.*` 兜底；新增/变更类型必须补齐模块 `json/*JsonCodecs.scala` 并经 `ApiJsonCodecs` 聚合导出。
 
 更多说明见：
 

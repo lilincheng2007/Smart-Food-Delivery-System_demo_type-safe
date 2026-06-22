@@ -5,7 +5,6 @@ import delivery.ai.objects.apiTypes.{AIDietWeeklyReportResponse, AIMerchantBusin
 import delivery.platform.api.RegisteredAPIMessage
 import delivery.platform.api.RegisteredAPIMessage.apiWithRole
 import delivery.platform.json.ApiJsonCodecs.given
-import io.circe.generic.auto.*
 
 object AIRoutes:
 

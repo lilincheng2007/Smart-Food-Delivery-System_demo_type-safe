@@ -1,7 +1,7 @@
 import { APIMessage } from '@/apis/shared/APIMessage'
 import type { TaskIO } from '@/apis/shared/TaskIO'
 import { sendAPI } from '@/apis/shared/sendAPI'
-import { getLocalImageFileError } from '@/lib/local-image-file'
+import { fileToBase64, getLocalImageFileError } from '@/lib/local-image-file'
 
 class CustomerReviewImageFileAPI extends APIMessage<string> {
   readonly apiName = 'customerreviewimagefileapi'
@@ -15,22 +15,6 @@ class CustomerReviewImageFileAPI extends APIMessage<string> {
     this.contentTypeLower = contentTypeLower
     this.filenameHint = filenameHint
   }
-}
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result
-      if (typeof result !== 'string') {
-        reject(new Error('图片内容读取失败'))
-        return
-      }
-      resolve(result.split(',')[1] ?? '')
-    }
-    reader.onerror = () => reject(new Error('图片内容读取失败'))
-    reader.readAsDataURL(file)
-  })
 }
 
 export function uploadReviewImageFileIO(file: File): TaskIO<string> {

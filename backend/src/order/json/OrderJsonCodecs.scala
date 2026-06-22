@@ -1,6 +1,7 @@
 package delivery.order.json
 
 import delivery.domain.*
+import delivery.order.api.*
 import delivery.order.objects.*
 import delivery.order.objects.apiTypes.*
 import delivery.order.tables.*
@@ -16,6 +17,32 @@ import io.circe.generic.semiauto.*
 import io.circe.syntax.*
 
 object OrderJsonCodecs:
+
+  given Codec[CustomerOrdersAPIMessage] = deriveCodec
+  given Codec[OrderDetailAPIMessage] = deriveCodec
+  given Codec[OrderCancelAPIMessage] = deriveCodec
+  given Codec[OrderCompleteAPIMessage] = deriveCodec
+  given Codec[OrderRefundRequestAPIMessage] = deriveCodec
+  given Codec[OrderRefundAppealAPIMessage] = deriveCodec
+  given Codec[CustomerRefundImageFileAPIMessage] = deriveCodec
+  given Codec[CustomerOrderImageFileAPIMessage] = deriveCodec
+  given Codec[MerchantOrderImageFileAPIMessage] = deriveCodec
+  given Codec[RiderOrderImageFileAPIMessage] = deriveCodec
+  given Codec[CustomerOrderChatMessagesAPIMessage] = deriveCodec
+  given Codec[CustomerSendOrderChatMessageAPIMessage] = deriveCodec
+  given Codec[CustomerOrderChatUnreadCountsAPIMessage] = deriveCodec
+  given Codec[MerchantOrderChatMessagesAPIMessage] = deriveCodec
+  given Codec[MerchantSendOrderChatMessageAPIMessage] = deriveCodec
+  given Codec[MerchantOrderChatUnreadCountsAPIMessage] = deriveCodec
+  given Codec[RiderOrderChatMessagesAPIMessage] = deriveCodec
+  given Codec[RiderSendOrderChatMessageAPIMessage] = deriveCodec
+  given Codec[RiderOrderChatUnreadCountsAPIMessage] = deriveCodec
+  given Codec[NotificationFeedAPIMessage] = deriveCodec
+  given Codec[NotificationReadStatesAPIMessage] = deriveCodec
+  given Codec[NotificationMarkReadAPIMessage] = deriveCodec
+  given Codec[NotificationMarkAllReadAPIMessage] = deriveCodec
+  given Codec[CheckoutQuoteAPIMessage] = deriveCodec
+  given Codec[CheckoutAPIMessage] = deriveCodec
 
   given Codec[OrderChatRole] = enumCodec("订单聊天角色", OrderChatRole.values)
   given Codec[OrderChatMessageType] = enumCodec("订单聊天消息类型", OrderChatMessageType.values)

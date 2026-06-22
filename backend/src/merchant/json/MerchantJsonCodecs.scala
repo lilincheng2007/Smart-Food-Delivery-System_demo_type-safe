@@ -2,6 +2,7 @@ package delivery.merchant.json
 
 import delivery.admin.json.AdminJsonCodecs.given
 import delivery.domain.*
+import delivery.merchant.api.*
 import delivery.merchant.objects.*
 import delivery.merchant.objects.apiTypes.*
 import delivery.merchant.tables.*
@@ -18,6 +19,29 @@ import io.circe.generic.semiauto.*
 import io.circe.syntax.*
 
 object MerchantJsonCodecs:
+
+  given Codec[CatalogAPIMessage] = deriveCodec
+  given Codec[MerchantMeAPIMessage] = deriveCodec
+  given Codec[MerchantCreateStoreOnboardingRequestAPIMessage] = deriveCodec
+  given Codec[MerchantStoreAPIMessage] = deriveCodec
+  given Codec[MerchantStoreOnboardingRequestsAPIMessage] = deriveCodec
+  given Codec[MerchantStoreDescriptionAPIMessage] = deriveCodec
+  given Codec[MerchantStoreAnnouncementAPIMessage] = deriveCodec
+  given Codec[MerchantBusinessHoursAPIMessage] = deriveCodec
+  given Codec[MerchantStorePromotionsAPIMessage] = deriveCodec
+  given Codec[MerchantStoreImageAPIMessage] = deriveCodec
+  given Codec[MerchantStoreImageFileAPIMessage] = deriveCodec
+  given Codec[MerchantCreateProductAPIMessage] = deriveCodec
+  given Codec[MerchantProductAPIMessage] = deriveCodec
+  given Codec[MerchantProductImageFileAPIMessage] = deriveCodec
+  given Codec[MerchantProductDescriptionsAPIMessage] = deriveCodec
+  given Codec[MerchantOrderAcceptAPIMessage] = deriveCodec
+  given Codec[MerchantOrderRejectAPIMessage] = deriveCodec
+  given Codec[MerchantOrderReadyAPIMessage] = deriveCodec
+  given Codec[MerchantOrderPrepDelayAPIMessage] = deriveCodec
+  given Codec[MerchantRefundRequestsAPIMessage] = deriveCodec
+  given Codec[MerchantRefundAcceptAPIMessage] = deriveCodec
+  given Codec[MerchantRefundRejectAPIMessage] = deriveCodec
 
   given Codec[MerchantBusinessStatus] = enumCodec("商家营业状态", MerchantBusinessStatus.values)
   given Codec[ProductInventoryMode] = enumCodec("商品库存模式", ProductInventoryMode.values)

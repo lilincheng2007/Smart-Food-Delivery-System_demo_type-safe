@@ -6,7 +6,6 @@ import delivery.platform.json.ApiJsonCodecs.given
 import delivery.domain.apiTypes.OkResponse
 import delivery.user.api.*
 import delivery.user.objects.apiTypes.{CustomerMeResponse, CustomerWalletTopUpResponse, LoginResponse}
-import io.circe.generic.auto.*
 
 object UserRoutes:
 

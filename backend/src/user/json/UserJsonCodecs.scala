@@ -4,6 +4,7 @@ import delivery.order.json.OrderJsonCodecs.given
 import delivery.platform.json.CommonJsonCodecs.given
 import delivery.promotion.json.PromotionJsonCodecs.given
 import delivery.promotion.objects.*
+import delivery.user.api.*
 import delivery.user.objects.*
 import delivery.user.objects.apiTypes.*
 import delivery.user.tables.*
@@ -15,6 +16,13 @@ import io.circe.generic.semiauto.*
 import io.circe.syntax.*
 
 object UserJsonCodecs:
+
+  given Codec[LoginAPIMessage] = deriveCodec
+  given Codec[RegisterAPIMessage] = deriveCodec
+  given Codec[CustomerMeAPIMessage] = deriveCodec
+  given Codec[CustomerProfilePatchAPIMessage] = deriveCodec
+  given Codec[CustomerVoucherDiscardAPIMessage] = deriveCodec
+  given Codec[CustomerRechargeAPIMessage] = deriveCodec
 
   given Codec[AuthCredentialRecord] = deriveCodec
   given Codec[Customer] = deriveCodec

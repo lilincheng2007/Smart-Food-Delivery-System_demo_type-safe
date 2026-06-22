@@ -3,6 +3,7 @@ package delivery.order.services
 import cats.effect.IO
 import delivery.user.services.CustomerLoyaltyService
 import delivery.order.objects.Order
+import delivery.order.tables.order.OrderTable
 import delivery.platform.api.HttpApiError
 import delivery.domain.{OrderStatus, RefundStatus}
 import delivery.user.tables.customerprofile.CustomerProfileTable
@@ -54,5 +55,47 @@ object RefundWorkflowService:
       )
       _ <- CustomerProfileTable.upsert(connection, account.copy(profile = nextProfile))
     yield refundedOrder
+
+  def rejectByAdmin(connection: Connection, order: Order, reason: String): IO[Order] =
+    val trimmedReason = reason.trim
+    for
+      _ <-
+        if !isAdminPending(order.refundStatus) then IO.raiseError(HttpApiError.BadRequest("该订单没有待管理员仲裁的退款申请"))
+        else if trimmedReason.isEmpty then IO.raiseError(HttpApiError.BadRequest("驳回原因不能为空"))
+        else IO.unit
+      updatedOrder = order.copy(
+        refundStatus = Some(RefundStatus.已驳回),
+        refundAdminReason = Some(trimmedReason)
+      )
+      _ <- OrderTable.upsert(connection, updatedOrder)
+      _ <- syncCustomerHistoryOrder(connection, updatedOrder)
+    yield updatedOrder
+
+  def rejectByMerchant(connection: Connection, order: Order, reason: String): IO[Order] =
+    val trimmedReason = reason.trim
+    for
+      _ <-
+        if !isMerchantPending(order.refundStatus) then IO.raiseError(HttpApiError.BadRequest("该订单没有待商家处理的退款申请"))
+        else if trimmedReason.isEmpty then IO.raiseError(HttpApiError.BadRequest("驳回理由不能为空"))
+        else IO.unit
+      now <- IO.realTimeInstant.map(_.toString)
+      updatedOrder = order.copy(
+        refundStatus = Some(RefundStatus.商家已驳回),
+        refundMerchantReason = Some(trimmedReason),
+        refundMerchantReviewedAt = Some(now),
+        refundAdminReason = None
+      )
+      _ <- OrderTable.upsert(connection, updatedOrder)
+      _ <- syncCustomerHistoryOrder(connection, updatedOrder)
+    yield updatedOrder
+
+  private def syncCustomerHistoryOrder(connection: Connection, order: Order): IO[Unit] =
+    CustomerProfileTable.findById(connection, order.customerId).flatMap {
+      case Some(value) =>
+        CustomerProfileTable.upsert(connection, value.copy(profile = value.profile.copy(
+          historyOrders = order :: value.profile.historyOrders.filterNot(_.id == order.id)
+        ))).void
+      case None => IO.unit
+    }
 
 end RefundWorkflowService

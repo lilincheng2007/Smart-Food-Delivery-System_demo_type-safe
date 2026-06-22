@@ -9,7 +9,6 @@ import delivery.platform.api.RegisteredAPIMessage
 import delivery.platform.api.RegisteredAPIMessage.{api, apiWithRole}
 import delivery.platform.json.ApiJsonCodecs.given
 import delivery.domain.apiTypes.OkResponse
-import io.circe.generic.auto.*
 
 object MerchantRoutes:
   val apiMessages: List[RegisteredAPIMessage] =

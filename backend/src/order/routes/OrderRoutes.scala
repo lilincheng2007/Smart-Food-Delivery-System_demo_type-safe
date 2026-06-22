@@ -6,7 +6,6 @@ import delivery.order.objects.apiTypes.{CheckoutQuoteResponse, CheckoutResponse,
 import delivery.platform.api.RegisteredAPIMessage
 import delivery.platform.api.RegisteredAPIMessage.{apiWithRole, apiWithRoles}
 import delivery.platform.json.ApiJsonCodecs.given
-import io.circe.generic.auto.*
 
 object OrderRoutes:
   val apiMessages: List[RegisteredAPIMessage] =

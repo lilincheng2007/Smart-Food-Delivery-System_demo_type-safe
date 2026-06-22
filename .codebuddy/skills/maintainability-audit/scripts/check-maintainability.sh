@@ -211,6 +211,48 @@ else
   printf '%s' "$missing_layers"
 fi
 
+printf '%s\n' '--- AI API 薄层与跨 API 依赖 ---'
+ai_api_to_api=$(grep -R "APIMessage().plan(connection)" "$BACKEND/ai/api" --include='*.scala' 2>/dev/null || true)
+if [ -z "$ai_api_to_api" ]; then
+  pass "AI API 未检测到 API 调 APIMessage"
+else
+  fail "AI API 检测到 API 调 APIMessage，应改为 service/table 查询"
+  printf '%s\n' "$ai_api_to_api"
+fi
+
+printf '%s\n' '--- routes generic.auto 兜底 ---'
+airoutes_file="$BACKEND/ai/routes/AIRoutes.scala"
+if [ -f "$airoutes_file" ] && ! grep -q 'io.circe.generic.auto' "$airoutes_file" 2>/dev/null; then
+  pass "AIRoutes 已移除 generic.auto 兜底"
+else
+  fail "AIRoutes 仍依赖 generic.auto 兜底"
+fi
+
+routes_generic_auto=$(find "$BACKEND" -path '*/routes/*Routes.scala' -type f -exec grep -l 'io.circe.generic.auto' {} + 2>/dev/null | sort || true)
+if [ -z "$routes_generic_auto" ]; then
+  pass "所有 routes 已移除 generic.auto 兜底"
+else
+  fail "仍有 routes 依赖 generic.auto，应补齐模块 codec 后移除"
+  print_block "涉及文件：" "$routes_generic_auto"
+fi
+
+printf '%s\n' '--- 前端 API 契约可发现性 ---'
+inline_api_dto=$(grep -R -E '^export interface .*?(Request|Response)\\b' "$FRONTEND/apis" --include='*.ts' 2>/dev/null | grep -v '/shared/' || true)
+if [ -z "$inline_api_dto" ]; then
+  pass "前端 API 文件未内联 Request/Response 类型"
+else
+  legacy "前端 API 文件检测到内联 Request/Response，建议迁移到 objects/*/apiTypes"
+  print_block "涉及文件：" "$inline_api_dto"
+fi
+
+duplicated_file_to_base64=$(grep -R "function fileToBase64" "$FRONTEND/apis" --include='*.ts' 2>/dev/null || true)
+if [ -z "$duplicated_file_to_base64" ]; then
+  pass "前端 API 未检测到重复 fileToBase64 实现"
+else
+  legacy "前端 API 仍存在 fileToBase64 重复实现，建议统一复用 lib/local-image-file"
+  print_block "涉及文件：" "$duplicated_file_to_base64"
+fi
+
 printf '\nSummary: %s pass, %s warn, %s fail\n' "$pass_count" "$warn_count" "$fail_count"
 if [ "$fail_count" -gt 0 ]; then
   exit 1

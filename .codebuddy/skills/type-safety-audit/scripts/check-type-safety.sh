@@ -234,8 +234,37 @@ old_imports=$(grep -rn "@/api/\|frontend/src/api\|src/api" "$FRONTEND" --include
 
 echo ""
 
-# 检查 7: Unsafe 组件与逃逸口
-echo "--- 检查 7: Unsafe 组件与逃逸口 ---"
+# 检查 7: AI API 跨层依赖与前端 API DTO 落位
+echo "--- 检查 7: AI API 跨层依赖与前端 API DTO 落位 ---"
+
+ai_api_to_api=$(grep -R "APIMessage().plan(connection)" "$BACKEND/ai/api" --include='*.scala' 2>/dev/null || true)
+if [ -z "$ai_api_to_api" ]; then
+  pass "AI API 未检测到 API 调 APIMessage"
+else
+  fail "AI API 存在 API 调 APIMessage 依赖"
+  echo "$ai_api_to_api"
+fi
+
+routes_generic_auto=$(find "$BACKEND" -path '*/routes/*Routes.scala' -type f -exec grep -l 'io.circe.generic.auto' {} + 2>/dev/null | sort || true)
+if [ -z "$routes_generic_auto" ]; then
+  pass "所有 routes 已移除 generic.auto 兜底"
+else
+  fail "routes 仍使用 generic.auto 兜底"
+  echo "$routes_generic_auto"
+fi
+
+inline_api_dto=$(grep -R -E '^export interface .*?(Request|Response)\b' "$FRONTEND/apis" --include='*.ts' 2>/dev/null | grep -v '/shared/' || true)
+if [ -z "$inline_api_dto" ]; then
+  pass "前端 API 文件无内联 Request/Response 类型"
+else
+  fail "前端 API 文件存在内联 Request/Response 类型"
+  echo "$inline_api_dto"
+fi
+
+echo ""
+
+# 检查 8: Unsafe 组件与逃逸口
+echo "--- 检查 8: Unsafe 组件与逃逸口 ---"
 frontend_unsafe=$(grep -rnE "Unsafe|Unsfe|dangerouslySetInnerHTML|eval[[:space:]]*\(|new[[:space:]]+Function[[:space:]]*\(|as[[:space:]]+any|@ts-ignore|@ts-expect-error" "$FRONTEND" --include='*.ts' --include='*.tsx' 2>/dev/null | head -20 || true)
 backend_unsafe=$(grep -rnE "Unsafe|Unsfe|unsafeRun|unsafeFromString|asInstanceOf" "$BACKEND" --include='*.scala' 2>/dev/null | head -20 || true)
 if [ -z "$frontend_unsafe$backend_unsafe" ]; then

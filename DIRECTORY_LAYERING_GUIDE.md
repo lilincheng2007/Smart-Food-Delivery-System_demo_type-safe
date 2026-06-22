@@ -39,6 +39,7 @@ backend/src/{module}/
 
 - 新增 `*APIMessageSupport.scala` 这类模糊支撑文件。
 - 在 API 文件中堆放 SQL、长业务流程、图片处理细节、复杂 DTO 转换。
+- 在 AI 模块中通过 `XxxAPIMessage().plan(connection)` 调用其它 APIMessage（API 调 API）。
 - 把多个 APIMessage 放进同一个文件。
 
 迁移建议：现有 `MerchantAPIMessageSupport`、`OrderAPIMessageSupport` 等应按职责拆到 `services/`、`validators/`、`utils/` 或独立 `media/` 能力中。
@@ -114,7 +115,8 @@ backend/src/{module}/
 2. 只有平台级通用对象、跨模块稳定枚举和 HTTP 通用 DTO 放入 `CommonJsonCodecs.scala`。
 3. `ApiJsonCodecs.scala` 只做聚合 `export`，不要继续放入具体业务对象的手写 codec。
 4. 不在 API 文件中临时手写零散 JSON 编解码。
-5. 若类型只属于单个模块，codec 命名和 import 依赖应带模块语义，避免同名冲突和循环依赖。
+5. routes 层禁止依赖 `io.circe.generic.auto.*` 兜底；应补齐模块 `json/*JsonCodecs.scala` 并经 `ApiJsonCodecs` 聚合导出。
+6. 若类型只属于单个模块，codec 命名和 import 依赖应带模块语义，避免同名冲突和循环依赖。
 
 ```text
 backend/src/{module}/json/{Module}JsonCodecs.scala       # 模块 codec 定义
